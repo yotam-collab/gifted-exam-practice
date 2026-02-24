@@ -206,8 +206,6 @@ body {
 .progress-fill {
   transition: width 0.5s ease;
   background: linear-gradient(90deg, #6C5CE7, #A855F7, #00CEC9);
-  background-size: 200% 100%;
-  animation: shimmer 2s linear infinite;
   box-shadow: 0 0 10px rgba(108, 92, 231, 0.5);
 }
 .progress-track {

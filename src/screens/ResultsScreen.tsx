@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { storage } from '../services/storage';
 import { getSectionConfig } from '../config/sections';
 import { questionBank } from '../data/questions';
-import type { SessionQuestion, Question } from '../types';
+import { questionVisuals } from '../data/shapeVisuals';
+import { numberShapeVisuals } from '../data/numberShapeVisuals';
+import { ShapeAnalogy, ShapeSeries, ShapeGrid, ShapeRow, ShapeOddOneOut, DividedCirclePair, NumberPyramid, NumberGrid, NumberFlowChart, NumberTriangle } from '../utils/shapeRenderer';
+import type { Question } from '../types';
 
 interface Props {
   sessionId: string;
@@ -229,9 +232,32 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
                       </button>
 
                       {/* Expanded details */}
-                      {isExpanded && (
+                      {isExpanded && (() => {
+                        const visual = questionVisuals[question.id];
+                        const nsVisual = numberShapeVisuals[question.id];
+                        return (
                         <div className="px-3 pb-3 border-t border-border/50">
                           <div className="py-3">
+                            {/* Shape SVG visuals */}
+                            {visual && (
+                              <div className="flex justify-center mb-3">
+                                {visual.stemLayout === 'analogy' && visual.stemShapes && <ShapeAnalogy shapes={visual.stemShapes} />}
+                                {visual.stemLayout === 'series' && visual.stemShapes && <ShapeSeries shapes={visual.stemShapes} />}
+                                {visual.stemLayout === 'grid' && visual.gridCells && <ShapeGrid cells={visual.gridCells} />}
+                                {visual.stemLayout === 'row' && visual.stemShapes && <ShapeRow shapes={visual.stemShapes} />}
+                                {visual.stemLayout === 'odd_one_out' && visual.stemShapes && <ShapeOddOneOut shapes={visual.stemShapes} />}
+                              </div>
+                            )}
+                            {/* Numbers-in-shapes SVG visuals */}
+                            {nsVisual && (
+                              <div className="flex justify-center mb-3">
+                                {nsVisual.type === 'divided_circle_pair' && <DividedCirclePair circle1={nsVisual.circle1} circle2={nsVisual.circle2} missingCircle={nsVisual.missingCircle} missingIndex={nsVisual.missingIndex} />}
+                                {nsVisual.type === 'number_pyramid' && <NumberPyramid rows={nsVisual.rows} missingRow={nsVisual.missingRow} missingCol={nsVisual.missingCol} />}
+                                {nsVisual.type === 'number_grid' && <NumberGrid rows={nsVisual.rows} missingRow={nsVisual.missingRow} missingCol={nsVisual.missingCol} />}
+                                {nsVisual.type === 'number_flow' && <NumberFlowChart nodes={nsVisual.nodes} operations={nsVisual.operations} missingIndex={nsVisual.missingIndex} />}
+                                {nsVisual.type === 'number_triangle' && <NumberTriangle top={nsVisual.top} bottomLeft={nsVisual.bottomLeft} bottomRight={nsVisual.bottomRight} center={nsVisual.center} missingPosition={nsVisual.missingPosition} />}
+                              </div>
+                            )}
                             <p className="text-sm font-medium mb-3 leading-relaxed">{question.stem}</p>
 
                             <div className="space-y-2">
@@ -293,10 +319,11 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
                             <div className="font-bold mb-1">
                               {isCorrect ? '✅ נכון!' : '💡 הסבר:'}
                             </div>
-                            <p className="leading-relaxed">{question.explanation}</p>
+                            <p className="leading-relaxed whitespace-pre-line">{question.explanation}</p>
                           </div>
                         </div>
-                      )}
+                        );
+                      })()}
                     </div>
                   );
                 })}

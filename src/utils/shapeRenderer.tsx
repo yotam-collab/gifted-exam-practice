@@ -676,3 +676,342 @@ export function ShapeOddOneOut({
     </div>
   );
 }
+
+// ===========================================================================
+// NUMBERS IN SHAPES COMPONENTS
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// Component: DividedCircle – circle divided into 3 or 4 segments with numbers
+// Like the real exam: top, bottom-left, bottom-right (or 4 quadrants)
+// ---------------------------------------------------------------------------
+
+export function DividedCircle({
+  values,
+  missingIndex,
+  size = 120,
+}: {
+  values: (number | string)[];
+  missingIndex?: number;
+  size?: number;
+}): React.ReactElement {
+  const r = size / 2 - 4;
+  const cx = size / 2;
+  const cy = size / 2;
+
+  if (values.length === 3) {
+    // 3-part circle: top, bottom-left, bottom-right
+    const textPositions = [
+      { x: cx, y: cy - r * 0.35 },       // top
+      { x: cx - r * 0.4, y: cy + r * 0.35 }, // bottom-left
+      { x: cx + r * 0.4, y: cy + r * 0.35 }, // bottom-right
+    ];
+
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#94a3b8" strokeWidth="2.5" />
+        {/* Dividing lines from center */}
+        <line x1={cx} y1={cy - r} x2={cx} y2={cy} stroke="#94a3b8" strokeWidth="1.5" />
+        <line x1={cx} y1={cy} x2={cx - r * 0.87} y2={cy + r * 0.5} stroke="#94a3b8" strokeWidth="1.5" />
+        <line x1={cx} y1={cy} x2={cx + r * 0.87} y2={cy + r * 0.5} stroke="#94a3b8" strokeWidth="1.5" />
+        {/* Numbers */}
+        {values.map((val, i) => (
+          <text
+            key={i}
+            x={textPositions[i].x}
+            y={textPositions[i].y}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={size * 0.18}
+            fontWeight="bold"
+            fill={i === missingIndex ? '#f59e0b' : '#e2e8f0'}
+          >
+            {i === missingIndex ? '?' : val}
+          </text>
+        ))}
+      </svg>
+    );
+  }
+
+  // 4-part circle: top, right, bottom, left
+  const textPositions4 = [
+    { x: cx, y: cy - r * 0.45 },       // top
+    { x: cx + r * 0.45, y: cy },       // right
+    { x: cx, y: cy + r * 0.45 },       // bottom
+    { x: cx - r * 0.45, y: cy },       // left
+  ];
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#94a3b8" strokeWidth="2.5" />
+      <line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke="#94a3b8" strokeWidth="1.5" />
+      <line x1={cx} y1={cy - r} x2={cx} y2={cy + r} stroke="#94a3b8" strokeWidth="1.5" />
+      {values.map((val, i) => (
+        <text
+          key={i}
+          x={textPositions4[i].x}
+          y={textPositions4[i].y}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={size * 0.18}
+          fontWeight="bold"
+          fill={i === missingIndex ? '#f59e0b' : '#e2e8f0'}
+        >
+          {i === missingIndex ? '?' : val}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Component: DividedCirclePair – two divided circles side by side (exam style)
+// ---------------------------------------------------------------------------
+
+export function DividedCirclePair({
+  circle1,
+  circle2,
+  missingCircle,
+  missingIndex,
+}: {
+  circle1: (number | string)[];
+  circle2: (number | string)[];
+  missingCircle: 1 | 2;
+  missingIndex: number;
+}): React.ReactElement {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, direction: 'ltr' }}>
+      <DividedCircle
+        values={circle1}
+        missingIndex={missingCircle === 1 ? missingIndex : undefined}
+        size={130}
+      />
+      <DividedCircle
+        values={circle2}
+        missingIndex={missingCircle === 2 ? missingIndex : undefined}
+        size={130}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Component: NumberPyramid – pyramid of numbers (each = sum of two below)
+// ---------------------------------------------------------------------------
+
+export function NumberPyramid({
+  rows,
+  missingRow,
+  missingCol,
+}: {
+  rows: (number | string)[][];
+  missingRow: number;
+  missingCol: number;
+}): React.ReactElement {
+  const cellSize = 48;
+  const gap = 6;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap, direction: 'ltr' }}>
+      {rows.map((row, ri) => (
+        <div key={ri} style={{ display: 'flex', gap, justifyContent: 'center' }}>
+          {row.map((val, ci) => {
+            const isMissing = ri === missingRow && ci === missingCol;
+            return (
+              <div
+                key={ci}
+                style={{
+                  width: cellSize,
+                  height: cellSize,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: isMissing ? '2px dashed #f59e0b' : '2px solid #94a3b8',
+                  borderRadius: 8,
+                  background: isMissing ? 'rgba(245, 158, 11, 0.1)' : 'rgba(148, 163, 184, 0.1)',
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: isMissing ? '#f59e0b' : '#e2e8f0',
+                }}
+              >
+                {isMissing ? '?' : val}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Component: NumberGrid – table/grid of numbers with a missing cell
+// ---------------------------------------------------------------------------
+
+export function NumberGrid({
+  rows,
+  missingRow,
+  missingCol,
+}: {
+  rows: (number | string)[][];
+  missingRow: number;
+  missingCol: number;
+}): React.ReactElement {
+  const cellSize = 46;
+
+  return (
+    <div
+      style={{
+        display: 'inline-grid',
+        gridTemplateColumns: `repeat(${rows[0]?.length || 0}, ${cellSize}px)`,
+        gap: 2,
+        padding: 4,
+        background: '#94a3b8',
+        borderRadius: 10,
+        direction: 'ltr',
+      }}
+    >
+      {rows.flatMap((row, ri) =>
+        row.map((val, ci) => {
+          const isMissing = ri === missingRow && ci === missingCol;
+          return (
+            <div
+              key={`${ri}-${ci}`}
+              style={{
+                width: cellSize,
+                height: cellSize,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: isMissing ? 'rgba(245, 158, 11, 0.15)' : '#1E1740',
+                fontSize: 17,
+                fontWeight: 700,
+                color: isMissing ? '#f59e0b' : '#e2e8f0',
+                borderRadius: 4,
+              }}
+            >
+              {isMissing ? '?' : val}
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Component: NumberFlowChart – flow chart with operations between nodes
+// ---------------------------------------------------------------------------
+
+export function NumberFlowChart({
+  nodes,
+  operations,
+  missingIndex,
+}: {
+  nodes: (number | string)[];
+  operations: string[];
+  missingIndex: number;
+}): React.ReactElement {
+  const nodeSize = 48;
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, direction: 'ltr', flexWrap: 'wrap' }}>
+      {nodes.map((val, i) => (
+        <React.Fragment key={i}>
+          <div
+            style={{
+              width: nodeSize,
+              height: nodeSize,
+              borderRadius: '50%',
+              border: i === missingIndex ? '2px dashed #f59e0b' : '2px solid #94a3b8',
+              background: i === missingIndex ? 'rgba(245, 158, 11, 0.1)' : 'rgba(148, 163, 184, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 16,
+              fontWeight: 700,
+              color: i === missingIndex ? '#f59e0b' : '#e2e8f0',
+            }}
+          >
+            {i === missingIndex ? '?' : val}
+          </div>
+          {i < operations.length && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <span style={{ fontSize: 14, color: '#94a3b8' }}>\u2192</span>
+              <span style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#a78bfa',
+                background: 'rgba(167, 139, 250, 0.1)',
+                padding: '2px 6px',
+                borderRadius: 6,
+              }}>
+                {operations[i]}
+              </span>
+              <span style={{ fontSize: 14, color: '#94a3b8' }}>\u2192</span>
+            </div>
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Component: NumberTriangle – triangle with numbers at vertices and center
+// ---------------------------------------------------------------------------
+
+export function NumberTriangle({
+  top,
+  bottomLeft,
+  bottomRight,
+  center,
+  missingPosition,
+}: {
+  top: number | string;
+  bottomLeft: number | string;
+  bottomRight: number | string;
+  center: number | string;
+  missingPosition: 'top' | 'bottomLeft' | 'bottomRight' | 'center';
+}): React.ReactElement {
+  const w = 160;
+  const h = 140;
+
+  const positions = {
+    top: { x: w / 2, y: 20 },
+    center: { x: w / 2, y: h * 0.45 },
+    bottomLeft: { x: 25, y: h - 15 },
+    bottomRight: { x: w - 25, y: h - 15 },
+  };
+
+  const vals: Record<string, number | string> = { top, bottomLeft, bottomRight, center };
+
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+      <polygon
+        points={`${w / 2},8 8,${h - 8} ${w - 8},${h - 8}`}
+        fill="none"
+        stroke="#94a3b8"
+        strokeWidth="2"
+      />
+      {Object.entries(positions).map(([key, pos]) => {
+        const isMissing = key === missingPosition;
+        return (
+          <text
+            key={key}
+            x={pos.x}
+            y={pos.y}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={18}
+            fontWeight="bold"
+            fontStyle={key === 'center' ? 'italic' : 'normal'}
+            fill={isMissing ? '#f59e0b' : '#e2e8f0'}
+          >
+            {isMissing ? '?' : vals[key]}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}

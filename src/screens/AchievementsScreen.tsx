@@ -1,4 +1,3 @@
-import React from 'react';
 import { storage } from '../services/storage';
 import { SECTION_CONFIGS } from '../config/sections';
 

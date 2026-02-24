@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { SectionType } from '../types';
 import { SECTION_CONFIGS } from '../config/sections';
 

@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { SessionMode, SessionConfig, Session, SessionSection, SessionQuestion, Question, SectionType } from '../types';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { SessionMode, SessionConfig, Session, SessionSection, SessionQuestion, Question } from '../types';
 import { questionBank } from '../data/questions';
-import { SECTION_CONFIGS, getSectionConfig } from '../config/sections';
+import { getSectionConfig } from '../config/sections';
 import { storage } from '../services/storage';
 import { updateMastery, selectAdaptiveQuestions } from '../services/adaptive';
 import { useTimer } from '../hooks/useTimer';
 import { questionVisuals } from '../data/shapeVisuals';
-import { ShapeAnalogy, ShapeSeries, ShapeGrid, ShapeRow, ShapeOddOneOut, ShapeBox, ShapeOptions } from '../utils/shapeRenderer';
+import { numberShapeVisuals } from '../data/numberShapeVisuals';
+import { ShapeAnalogy, ShapeSeries, ShapeGrid, ShapeRow, ShapeOddOneOut, ShapeOptions, DividedCirclePair, NumberPyramid, NumberGrid, NumberFlowChart, NumberTriangle } from '../utils/shapeRenderer';
 
 interface Props {
   userId: string;
@@ -17,7 +18,7 @@ interface Props {
   isPracticeMode: boolean;
 }
 
-export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isPracticeMode }: Props) {
+export default function SessionScreen({ userId, mode, config, onEnd, isPracticeMode }: Props) {
   const [session, setSession] = useState<Session | null>(null);
   const [currentSectionIdx, setCurrentSectionIdx] = useState(0);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
@@ -328,7 +329,9 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
       <div className="flex-1 flex flex-col">
         {(() => {
           const visual = questionVisuals[currentQuestion.id];
+          const nsVisual = numberShapeVisuals[currentQuestion.id];
           const hasVisual = !!visual;
+          const hasNSVisual = !!nsVisual;
           const hasVisualOptions = !!visual?.optionShapes;
 
           return (
@@ -360,7 +363,26 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
                     <ShapeOddOneOut shapes={visual.stemShapes} />
                   </div>
                 )}
-                <p className={`text-lg font-medium leading-relaxed ${hasVisual ? 'text-center text-sm text-text-secondary' : ''}`}>
+                {hasNSVisual && (
+                  <div className="flex justify-center mb-3">
+                    {nsVisual.type === 'divided_circle_pair' && (
+                      <DividedCirclePair circle1={nsVisual.circle1} circle2={nsVisual.circle2} missingCircle={nsVisual.missingCircle} missingIndex={nsVisual.missingIndex} />
+                    )}
+                    {nsVisual.type === 'number_pyramid' && (
+                      <NumberPyramid rows={nsVisual.rows} missingRow={nsVisual.missingRow} missingCol={nsVisual.missingCol} />
+                    )}
+                    {nsVisual.type === 'number_grid' && (
+                      <NumberGrid rows={nsVisual.rows} missingRow={nsVisual.missingRow} missingCol={nsVisual.missingCol} />
+                    )}
+                    {nsVisual.type === 'number_flow' && (
+                      <NumberFlowChart nodes={nsVisual.nodes} operations={nsVisual.operations} missingIndex={nsVisual.missingIndex} />
+                    )}
+                    {nsVisual.type === 'number_triangle' && (
+                      <NumberTriangle top={nsVisual.top} bottomLeft={nsVisual.bottomLeft} bottomRight={nsVisual.bottomRight} center={nsVisual.center} missingPosition={nsVisual.missingPosition} />
+                    )}
+                  </div>
+                )}
+                <p className={`text-lg font-medium leading-relaxed ${hasVisual || hasNSVisual ? 'text-center text-sm text-text-secondary' : ''}`}>
                   {currentQuestion.stem}
                 </p>
               </div>
@@ -437,7 +459,7 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
         })()}
 
         {/* Practice Mode: Result & Explanation */}
-        {isPracticeMode && showResult && (
+        {isPracticeMode && showResult && currentSQ && (
           <div className="mb-4 animate-slide-up">
             <div className={`p-4 rounded-xl mb-3 ${
               currentSQ.isCorrect ? 'result-correct' : 'result-wrong'
@@ -459,7 +481,7 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
                 </button>
               )}
               {showExplanation && (
-                <p className="text-sm text-text-secondary mt-2">{currentQuestion.explanation}</p>
+                <p className="text-sm text-text-secondary mt-2 whitespace-pre-line">{currentQuestion.explanation}</p>
               )}
             </div>
 

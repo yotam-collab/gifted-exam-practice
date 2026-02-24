@@ -1,4 +1,3 @@
-import React from 'react';
 import type { AppView } from '../types';
 import { storage } from '../services/storage';
 

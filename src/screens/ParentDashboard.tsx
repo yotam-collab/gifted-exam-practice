@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import { storage } from '../services/storage';
-import { SECTION_CONFIGS, getSectionConfig } from '../config/sections';
+import { SECTION_CONFIGS } from '../config/sections';
 import { getWeakSkills, getStrongSkills, generateWeeklyPlan } from '../services/adaptive';
-import type { SkillStats, Session } from '../types';
+
+
 
 interface Props {
   childId: string;
@@ -48,7 +49,7 @@ export default function ParentDashboard({ childId, onBack }: Props) {
 
   const trendData = useMemo(() => {
     const recent = sessions.slice(-10);
-    return recent.map((s, i) => {
+    return recent.map((s) => {
       const date = new Date(s.startedAt);
       return {
         name: `${date.getDate()}/${date.getMonth() + 1}`,
