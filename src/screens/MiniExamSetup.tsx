@@ -21,28 +21,33 @@ export default function MiniExamSetup({ onBack, onStart }: Props) {
   const counts = [3, 5, 8, 10];
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen">
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={onBack} className="text-2xl cursor-pointer hover:opacity-70">→</button>
-        <h1 className="text-2xl font-bold">מבחן מקוצר</h1>
+    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative">
+      <div className="bg-shapes">
+        <div className="bg-shape" style={{ width: 200, height: 200, top: '10%', right: '-10%', background: '#A855F7' }} />
+        <div className="bg-shape" style={{ width: 150, height: 150, bottom: '15%', left: '-5%', background: '#00CEC9', animationDelay: '2s' }} />
+      </div>
+
+      <div className="flex items-center gap-3 mb-6 relative z-10">
+        <button onClick={onBack} className="text-2xl cursor-pointer hover:opacity-70 text-primary-light">→</button>
+        <h1 className="text-2xl font-extrabold text-glow">מבחן מקוצר</h1>
       </div>
 
       {/* Section Selection */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-3">בחר פרקים (2-5):</h2>
+      <div className="mb-6 relative z-10">
+        <h2 className="text-lg font-semibold mb-3 text-text-secondary">בחר פרקים (2-5):</h2>
         <div className="space-y-2">
           {SECTION_CONFIGS.map((s) => (
             <button
               key={s.type}
               onClick={() => toggleSection(s.type)}
-              className={`w-full p-3 rounded-xl border-2 flex items-center gap-3 cursor-pointer ${
+              className={`menu-item w-full p-3 flex items-center gap-3 ${
                 selectedSections.includes(s.type)
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-card'
+                  ? '!border-primary !bg-primary/10'
+                  : ''
               }`}
             >
-              <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center ${
-                selectedSections.includes(s.type) ? 'bg-primary border-primary text-white' : 'border-gray-300'
+              <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all ${
+                selectedSections.includes(s.type) ? 'bg-primary border-primary text-white' : 'border-border text-text-secondary'
               }`}>
                 {selectedSections.includes(s.type) && '✓'}
               </div>
@@ -54,17 +59,17 @@ export default function MiniExamSetup({ onBack, onStart }: Props) {
       </div>
 
       {/* Questions per section */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-3">שאלות לפרק:</h2>
+      <div className="mb-6 relative z-10">
+        <h2 className="text-lg font-semibold mb-3 text-text-secondary">שאלות לפרק:</h2>
         <div className="flex gap-3">
           {counts.map((c) => (
             <button
               key={c}
               onClick={() => setQuestionsPerSection(c)}
-              className={`flex-1 py-3 rounded-xl border-2 text-center cursor-pointer font-bold ${
+              className={`flex-1 py-3 rounded-xl border-2 text-center cursor-pointer font-bold transition-all ${
                 questionsPerSection === c
-                  ? 'border-primary bg-primary/5 text-primary'
-                  : 'border-border bg-card'
+                  ? 'border-primary bg-primary/15 text-primary-light shadow-[0_0_15px_rgba(108,92,231,0.2)]'
+                  : 'border-border bg-card hover:border-primary/30'
               }`}
             >
               {c}
@@ -74,13 +79,13 @@ export default function MiniExamSetup({ onBack, onStart }: Props) {
       </div>
 
       {/* Timer toggle */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between bg-card p-4 rounded-xl border border-border">
-          <span className="font-semibold">עם טיימר</span>
+      <div className="mb-8 relative z-10">
+        <div className="game-card p-4 flex items-center justify-between">
+          <span className="font-semibold">עם טיימר ⏱️</span>
           <button
             onClick={() => setUseTimer(!useTimer)}
-            className={`w-14 h-8 rounded-full transition-colors cursor-pointer ${
-              useTimer ? 'bg-primary' : 'bg-gray-300'
+            className={`w-14 h-8 rounded-full transition-all cursor-pointer ${
+              useTimer ? 'bg-primary shadow-[0_0_10px_rgba(108,92,231,0.4)]' : 'bg-border'
             }`}
           >
             <div className={`w-6 h-6 bg-white rounded-full shadow-md transition-transform mx-1 mt-1 ${
@@ -91,17 +96,19 @@ export default function MiniExamSetup({ onBack, onStart }: Props) {
       </div>
 
       {/* Start */}
-      <button
-        onClick={() => onStart(selectedSections, questionsPerSection, useTimer)}
-        disabled={selectedSections.length < 2}
-        className={`w-full py-4 text-white text-lg font-bold rounded-2xl cursor-pointer transition-colors shadow-lg ${
-          selectedSections.length >= 2
-            ? 'bg-primary hover:bg-primary-dark'
-            : 'bg-gray-300 cursor-not-allowed'
-        }`}
-      >
-        {selectedSections.length < 2 ? 'בחר לפחות 2 פרקים' : 'התחל מבחן מקוצר! ⏱️'}
-      </button>
+      <div className="relative z-10">
+        <button
+          onClick={() => onStart(selectedSections, questionsPerSection, useTimer)}
+          disabled={selectedSections.length < 2}
+          className={`w-full py-4 text-lg font-bold rounded-2xl cursor-pointer transition-all ${
+            selectedSections.length >= 2
+              ? 'btn-game'
+              : 'bg-border text-text-secondary cursor-not-allowed'
+          }`}
+        >
+          {selectedSections.length < 2 ? 'בחר לפחות 2 פרקים' : 'התחל מבחן מקוצר! ⏱️'}
+        </button>
+      </div>
     </div>
   );
 }

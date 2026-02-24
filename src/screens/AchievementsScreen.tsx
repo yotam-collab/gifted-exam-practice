@@ -22,7 +22,6 @@ export default function AchievementsScreen({ userId, onBack }: Props) {
     sessions.reduce((sum, s) => sum + (s.totalTimeSec || 0), 0) / 60
   );
 
-  // Achievements
   const achievements = [
     { icon: '🌟', title: 'צעד ראשון', desc: 'השלם תרגול ראשון', unlocked: totalSessions >= 1 },
     { icon: '🔥', title: 'על גלגלים', desc: 'השלם 5 תרגולים', unlocked: totalSessions >= 5 },
@@ -34,7 +33,6 @@ export default function AchievementsScreen({ userId, onBack }: Props) {
     { icon: '🌈', title: 'מגוון', desc: 'תרגל את כל 5 הנושאים', unlocked: SECTION_CONFIGS.every(sc => sessions.some(s => s.sections.some(sec => sec.sectionType === sc.type))) },
   ];
 
-  // Section mastery
   const sectionMastery = SECTION_CONFIGS.map(sc => {
     const sectionStats = stats.filter(s => s.sectionType === sc.type);
     const avgMastery = sectionStats.length > 0
@@ -44,46 +42,55 @@ export default function AchievementsScreen({ userId, onBack }: Props) {
   });
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen">
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={onBack} className="text-2xl cursor-pointer hover:opacity-70">→</button>
-        <h1 className="text-2xl font-bold">ההצלחות שלי ⭐</h1>
+    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative">
+      <div className="bg-shapes">
+        <div className="bg-shape" style={{ width: 250, height: 250, top: '-5%', right: '-10%', background: '#FDCB6E' }} />
+        <div className="bg-shape" style={{ width: 150, height: 150, bottom: '15%', left: '-5%', background: '#A855F7', animationDelay: '2s' }} />
+      </div>
+
+      <div className="flex items-center gap-3 mb-6 relative z-10">
+        <button onClick={onBack} className="text-2xl cursor-pointer hover:opacity-70 text-primary-light">→</button>
+        <h1 className="text-2xl font-extrabold text-glow">ההצלחות שלי ⭐</h1>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-card rounded-xl p-4 border border-border text-center">
-          <div className="text-2xl font-bold text-primary">{totalSessions}</div>
-          <div className="text-xs text-text-secondary">אימונים</div>
+      <div className="grid grid-cols-2 gap-3 mb-6 relative z-10">
+        <div className="stat-badge">
+          <div className="stat-value">{totalSessions}</div>
+          <div className="text-xs text-text-secondary mt-1">אימונים</div>
         </div>
-        <div className="bg-card rounded-xl p-4 border border-border text-center">
-          <div className="text-2xl font-bold text-success">{totalCorrect}</div>
-          <div className="text-xs text-text-secondary">תשובות נכונות</div>
+        <div className="stat-badge">
+          <div className="stat-value">{totalCorrect}</div>
+          <div className="text-xs text-text-secondary mt-1">תשובות נכונות</div>
         </div>
-        <div className="bg-card rounded-xl p-4 border border-border text-center">
-          <div className="text-2xl font-bold text-warning">{totalMinutes}</div>
-          <div className="text-xs text-text-secondary">דקות תרגול</div>
+        <div className="stat-badge">
+          <div className="stat-value">{totalMinutes}</div>
+          <div className="text-xs text-text-secondary mt-1">דקות תרגול</div>
         </div>
-        <div className="bg-card rounded-xl p-4 border border-border text-center">
-          <div className="text-2xl font-bold text-purple">{totalQuestions}</div>
-          <div className="text-xs text-text-secondary">שאלות סה"כ</div>
+        <div className="stat-badge">
+          <div className="stat-value">{totalQuestions}</div>
+          <div className="text-xs text-text-secondary mt-1">שאלות סה"כ</div>
         </div>
       </div>
 
       {/* Section Progress */}
-      <div className="bg-card rounded-2xl p-4 shadow-sm border border-border mb-6">
+      <div className="game-card p-4 mb-6 relative z-10">
         <h3 className="font-bold mb-3">רמת שליטה לפי נושא:</h3>
         <div className="space-y-3">
           {sectionMastery.map(sm => (
             <div key={sm.config.type}>
               <div className="flex justify-between text-sm mb-1">
                 <span>{sm.config.icon} {sm.config.nameHe}</span>
-                <span className="font-bold">{sm.mastery}%</span>
+                <span className="font-bold" style={{ color: sm.config.color }}>{sm.mastery}%</span>
               </div>
-              <div className="w-full h-3 bg-border rounded-full overflow-hidden">
+              <div className="progress-track h-3">
                 <div
-                  className="h-full rounded-full progress-fill"
-                  style={{ width: `${sm.mastery}%`, backgroundColor: sm.config.color }}
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: `${sm.mastery}%`,
+                    backgroundColor: sm.config.color,
+                    boxShadow: `0 0 8px ${sm.config.color}40`,
+                  }}
                 ></div>
               </div>
             </div>
@@ -92,16 +99,20 @@ export default function AchievementsScreen({ userId, onBack }: Props) {
       </div>
 
       {/* Achievements */}
-      <h3 className="font-bold text-lg mb-3">הישגים:</h3>
-      <div className="grid grid-cols-2 gap-3">
+      <h3 className="font-bold text-lg mb-3 relative z-10 text-glow">הישגים:</h3>
+      <div className="grid grid-cols-2 gap-3 relative z-10">
         {achievements.map((a, i) => (
           <div
             key={i}
-            className={`bg-card rounded-xl p-3 border text-center ${
-              a.unlocked ? 'border-warning' : 'border-border opacity-50'
+            className={`game-card p-3 text-center transition-all ${
+              a.unlocked
+                ? 'border-warning/50 shadow-[0_0_15px_rgba(253,203,110,0.15)]'
+                : 'opacity-40'
             }`}
           >
-            <div className="text-3xl mb-1">{a.unlocked ? a.icon : '🔒'}</div>
+            <div className={`text-3xl mb-1 ${a.unlocked ? 'animate-float' : ''}`} style={{ animationDelay: `${i * 0.5}s` }}>
+              {a.unlocked ? a.icon : '🔒'}
+            </div>
             <div className="font-bold text-sm">{a.title}</div>
             <div className="text-xs text-text-secondary">{a.desc}</div>
           </div>

@@ -25,6 +25,8 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
   const [showResult, setShowResult] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [sectionTransition, setSectionTransition] = useState(false);
+  const [combo, setCombo] = useState(0);
+  const [showCombo, setShowCombo] = useState(false);
   const questionStartTime = useRef<number>(Date.now());
   const [questionsMap, setQuestionsMap] = useState<Map<string, Question>>(new Map());
 
@@ -97,7 +99,6 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
 
   const handleTimeUp = useCallback(() => {
     if (mode === 'full_exam' || mode === 'mini_exam') {
-      // Auto-advance to next section
       handleNextSection();
     }
   }, [mode, currentSectionIdx]);
@@ -119,6 +120,18 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
     const isCorrect = optionIdx === currentQuestion.correctOption;
 
     setSelectedOption(optionIdx);
+
+    // Update combo
+    if (isCorrect) {
+      const newCombo = combo + 1;
+      setCombo(newCombo);
+      if (newCombo >= 2) {
+        setShowCombo(true);
+        setTimeout(() => setShowCombo(false), 1500);
+      }
+    } else {
+      setCombo(0);
+    }
 
     // Update session question
     const updatedSession = { ...session };
@@ -148,7 +161,7 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
         advanceQuestion();
       }, 300);
     }
-  }, [selectedOption, currentQuestion, currentSQ, session, currentSectionIdx, currentQuestionIdx, isPracticeMode, userId]);
+  }, [selectedOption, currentQuestion, currentSQ, session, currentSectionIdx, currentQuestionIdx, isPracticeMode, userId, combo]);
 
   const advanceQuestion = useCallback(() => {
     if (!currentSection) return;
@@ -217,7 +230,7 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
   if (!session || !currentSection || !currentQuestion) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl text-text-secondary">טוען...</div>
+        <div className="text-xl text-text-secondary animate-float">טוען...</div>
       </div>
     );
   }
@@ -228,22 +241,38 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
     const nextConfig = nextSection ? getSectionConfig(nextSection.sectionType) : null;
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4">
-        <div className="text-6xl mb-4">✅</div>
-        <h2 className="text-2xl font-bold mb-2">סיימת את הפרק!</h2>
-        {nextConfig && (
-          <p className="text-lg text-text-secondary">
-            עוברים ל{nextConfig.nameHe} {nextConfig.icon}
-          </p>
-        )}
+        <div className="bg-shapes">
+          <div className="bg-shape" style={{ width: 200, height: 200, top: '20%', right: '10%', background: '#6C5CE7' }} />
+          <div className="bg-shape" style={{ width: 150, height: 150, bottom: '20%', left: '10%', background: '#00CEC9' }} />
+        </div>
+        <div className="animate-bounce-in relative z-10">
+          <div className="text-7xl mb-4">✅</div>
+          <h2 className="text-2xl font-bold mb-2 text-glow">סיימת את הפרק!</h2>
+          {nextConfig && (
+            <p className="text-lg text-text-secondary">
+              עוברים ל{nextConfig.nameHe} {nextConfig.icon}
+            </p>
+          )}
+        </div>
       </div>
     );
   }
 
   const sectionConfig = getSectionConfig(currentSection.sectionType);
   const progress = ((currentQuestionIdx + 1) / currentSection.questions.length) * 100;
+  const correctSoFar = currentSection.questions.filter(q => q.isCorrect).length;
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-4 min-h-screen flex flex-col">
+    <div className="max-w-lg mx-auto px-4 py-4 min-h-screen flex flex-col relative">
+      {/* Combo popup */}
+      {showCombo && combo >= 2 && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-bounce-in">
+          <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-3 rounded-2xl font-extrabold text-lg shadow-lg">
+            {combo >= 5 ? '🔥🔥🔥' : combo >= 3 ? '🔥🔥' : '🔥'} רצף של {combo}!
+          </div>
+        </div>
+      )}
+
       {/* Top Bar */}
       <div className="flex items-center justify-between mb-3">
         <button
@@ -252,18 +281,21 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
               endSession();
             }
           }}
-          className="text-text-secondary text-sm cursor-pointer hover:text-danger"
+          className="text-text-secondary text-sm cursor-pointer hover:text-danger transition-colors"
         >
           יציאה ✕
         </button>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium" style={{ color: sectionConfig.color }}>
+          <span className="text-sm font-bold px-3 py-1 rounded-full" style={{
+            backgroundColor: sectionConfig.color + '20',
+            color: sectionConfig.color,
+          }}>
             {sectionConfig.icon} {sectionConfig.nameHe}
           </span>
           {session.sections.length > 1 && (
             <span className="text-xs text-text-secondary">
-              (פרק {currentSectionIdx + 1} מתוך {session.sections.length})
+              ({currentSectionIdx + 1}/{session.sections.length})
             </span>
           )}
         </div>
@@ -279,16 +311,17 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full h-2 bg-border rounded-full mb-4 overflow-hidden">
+      <div className="progress-track h-2 mb-2">
         <div
           className="h-full rounded-full progress-fill"
-          style={{ width: `${progress}%`, backgroundColor: sectionConfig.color }}
+          style={{ width: `${progress}%` }}
         ></div>
       </div>
 
-      {/* Question Counter */}
-      <div className="text-center text-sm text-text-secondary mb-4">
-        שאלה {currentQuestionIdx + 1} מתוך {currentSection.questions.length}
+      {/* Question Counter + Score */}
+      <div className="flex justify-between items-center text-sm text-text-secondary mb-4">
+        <span>שאלה {currentQuestionIdx + 1} מתוך {currentSection.questions.length}</span>
+        <span className="text-success font-bold">{correctSoFar} ✓</span>
       </div>
 
       {/* Question */}
@@ -301,7 +334,7 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
           return (
             <>
               {/* Question Stem */}
-              <div className="bg-card rounded-2xl p-5 shadow-sm border border-border mb-4">
+              <div className="question-card mb-4">
                 {hasVisual && visual.stemLayout === 'analogy' && visual.stemShapes && (
                   <div className="flex justify-center mb-3">
                     <ShapeAnalogy shapes={visual.stemShapes} />
@@ -341,7 +374,6 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
                     onSelect={(idx) => handleAnswer(idx)}
                     disabled={selectedOption !== null}
                   />
-                  {/* Show correct/wrong indicators after answer */}
                   {showResult && (
                     <div className="flex justify-center gap-4 mt-3">
                       {visual.optionShapes.map((_, idx) => {
@@ -360,7 +392,7 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
                 /* Text Options (default) */
                 <div className="space-y-3 mb-4">
                   {currentQuestion.options.map((option, idx) => {
-                    let btnClass = 'option-btn w-full p-4 rounded-xl border-2 text-right cursor-pointer bg-card';
+                    let btnClass = 'option-btn w-full p-4 rounded-xl text-right cursor-pointer';
 
                     if (showResult) {
                       if (idx === currentQuestion.correctOption) {
@@ -368,12 +400,10 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
                       } else if (idx === selectedOption && idx !== currentQuestion.correctOption) {
                         btnClass += ' wrong';
                       } else {
-                        btnClass += ' border-border opacity-60';
+                        btnClass += ' opacity-40';
                       }
                     } else if (selectedOption === idx) {
                       btnClass += ' selected';
-                    } else {
-                      btnClass += ' border-border hover:border-primary-light';
                     }
 
                     return (
@@ -384,14 +414,14 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
                         className={btnClass}
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 text-sm font-bold ${
+                          <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 text-sm font-bold transition-colors ${
                             showResult && idx === currentQuestion.correctOption
                               ? 'bg-success text-white border-success'
                               : showResult && idx === selectedOption && idx !== currentQuestion.correctOption
                               ? 'bg-danger text-white border-danger'
                               : selectedOption === idx
                               ? 'bg-primary text-white border-primary'
-                              : 'border-gray-300 text-text-secondary'
+                              : 'border-border text-text-secondary'
                           }`}>
                             {String.fromCharCode(1488 + idx)}
                           </div>
@@ -408,17 +438,22 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
 
         {/* Practice Mode: Result & Explanation */}
         {isPracticeMode && showResult && (
-          <div className="mb-4">
+          <div className="mb-4 animate-slide-up">
             <div className={`p-4 rounded-xl mb-3 ${
-              currentSQ.isCorrect ? 'bg-green-50 border border-success' : 'bg-red-50 border border-danger'
+              currentSQ.isCorrect ? 'result-correct' : 'result-wrong'
             }`}>
               <div className="font-bold text-lg mb-1">
                 {currentSQ.isCorrect ? 'כל הכבוד! 🌟' : 'לא נורא, נלמד מזה! 💪'}
               </div>
+              {currentSQ.isCorrect && combo >= 2 && (
+                <div className="text-sm text-warning font-bold mb-1">
+                  🔥 רצף של {combo} תשובות נכונות!
+                </div>
+              )}
               {!showExplanation && (
                 <button
                   onClick={() => setShowExplanation(true)}
-                  className="text-primary text-sm underline cursor-pointer"
+                  className="text-primary-light text-sm underline cursor-pointer"
                 >
                   הראה הסבר
                 </button>
@@ -430,7 +465,7 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
 
             <button
               onClick={advanceQuestion}
-              className="w-full py-3 bg-primary text-white font-bold rounded-xl cursor-pointer hover:bg-primary-dark transition-colors"
+              className="btn-game w-full text-lg"
             >
               {currentQuestionIdx < currentSection.questions.length - 1 ? 'שאלה הבאה ←' : 'סיום 🏁'}
             </button>
@@ -441,7 +476,7 @@ export default function SessionScreen({ userId, mode, config, onEnd, onQuit, isP
         {!isPracticeMode && selectedOption !== null && !showResult && (
           <button
             onClick={advanceQuestion}
-            className="w-full py-3 bg-primary text-white font-bold rounded-xl cursor-pointer hover:bg-primary-dark transition-colors mb-4"
+            className="btn-game w-full text-lg mb-4"
           >
             {currentQuestionIdx < currentSection.questions.length - 1 ? 'הבאה ←' : 'סיום פרק'}
           </button>

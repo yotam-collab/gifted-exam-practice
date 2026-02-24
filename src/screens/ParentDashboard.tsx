@@ -19,7 +19,6 @@ export default function ParentDashboard({ childId, onBack }: Props) {
   const strongSkills = getStrongSkills(childId);
   const settings = storage.getSettings();
 
-  // Overview data
   const totalSessions = sessions.length;
   const totalQuestions = sessions.reduce(
     (sum, s) => sum + s.sections.reduce((ss, sec) => ss + sec.questions.length, 0), 0
@@ -31,7 +30,6 @@ export default function ParentDashboard({ childId, onBack }: Props) {
     sessions.reduce((sum, s) => sum + (s.totalTimeSec || 0), 0) / 60
   );
 
-  // Section accuracy chart data
   const sectionChartData = SECTION_CONFIGS.map(sc => {
     const sectionStats = allStats.filter(s => s.sectionType === sc.type);
     const avgMastery = sectionStats.length > 0
@@ -48,7 +46,6 @@ export default function ParentDashboard({ childId, onBack }: Props) {
     };
   });
 
-  // Trend data (last 7 sessions)
   const trendData = useMemo(() => {
     const recent = sessions.slice(-10);
     return recent.map((s, i) => {
@@ -61,7 +58,6 @@ export default function ParentDashboard({ childId, onBack }: Props) {
     });
   }, [sessions]);
 
-  // Skill heatmap data
   const skillHeatmapData = SECTION_CONFIGS.map(sc => {
     const skills = sc.skills.map(skill => {
       const stat = allStats.find(s => s.sectionType === sc.type && s.skillTag === skill.tag);
@@ -74,7 +70,6 @@ export default function ParentDashboard({ childId, onBack }: Props) {
     return { section: sc, skills };
   });
 
-  // Speed vs accuracy analysis
   const speedErrors = sessions.reduce((sum, s) => {
     return sum + s.sections.reduce((ss, sec) => {
       return ss + sec.questions.filter(q => !q.isCorrect && (q.timeSpentSec || 0) < 15).length;
@@ -86,7 +81,6 @@ export default function ParentDashboard({ childId, onBack }: Props) {
     }, 0);
   }, 0);
 
-  // Weekly plan
   const [weeklyPlan, setWeeklyPlan] = useState<string[]>([]);
   const generatePlan = () => {
     const recommendations = generateWeeklyPlan(childId);
@@ -102,24 +96,30 @@ export default function ParentDashboard({ childId, onBack }: Props) {
   ];
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 min-h-screen">
+    <div className="max-w-2xl mx-auto px-4 py-6 min-h-screen relative">
+      <div className="bg-shapes">
+        <div className="bg-shape" style={{ width: 200, height: 200, top: '5%', right: '-10%', background: '#6C5CE7' }} />
+      </div>
+
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={onBack} className="text-2xl cursor-pointer hover:opacity-70">→</button>
+      <div className="flex items-center gap-3 mb-4 relative z-10">
+        <button onClick={onBack} className="text-2xl cursor-pointer hover:opacity-70 text-primary-light">→</button>
         <div>
-          <h1 className="text-2xl font-bold">דשבורד הורים</h1>
+          <h1 className="text-2xl font-extrabold text-glow">דשבורד הורים</h1>
           <p className="text-sm text-text-secondary">נתוני {settings.childName}</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-border rounded-xl p-1 mb-6">
+      <div className="flex gap-1 bg-card rounded-xl p-1 mb-6 relative z-10 border border-border">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
-              tab === t.id ? 'bg-card text-primary shadow-sm' : 'text-text-secondary hover:text-text'
+            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium cursor-pointer transition-all ${
+              tab === t.id
+                ? 'bg-primary/20 text-primary-light shadow-sm'
+                : 'text-text-secondary hover:text-text'
             }`}
           >
             {t.label}
@@ -129,35 +129,45 @@ export default function ParentDashboard({ childId, onBack }: Props) {
 
       {/* Overview Tab */}
       {tab === 'overview' && (
-        <div>
-          {/* Key Metrics */}
+        <div className="relative z-10">
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <MetricCard value={totalSessions} label="אימונים" color="text-primary" />
-            <MetricCard value={avgScore + '%'} label="ציון ממוצע" color="text-success" />
-            <MetricCard value={totalQuestions} label="שאלות" color="text-warning" />
-            <MetricCard value={totalMinutes + ' דק׳'} label="זמן תרגול" color="text-purple" />
+            <div className="stat-badge">
+              <div className="stat-value">{totalSessions}</div>
+              <div className="text-xs text-text-secondary mt-1">אימונים</div>
+            </div>
+            <div className="stat-badge">
+              <div className="stat-value">{avgScore}%</div>
+              <div className="text-xs text-text-secondary mt-1">ציון ממוצע</div>
+            </div>
+            <div className="stat-badge">
+              <div className="stat-value">{totalQuestions}</div>
+              <div className="text-xs text-text-secondary mt-1">שאלות</div>
+            </div>
+            <div className="stat-badge">
+              <div className="stat-value">{totalMinutes}</div>
+              <div className="text-xs text-text-secondary mt-1">דקות תרגול</div>
+            </div>
           </div>
 
           {/* Error Analysis */}
-          <div className="bg-card rounded-2xl p-4 border border-border mb-4">
+          <div className="game-card p-4 mb-4">
             <h3 className="font-bold mb-3">ניתוח טעויות:</h3>
             <div className="flex gap-4">
-              <div className="flex-1 text-center p-3 rounded-xl bg-orange-50">
+              <div className="flex-1 text-center p-3 rounded-xl bg-warning/10 border border-warning/20">
                 <div className="text-2xl font-bold text-warning">{speedErrors}</div>
                 <div className="text-xs text-text-secondary">טעויות מהירות</div>
                 <div className="text-xs text-text-secondary">(תשובה מהירה מדי)</div>
               </div>
-              <div className="flex-1 text-center p-3 rounded-xl bg-blue-50">
-                <div className="text-2xl font-bold text-primary">{understandingErrors}</div>
+              <div className="flex-1 text-center p-3 rounded-xl bg-primary/10 border border-primary/20">
+                <div className="text-2xl font-bold text-primary-light">{understandingErrors}</div>
                 <div className="text-xs text-text-secondary">טעויות הבנה</div>
                 <div className="text-xs text-text-secondary">(חשבו אבל טעו)</div>
               </div>
             </div>
           </div>
 
-          {/* Strong & Weak */}
           {strongSkills.length > 0 && (
-            <div className="bg-green-50 rounded-2xl p-4 border border-success mb-4">
+            <div className="result-correct rounded-2xl p-4 mb-4">
               <h3 className="font-bold text-success mb-2">נושאים חזקים 💪</h3>
               <ul className="text-sm space-y-1">
                 {strongSkills.slice(0, 3).map(s => {
@@ -174,7 +184,7 @@ export default function ParentDashboard({ childId, onBack }: Props) {
           )}
 
           {weakSkills.length > 0 && (
-            <div className="bg-red-50 rounded-2xl p-4 border border-danger mb-4">
+            <div className="result-wrong rounded-2xl p-4 mb-4">
               <h3 className="font-bold text-danger mb-2">צריך חיזוק 📚</h3>
               <ul className="text-sm space-y-1">
                 {weakSkills.slice(0, 3).map(s => {
@@ -194,17 +204,18 @@ export default function ParentDashboard({ childId, onBack }: Props) {
 
       {/* Sections Tab */}
       {tab === 'sections' && (
-        <div>
-          {/* Bar Chart */}
-          <div className="bg-card rounded-2xl p-4 border border-border mb-6">
+        <div className="relative z-10">
+          <div className="game-card p-4 mb-6">
             <h3 className="font-bold mb-4">דיוק לפי פרק:</h3>
             <div style={{ direction: 'ltr' }}>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={sectionChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" fontSize={12} />
-                  <YAxis domain={[0, 100]} fontSize={12} />
-                  <Tooltip />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#3D2F6B" />
+                  <XAxis dataKey="name" fontSize={12} stroke="#9B8FC2" />
+                  <YAxis domain={[0, 100]} fontSize={12} stroke="#9B8FC2" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#1E1740', border: '1px solid #3D2F6B', borderRadius: '8px', color: '#F0EDFF' }}
+                  />
                   <Bar dataKey="דיוק" radius={[6, 6, 0, 0]}>
                     {sectionChartData.map((entry, idx) => (
                       <rect key={idx} fill={entry.fill} />
@@ -215,8 +226,7 @@ export default function ParentDashboard({ childId, onBack }: Props) {
             </div>
           </div>
 
-          {/* Skill Heatmap */}
-          <div className="bg-card rounded-2xl p-4 border border-border">
+          <div className="game-card p-4">
             <h3 className="font-bold mb-4">מפת מיומנויות:</h3>
             {skillHeatmapData.map(sh => (
               <div key={sh.section.type} className="mb-4">
@@ -227,14 +237,15 @@ export default function ParentDashboard({ childId, onBack }: Props) {
                   {sh.skills.map(skill => (
                     <div
                       key={skill.name}
-                      className="p-2 rounded-lg text-center text-xs"
+                      className="p-2 rounded-lg text-center text-xs border"
                       style={{
-                        backgroundColor: `rgba(${skill.mastery > 60 ? '5, 150, 105' : skill.mastery > 30 ? '217, 119, 6' : '220, 38, 38'}, ${Math.max(0.1, skill.mastery / 100)})`,
-                        color: skill.mastery > 50 ? 'white' : '#1E293B',
+                        backgroundColor: `rgba(${skill.mastery > 60 ? '0, 184, 148' : skill.mastery > 30 ? '253, 203, 110' : '255, 107, 107'}, ${Math.max(0.1, skill.mastery / 200)})`,
+                        borderColor: `rgba(${skill.mastery > 60 ? '0, 184, 148' : skill.mastery > 30 ? '253, 203, 110' : '255, 107, 107'}, 0.3)`,
+                        color: '#F0EDFF',
                       }}
                     >
                       <div className="font-medium">{skill.name}</div>
-                      <div>{Math.round(skill.mastery)}%</div>
+                      <div className="font-bold">{Math.round(skill.mastery)}%</div>
                     </div>
                   ))}
                 </div>
@@ -246,35 +257,39 @@ export default function ParentDashboard({ childId, onBack }: Props) {
 
       {/* Trends Tab */}
       {tab === 'trends' && (
-        <div>
+        <div className="relative z-10">
           {trendData.length > 1 ? (
             <>
-              <div className="bg-card rounded-2xl p-4 border border-border mb-6">
+              <div className="game-card p-4 mb-6">
                 <h3 className="font-bold mb-4">מגמת ציונים:</h3>
                 <div style={{ direction: 'ltr' }}>
                   <ResponsiveContainer width="100%" height={250}>
                     <LineChart data={trendData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" fontSize={12} />
-                      <YAxis domain={[0, 100]} fontSize={12} />
-                      <Tooltip />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#3D2F6B" />
+                      <XAxis dataKey="name" fontSize={12} stroke="#9B8FC2" />
+                      <YAxis domain={[0, 100]} fontSize={12} stroke="#9B8FC2" />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#1E1740', border: '1px solid #3D2F6B', borderRadius: '8px', color: '#F0EDFF' }}
+                      />
                       <Legend />
-                      <Line type="monotone" dataKey="ציון" stroke="#4F46E5" strokeWidth={2} dot={{ r: 4 }} />
+                      <Line type="monotone" dataKey="ציון" stroke="#A855F7" strokeWidth={2} dot={{ r: 4, fill: '#A855F7' }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              <div className="bg-card rounded-2xl p-4 border border-border">
+              <div className="game-card p-4">
                 <h3 className="font-bold mb-4">זמן תרגול:</h3>
                 <div style={{ direction: 'ltr' }}>
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={trendData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" fontSize={12} />
-                      <YAxis fontSize={12} />
-                      <Tooltip />
-                      <Bar dataKey="זמן (דק)" fill="#7C3AED" radius={[6, 6, 0, 0]} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#3D2F6B" />
+                      <XAxis dataKey="name" fontSize={12} stroke="#9B8FC2" />
+                      <YAxis fontSize={12} stroke="#9B8FC2" />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#1E1740', border: '1px solid #3D2F6B', borderRadius: '8px', color: '#F0EDFF' }}
+                      />
+                      <Bar dataKey="זמן (דק)" fill="#6C5CE7" radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -291,9 +306,8 @@ export default function ParentDashboard({ childId, onBack }: Props) {
 
       {/* Plan Tab */}
       {tab === 'plan' && (
-        <div>
-          {/* Quick Insights */}
-          <div className="bg-card rounded-2xl p-4 border border-border mb-4">
+        <div className="relative z-10">
+          <div className="game-card p-4 mb-4">
             <h3 className="font-bold mb-3">תובנות:</h3>
             <div className="space-y-2 text-sm">
               {weakSkills.length > 0 && (
@@ -329,21 +343,20 @@ export default function ParentDashboard({ childId, onBack }: Props) {
             </div>
           </div>
 
-          {/* Generate Plan */}
           <button
             onClick={generatePlan}
-            className="w-full py-3 bg-primary text-white font-bold rounded-xl cursor-pointer hover:bg-primary-dark transition-colors mb-4"
+            className="btn-game w-full text-lg mb-4"
           >
             צור תוכנית תרגול לשבוע 📅
           </button>
 
           {weeklyPlan.length > 0 && (
-            <div className="bg-card rounded-2xl p-4 border border-border">
+            <div className="game-card p-4">
               <h3 className="font-bold mb-3">תוכנית לשבוע:</h3>
               <div className="space-y-2">
                 {weeklyPlan.map((item, i) => (
                   <div key={i} className="flex gap-2 items-start text-sm">
-                    <span className="text-primary font-bold">{i + 1}.</span>
+                    <span className="text-primary-light font-bold">{i + 1}.</span>
                     <span>{item}</span>
                   </div>
                 ))}
@@ -356,18 +369,9 @@ export default function ParentDashboard({ childId, onBack }: Props) {
   );
 }
 
-function MetricCard({ value, label, color }: { value: string | number; label: string; color: string }) {
-  return (
-    <div className="bg-card rounded-xl p-4 border border-border text-center">
-      <div className={`text-2xl font-bold ${color}`}>{value}</div>
-      <div className="text-xs text-text-secondary">{label}</div>
-    </div>
-  );
-}
-
 function Insight({ icon, text }: { icon: string; text: string }) {
   return (
-    <div className="flex gap-2 items-start p-2 rounded-lg bg-bg">
+    <div className="flex gap-2 items-start p-2 rounded-lg bg-bg-light border border-border/50">
       <span>{icon}</span>
       <span>{text}</span>
     </div>
