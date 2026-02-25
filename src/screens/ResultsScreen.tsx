@@ -203,6 +203,8 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
                   const isExpanded = expandedQuestion === sq.id;
                   const isCorrect = sq.isCorrect;
                   const wasAnswered = sq.selectedOption !== undefined;
+                  const visual = questionVisuals[question.id];
+                  const nsVisual = numberShapeVisuals[question.id];
 
                   return (
                     <div
@@ -232,10 +234,7 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
                       </button>
 
                       {/* Expanded details */}
-                      {isExpanded && (() => {
-                        const visual = questionVisuals[question.id];
-                        const nsVisual = numberShapeVisuals[question.id];
-                        return (
+                      {isExpanded && (
                         <div className="px-3 pb-3 border-t border-border/50">
                           <div className="py-3">
                             {/* Shape SVG visuals */}
@@ -322,8 +321,7 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
                             <p className="leading-relaxed whitespace-pre-line">{question.explanation}</p>
                           </div>
                         </div>
-                        );
-                      })()}
+                      )}
                     </div>
                   );
                 })}
