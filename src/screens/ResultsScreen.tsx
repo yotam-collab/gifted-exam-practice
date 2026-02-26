@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { storage } from '../services/storage';
 import { getSectionConfig } from '../config/sections';
-import { questionBank } from '../data/questions';
-import { questionVisuals } from '../data/shapeVisuals';
-import { numberShapeVisuals } from '../data/numberShapeVisuals';
+import { getQuestionById, getVisualConfig, getNSVisualConfig } from '../services/questionPool';
 import { ShapeAnalogy, ShapeSeries, ShapeGrid, ShapeRow, ShapeOddOneOut, DividedCirclePair, NumberPyramid, NumberGrid, NumberFlowChart, NumberTriangle } from '../utils/shapeRenderer';
 import type { Question } from '../types';
 
@@ -73,7 +71,7 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
   };
 
   const getQuestion = (questionId: string): Question | undefined => {
-    return questionBank.find(q => q.id === questionId);
+    return getQuestionById(questionId);
   };
 
   const toggleQuestion = (sqId: string) => {
@@ -273,8 +271,8 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
                   const isExpanded = expandedQuestion === sq.id;
                   const isCorrect = sq.isCorrect;
                   const wasAnswered = sq.selectedOption !== undefined;
-                  const visual = questionVisuals[question.id];
-                  const nsVisual = numberShapeVisuals[question.id];
+                  const visual = getVisualConfig(question.id);
+                  const nsVisual = getNSVisualConfig(question.id);
                   const wasSlow = isExamMode && sq.timeSpentSec && sq.timeSpentSec > (question.recommendedTimeSec || 60) * 1.3;
 
                   return (

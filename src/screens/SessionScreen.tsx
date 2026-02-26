@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { SessionMode, SessionConfig, Session, SessionSection, SessionQuestion, Question } from '../types';
-import { questionBank } from '../data/questions';
 import { getSectionConfig } from '../config/sections';
 import { storage } from '../services/storage';
 import { updateMastery, selectAdaptiveQuestions } from '../services/adaptive';
 import { useTimer } from '../hooks/useTimer';
-import { questionVisuals } from '../data/shapeVisuals';
-import { numberShapeVisuals } from '../data/numberShapeVisuals';
+import { generateFresh, getVisualConfig, getNSVisualConfig } from '../services/questionPool';
 import { ShapeAnalogy, ShapeSeries, ShapeGrid, ShapeRow, ShapeOddOneOut, ShapeOptions, DividedCirclePair, NumberPyramid, NumberGrid, NumberFlowChart, NumberTriangle } from '../utils/shapeRenderer';
 import { sounds } from '../services/sounds';
 
@@ -101,19 +99,8 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
       if (mode === 'adaptive') {
         availableQuestions = selectAdaptiveQuestions(userId, count);
       } else {
-        availableQuestions = questionBank.filter(q =>
-          q.sectionType === sectionType && q.isActive
-        );
-
-        if (config.difficulty && config.difficulty !== 'adaptive') {
-          const filtered = availableQuestions.filter(q => q.difficulty === config.difficulty);
-          if (filtered.length >= count) {
-            availableQuestions = filtered;
-          }
-        }
-
-        // Shuffle and pick
-        availableQuestions = shuffleArray(availableQuestions).slice(0, count);
+        // Generate fresh questions every time — no repeats!
+        availableQuestions = generateFresh(sectionType, config.difficulty || 'medium', count);
       }
 
       const sessionQuestions: SessionQuestion[] = availableQuestions.map((q, i) => {
@@ -154,8 +141,8 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
   const currentQuestion = currentSQ ? questionsMap.get(currentSQ.questionId) : undefined;
 
   // Visual lookups (moved to component scope for use in explanations)
-  const visual = currentQuestion ? questionVisuals[currentQuestion.id] : undefined;
-  const nsVisual = currentQuestion ? numberShapeVisuals[currentQuestion.id] : undefined;
+  const visual = currentQuestion ? getVisualConfig(currentQuestion.id) : undefined;
+  const nsVisual = currentQuestion ? getNSVisualConfig(currentQuestion.id) : undefined;
 
   const sectionTimeSec = currentSection?.timeLimitSec || 0;
 
@@ -646,11 +633,3 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
   );
 }
 
-function shuffleArray<T>(arr: T[]): T[] {
-  const shuffled = [...arr];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}

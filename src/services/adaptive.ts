@@ -7,7 +7,7 @@ import type {
   Recommendation,
 } from '../types';
 import { storage } from './storage';
-import { questionBank } from '../data/questions';
+import { generateFresh } from './questionPool';
 import { SECTION_CONFIGS } from '../config/sections';
 
 // ── Mastery Update ─────────────────────────────────────────────────
@@ -88,7 +88,8 @@ export function updateMastery(
 
 /**
  * Select next questions for adaptive mode.
- * Distribution: 60% weak areas, 25% mixed reinforcement, 15% strong areas (confidence).
+ * Generates fresh questions — distributes across all section types.
+ * Difficulty is based on mastery: weak skills get easier, strong get harder.
  */
 export function selectAdaptiveQuestions(
   userId: string,
@@ -98,56 +99,63 @@ export function selectAdaptiveQuestions(
   const strongSkills = getStrongSkills(userId);
   const allStats = storage.getSkillStats(userId);
 
+  // Determine which sections need focus
+  const weakSections = new Set(weakSkills.map(s => s.sectionType));
+  const strongSections = new Set(strongSkills.map(s => s.sectionType));
+
+  // All section types to distribute across
+  const allSections: SectionType[] = ['math', 'sentence_completion', 'word_relations', 'shapes', 'numbers_in_shapes'];
+
+  // Weighted distribution: more questions for weak areas
   const weakCount = Math.round(count * 0.6);
   const mixedCount = Math.round(count * 0.25);
-  const strongCount = count - weakCount - mixedCount;
 
   const selected: Question[] = [];
-  const usedIds = new Set<string>();
 
-  // Helper: pick random questions matching criteria
-  const pickQuestions = (
-    filter: (q: Question) => boolean,
-    needed: number
-  ): void => {
-    const candidates = questionBank.filter(
-      (q) => q.isActive && !usedIds.has(q.id) && filter(q)
-    );
-    shuffleArray(candidates);
-    for (const q of candidates) {
-      if (selected.length >= count || needed <= 0) break;
-      selected.push(q);
-      usedIds.add(q.id);
-      needed--;
+  // 1. Weak area questions (60%) — generate as easy/medium
+  if (weakSections.size > 0) {
+    const perSection = Math.max(1, Math.ceil(weakCount / weakSections.size));
+    for (const sType of weakSections) {
+      const avgMastery = allStats.filter(s => s.sectionType === sType).reduce((sum, s) => sum + s.masteryScore, 0)
+        / Math.max(1, allStats.filter(s => s.sectionType === sType).length);
+      const diff = getAdaptiveDifficulty(avgMastery);
+      const generated = generateFresh(sType, diff, perSection);
+      selected.push(...generated);
     }
-  };
-
-  // 1. Weak area questions (60%)
-  if (weakSkills.length > 0) {
-    const weakTags = new Set(weakSkills.map((s) => s.skillTag));
-    pickQuestions((q) => weakTags.has(q.skillTag), weakCount);
   }
 
-  // 2. Mixed reinforcement (25%) — pick from skills with medium mastery
-  const mediumTags = new Set(
-    allStats
-      .filter((s) => s.masteryScore >= 40 && s.masteryScore <= 70)
-      .map((s) => s.skillTag)
-  );
-  pickQuestions((q) => mediumTags.has(q.skillTag), mixedCount);
-
-  // 3. Strong area questions (15%) — confidence building
-  if (strongSkills.length > 0) {
-    const strongTags = new Set(strongSkills.map((s) => s.skillTag));
-    pickQuestions((q) => strongTags.has(q.skillTag), strongCount);
+  // 2. Mixed reinforcement (25%) — distribute across all sections
+  const remainingForMixed = Math.max(0, weakCount + mixedCount - selected.length);
+  if (remainingForMixed > 0) {
+    const perSection = Math.max(1, Math.ceil(remainingForMixed / allSections.length));
+    const shuffledSections = [...allSections];
+    shuffleArray(shuffledSections);
+    for (const sType of shuffledSections) {
+      if (selected.length >= weakCount + mixedCount) break;
+      const generated = generateFresh(sType, 'medium', perSection);
+      selected.push(...generated);
+    }
   }
 
-  // Fill remaining spots with any available questions
-  if (selected.length < count) {
-    pickQuestions(() => true, count - selected.length);
+  // 3. Strong area questions (15%) — harder to maintain growth
+  const remainingForStrong = Math.max(0, count - selected.length);
+  if (remainingForStrong > 0) {
+    const strongSectionsList = strongSections.size > 0
+      ? Array.from(strongSections)
+      : allSections;
+    const perSection = Math.max(1, Math.ceil(remainingForStrong / strongSectionsList.length));
+    const shuffledStrongSections = [...strongSectionsList];
+    shuffleArray(shuffledStrongSections);
+    for (const sType of shuffledStrongSections) {
+      if (selected.length >= count) break;
+      const generated = generateFresh(sType, 'hard', perSection);
+      selected.push(...generated);
+    }
   }
 
-  return selected;
+  // Trim to exact count and shuffle
+  shuffleArray(selected);
+  return selected.slice(0, count);
 }
 
 // ── Skill Classification ───────────────────────────────────────────

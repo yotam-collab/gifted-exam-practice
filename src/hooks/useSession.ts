@@ -10,7 +10,7 @@ import type {
 } from '../types';
 import { storage } from '../services/storage';
 import { updateMastery, selectAdaptiveQuestions } from '../services/adaptive';
-import { questionBank } from '../data/questions';
+import { generateFresh, getQuestionById } from '../services/questionPool';
 import { SECTION_CONFIGS } from '../config/sections';
 
 export interface UseSessionReturn {
@@ -65,30 +65,17 @@ export function useSession(userId: string): UseSessionReturn {
           });
         }
       } else {
-        // Practice / mini_exam / full_exam: select from questionBank by section & difficulty
+        // Practice / mini_exam / full_exam: generate fresh questions
         for (const sectionType of config.sections) {
           const sectionConfig = SECTION_CONFIGS.find((s) => s.type === sectionType);
           const timeLimitSec = config.timeLimitSec ?? sectionConfig?.defaultTimeSec ?? 600;
 
-          // Filter questions for this section
-          let candidates = questionBank.filter(
-            (q) => q.isActive && q.sectionType === sectionType
+          // Generate fresh questions — no repeats!
+          const picked = generateFresh(
+            sectionType,
+            config.difficulty || 'medium',
+            config.questionsPerSection,
           );
-
-          // Filter by difficulty if not adaptive
-          if (config.difficulty !== 'adaptive') {
-            const difficultyFiltered = candidates.filter(
-              (q) => q.difficulty === config.difficulty
-            );
-            // Fall back to all candidates if no questions match the difficulty
-            if (difficultyFiltered.length > 0) {
-              candidates = difficultyFiltered;
-            }
-          }
-
-          // Shuffle and pick the requested count
-          shuffleArray(candidates);
-          const picked = candidates.slice(0, config.questionsPerSection);
 
           sections.push({
             sectionType,
@@ -134,8 +121,8 @@ export function useSession(userId: string): UseSessionReturn {
       const sq = section.questions[currentQuestion];
       if (!sq) return { isCorrect: false, explanation: '' };
 
-      // Find the original question from the bank
-      const question = questionBank.find((q) => q.id === sq.questionId);
+      // Find the original question from the pool
+      const question = getQuestionById(sq.questionId);
       if (!question) return { isCorrect: false, explanation: '' };
 
       const isCorrect = selectedOption === question.correctOption;
@@ -303,9 +290,3 @@ function createSessionQuestion(questionId: string): SessionQuestion {
   };
 }
 
-function shuffleArray<T>(array: T[]): void {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-}
