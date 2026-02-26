@@ -36,8 +36,8 @@ export default function ParentLogin({ onBack, onSuccess }: Props) {
   return (
     <div className="max-w-sm mx-auto px-4 py-6 min-h-screen flex flex-col items-center justify-center relative">
       <div className="bg-shapes">
-        <div className="bg-shape" style={{ width: 200, height: 200, top: '10%', right: '-10%', background: '#6C5CE7' }} />
-        <div className="bg-shape" style={{ width: 150, height: 150, bottom: '20%', left: '-5%', background: '#A855F7', animationDelay: '3s' }} />
+        <div className="bg-shape" style={{ width: 200, height: 200, top: '10%', right: '-10%', background: '#E85D3A' }} />
+        <div className="bg-shape" style={{ width: 150, height: 150, bottom: '20%', left: '-5%', background: '#6C3483', animationDelay: '3s' }} />
       </div>
 
       <button
@@ -58,7 +58,7 @@ export default function ParentLogin({ onBack, onSuccess }: Props) {
             key={i}
             className={`w-4 h-4 rounded-full transition-all ${
               i < pin.length
-                ? error ? 'bg-danger scale-125 shadow-[0_0_10px_rgba(255,107,107,0.5)]' : 'bg-primary scale-125 shadow-[0_0_10px_rgba(108,92,231,0.5)]'
+                ? error ? 'bg-danger scale-125 shadow-[0_0_10px_rgba(255,107,107,0.5)]' : 'bg-primary scale-125 shadow-[0_0_10px_rgba(232,93,58,0.5)]'
                 : 'bg-border'
             }`}
           ></div>
@@ -75,7 +75,7 @@ export default function ParentLogin({ onBack, onSuccess }: Props) {
           <button
             key={n}
             onClick={() => handleDigit(String(n))}
-            className="w-16 h-16 rounded-2xl bg-card border border-border text-xl font-bold cursor-pointer hover:border-primary hover:shadow-[0_0_10px_rgba(108,92,231,0.2)] transition-all mx-auto"
+            className="w-16 h-16 rounded-2xl bg-card border border-border text-xl font-bold cursor-pointer hover:border-primary hover:shadow-[0_0_10px_rgba(232,93,58,0.2)] transition-all mx-auto"
           >
             {n}
           </button>
@@ -83,7 +83,7 @@ export default function ParentLogin({ onBack, onSuccess }: Props) {
         <div></div>
         <button
           onClick={() => handleDigit('0')}
-          className="w-16 h-16 rounded-2xl bg-card border border-border text-xl font-bold cursor-pointer hover:border-primary hover:shadow-[0_0_10px_rgba(108,92,231,0.2)] transition-all mx-auto"
+          className="w-16 h-16 rounded-2xl bg-card border border-border text-xl font-bold cursor-pointer hover:border-primary hover:shadow-[0_0_10px_rgba(232,93,58,0.2)] transition-all mx-auto"
         >
           0
         </button>

@@ -17,36 +17,36 @@ export default function HomeScreen({ onNavigate, onStartAdaptive, onStartFullExa
     {
       title: 'תרגול לפי נושא',
       subtitle: 'בחר נושא, רמת קושי ומספר שאלות',
-      icon: '📚',
-      gradient: 'from-purple-600 to-indigo-600',
+      icon: '🍎',
+      gradient: 'from-red-600 to-orange-600',
       onClick: () => onNavigate('practice_setup'),
     },
     {
       title: 'חיזוק חכם',
       subtitle: 'תרגול ממוקד בנושאים שצריך לחזק',
-      icon: '🧠',
-      gradient: 'from-emerald-600 to-teal-600',
+      icon: '🥝',
+      gradient: 'from-green-600 to-lime-600',
       onClick: onStartAdaptive,
     },
     {
       title: 'מבחן מקוצר',
       subtitle: 'כמה פרקים נבחרים בזמן קצר',
-      icon: '⏱️',
-      gradient: 'from-amber-500 to-orange-600',
+      icon: '🍊',
+      gradient: 'from-orange-500 to-amber-600',
       onClick: () => onNavigate('mini_exam_setup'),
     },
     {
       title: 'מבחן מלא',
       subtitle: 'סימולציה מלאה כמו במבחן אמיתי',
-      icon: '📋',
-      gradient: 'from-violet-600 to-purple-700',
+      icon: '🍇',
+      gradient: 'from-purple-700 to-fuchsia-700',
       onClick: onStartFullExam,
     },
     {
       title: 'ההצלחות שלי',
       subtitle: 'ראה את ההתקדמות והכוכבים שלך',
-      icon: '⭐',
-      gradient: 'from-yellow-500 to-amber-600',
+      icon: '🏆',
+      gradient: 'from-yellow-500 to-orange-500',
       onClick: () => onNavigate('achievements'),
     },
   ];
@@ -55,15 +55,15 @@ export default function HomeScreen({ onNavigate, onStartAdaptive, onStartFullExa
     <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative">
       {/* Background Shapes */}
       <div className="bg-shapes">
-        <div className="bg-shape" style={{ width: 300, height: 300, top: '-5%', right: '-10%', background: '#6C5CE7' }} />
-        <div className="bg-shape" style={{ width: 200, height: 200, bottom: '10%', left: '-5%', background: '#A855F7', animationDelay: '2s' }} />
-        <div className="bg-shape" style={{ width: 150, height: 150, top: '40%', right: '80%', background: '#00CEC9', animationDelay: '4s' }} />
+        <div className="bg-shape" style={{ width: 300, height: 300, top: '-5%', right: '-10%', background: '#E85D3A' }} />
+        <div className="bg-shape" style={{ width: 200, height: 200, bottom: '10%', left: '-5%', background: '#6C3483', animationDelay: '2s' }} />
+        <div className="bg-shape" style={{ width: 150, height: 150, top: '40%', right: '80%', background: '#27AE60', animationDelay: '4s' }} />
       </div>
 
       {/* Header */}
       <div className="text-center mb-8 relative z-10">
-        <div className="text-5xl mb-3 animate-float">🚀</div>
-        <h1 className="text-3xl font-extrabold text-glow mb-2 bg-gradient-to-l from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+        <div className="text-5xl mb-3 animate-float">🍉</div>
+        <h1 className="text-3xl font-extrabold text-glow mb-2 bg-gradient-to-l from-orange-400 to-yellow-400 bg-clip-text text-transparent">
           שלום {childName}!
         </h1>
         <p className="text-text-secondary text-lg">

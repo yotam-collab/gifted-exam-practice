@@ -59,10 +59,10 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
   const weakSections = sectionResults.filter(s => s.pct < 70);
 
   const getEmoji = (score: number) => {
-    if (score >= 90) return '🏆';
-    if (score >= 70) return '🌟';
-    if (score >= 50) return '💪';
-    return '🎯';
+    if (score >= 90) return '🍉';
+    if (score >= 70) return '⚔️';
+    if (score >= 50) return '🥝';
+    return '🍎';
   };
 
   const getMessage = (score: number) => {
@@ -80,14 +80,14 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
     setExpandedQuestion(prev => prev === sqId ? null : sqId);
   };
 
-  const scoreColor = score >= 70 ? '#00B894' : score >= 50 ? '#FDCB6E' : '#FF6B6B';
+  const scoreColor = score >= 70 ? '#27AE60' : score >= 50 ? '#F39C12' : '#E74C3C';
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative">
       {/* Background decoration */}
       <div className="bg-shapes">
         <div className="bg-shape" style={{ width: 250, height: 250, top: '-5%', right: '-10%', background: scoreColor }} />
-        <div className="bg-shape" style={{ width: 180, height: 180, bottom: '10%', left: '-5%', background: '#A855F7', animationDelay: '2s' }} />
+        <div className="bg-shape" style={{ width: 180, height: 180, bottom: '10%', left: '-5%', background: '#6C3483', animationDelay: '2s' }} />
       </div>
 
       {/* Score Circle */}
@@ -97,7 +97,7 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
         </div>
         <div className={`relative w-36 h-36 mx-auto mb-4 ${animateScore ? 'score-circle-glow' : 'opacity-0'}`}>
           <svg className="w-36 h-36 -rotate-90" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(61, 47, 107, 0.5)" strokeWidth="6" />
+            <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(92, 61, 30, 0.5)" strokeWidth="6" />
             <circle
               cx="50" cy="50" r="42" fill="none"
               stroke={scoreColor}
@@ -153,7 +153,7 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
       {/* What went well */}
       {strongSections.length > 0 && (
         <div className="result-correct rounded-2xl p-4 mb-4 relative z-10">
-          <h3 className="font-bold text-success mb-2 text-glow-success">מה הלך מעולה 🌟</h3>
+          <h3 className="font-bold text-success mb-2 text-glow-success">מה הלך מעולה 🍉</h3>
           <ul className="text-sm space-y-1">
             {strongSections.map(s => (
               <li key={s.type}>{s.config.icon} {s.config.nameHe} - {s.pct}% הצלחה!</li>
@@ -164,8 +164,8 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
 
       {/* What to practice */}
       {weakSections.length > 0 && (
-        <div className="game-card p-4 mb-4 relative z-10" style={{ borderColor: 'rgba(168, 85, 247, 0.4)' }}>
-          <h3 className="font-bold text-purple-light mb-2">מה נתרגל בפעם הבאה 📚</h3>
+        <div className="game-card p-4 mb-4 relative z-10" style={{ borderColor: 'rgba(232, 93, 58, 0.4)' }}>
+          <h3 className="font-bold text-purple-light mb-2">מה נתרגל בפעם הבאה 🍊</h3>
           <ul className="text-sm space-y-1 text-text-secondary">
             {weakSections.map(s => (
               <li key={s.type}>{s.config.icon} {s.config.nameHe} - כדאי לתרגל עוד</li>
@@ -211,8 +211,8 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
                       key={sq.id}
                       className={`rounded-xl border-2 overflow-hidden transition-all ${
                         isCorrect
-                          ? 'border-success/40 bg-gradient-to-r from-[#0A3D2E]/50 to-transparent'
-                          : 'border-danger/40 bg-gradient-to-r from-[#3D1520]/50 to-transparent'
+                          ? 'border-success/40 bg-gradient-to-r from-[#1A4D2E]/50 to-transparent'
+                          : 'border-danger/40 bg-gradient-to-r from-[#4D1520]/50 to-transparent'
                       }`}
                     >
                       {/* Question header - clickable */}
@@ -337,13 +337,13 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
           onClick={onPracticeAgain}
           className="btn-game w-full text-lg"
         >
-          תרגול נוסף 🚀
+          תרגול נוסף ⚔️
         </button>
         <button
           onClick={onHome}
           className="w-full py-3 game-card border-2 border-border text-text font-bold rounded-xl cursor-pointer hover:border-primary transition-colors"
         >
-          חזרה למסך הבית 🏠
+          חזרה למסך הבית 🏯
         </button>
       </div>
     </div>

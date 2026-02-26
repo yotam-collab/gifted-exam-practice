@@ -23,8 +23,8 @@ export default function MiniExamSetup({ onBack, onStart }: Props) {
   return (
     <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative">
       <div className="bg-shapes">
-        <div className="bg-shape" style={{ width: 200, height: 200, top: '10%', right: '-10%', background: '#A855F7' }} />
-        <div className="bg-shape" style={{ width: 150, height: 150, bottom: '15%', left: '-5%', background: '#00CEC9', animationDelay: '2s' }} />
+        <div className="bg-shape" style={{ width: 200, height: 200, top: '10%', right: '-10%', background: '#6C3483' }} />
+        <div className="bg-shape" style={{ width: 150, height: 150, bottom: '15%', left: '-5%', background: '#27AE60', animationDelay: '2s' }} />
       </div>
 
       <div className="flex items-center gap-3 mb-6 relative z-10">
@@ -68,7 +68,7 @@ export default function MiniExamSetup({ onBack, onStart }: Props) {
               onClick={() => setQuestionsPerSection(c)}
               className={`flex-1 py-3 rounded-xl border-2 text-center cursor-pointer font-bold transition-all ${
                 questionsPerSection === c
-                  ? 'border-primary bg-primary/15 text-primary-light shadow-[0_0_15px_rgba(108,92,231,0.2)]'
+                  ? 'border-primary bg-primary/15 text-primary-light shadow-[0_0_15px_rgba(232,93,58,0.2)]'
                   : 'border-border bg-card hover:border-primary/30'
               }`}
             >
@@ -85,7 +85,7 @@ export default function MiniExamSetup({ onBack, onStart }: Props) {
           <button
             onClick={() => setUseTimer(!useTimer)}
             className={`w-14 h-8 rounded-full transition-all cursor-pointer ${
-              useTimer ? 'bg-primary shadow-[0_0_10px_rgba(108,92,231,0.4)]' : 'bg-border'
+              useTimer ? 'bg-primary shadow-[0_0_10px_rgba(232,93,58,0.4)]' : 'bg-border'
             }`}
           >
             <div className={`w-6 h-6 bg-white rounded-full shadow-md transition-transform mx-1 mt-1 ${
@@ -106,7 +106,7 @@ export default function MiniExamSetup({ onBack, onStart }: Props) {
               : 'bg-border text-text-secondary cursor-not-allowed'
           }`}
         >
-          {selectedSections.length < 2 ? 'בחר לפחות 2 פרקים' : 'התחל מבחן מקוצר! ⏱️'}
+          {selectedSections.length < 2 ? 'בחר לפחות 2 פרקים' : 'התחל מבחן מקוצר! ⚔️'}
         </button>
       </div>
     </div>

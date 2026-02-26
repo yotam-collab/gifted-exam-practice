@@ -4,10 +4,10 @@ export const SECTION_CONFIGS: SectionConfig[] = [
   {
     type: 'math',
     nameHe: 'חשבון',
-    icon: '🔢',
+    icon: '🍎',
     defaultTimeSec: 16 * 60,
     defaultQuestionCount: 15,
-    color: '#4F46E5',
+    color: '#E74C3C',
     skills: [
       { tag: 'basic_arithmetic', nameHe: 'פעולות חשבון בסיסיות' },
       { tag: 'word_problems', nameHe: 'בעיות מילוליות' },
@@ -21,10 +21,10 @@ export const SECTION_CONFIGS: SectionConfig[] = [
   {
     type: 'sentence_completion',
     nameHe: 'השלמת משפטים',
-    icon: '📝',
+    icon: '🍊',
     defaultTimeSec: 14 * 60,
     defaultQuestionCount: 15,
-    color: '#059669',
+    color: '#E67E22',
     skills: [
       { tag: 'vocabulary', nameHe: 'אוצר מילים' },
       { tag: 'logical_connection', nameHe: 'קשר לוגי במשפט' },
@@ -37,10 +37,10 @@ export const SECTION_CONFIGS: SectionConfig[] = [
   {
     type: 'word_relations',
     nameHe: 'יחסי מילים',
-    icon: '🔗',
+    icon: '🍋',
     defaultTimeSec: 10 * 60,
     defaultQuestionCount: 12,
-    color: '#D97706',
+    color: '#F1C40F',
     skills: [
       { tag: 'synonyms_antonyms', nameHe: 'נרדפות והפכים' },
       { tag: 'part_whole', nameHe: 'חלק-שלם' },
@@ -54,10 +54,10 @@ export const SECTION_CONFIGS: SectionConfig[] = [
   {
     type: 'shapes',
     nameHe: 'צורות',
-    icon: '🔷',
+    icon: '🍇',
     defaultTimeSec: 14 * 60,
     defaultQuestionCount: 15,
-    color: '#DC2626',
+    color: '#8E44AD',
     skills: [
       { tag: 'shape_analogy', nameHe: 'אנלוגיות צורניות' },
       { tag: 'transformation', nameHe: 'טרנספורמציות' },
@@ -74,10 +74,10 @@ export const SECTION_CONFIGS: SectionConfig[] = [
   {
     type: 'numbers_in_shapes',
     nameHe: 'מספרים בצורות',
-    icon: '🔶',
+    icon: '🥝',
     defaultTimeSec: 15 * 60,
     defaultQuestionCount: 12,
-    color: '#7C3AED',
+    color: '#27AE60',
     skills: [
       { tag: 'divided_circle', nameHe: 'עיגול מחולק' },
       { tag: 'number_pyramid', nameHe: 'פירמידת מספרים' },

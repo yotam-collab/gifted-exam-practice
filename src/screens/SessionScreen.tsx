@@ -243,11 +243,11 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4">
         <div className="bg-shapes">
-          <div className="bg-shape" style={{ width: 200, height: 200, top: '20%', right: '10%', background: '#6C5CE7' }} />
-          <div className="bg-shape" style={{ width: 150, height: 150, bottom: '20%', left: '10%', background: '#00CEC9' }} />
+          <div className="bg-shape" style={{ width: 200, height: 200, top: '20%', right: '10%', background: '#E85D3A' }} />
+          <div className="bg-shape" style={{ width: 150, height: 150, bottom: '20%', left: '10%', background: '#27AE60' }} />
         </div>
         <div className="animate-bounce-in relative z-10">
-          <div className="text-7xl mb-4">✅</div>
+          <div className="text-7xl mb-4">⚔️</div>
           <h2 className="text-2xl font-bold mb-2 text-glow">סיימת את הפרק!</h2>
           {nextConfig && (
             <p className="text-lg text-text-secondary">
@@ -268,7 +268,7 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
       {/* Combo popup */}
       {showCombo && combo >= 2 && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-bounce-in">
-          <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-3 rounded-2xl font-extrabold text-lg shadow-lg">
+          <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 py-3 rounded-2xl font-extrabold text-lg shadow-lg">
             {combo >= 5 ? '🔥🔥🔥' : combo >= 3 ? '🔥🔥' : '🔥'} רצף של {combo}!
           </div>
         </div>
@@ -465,7 +465,7 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
               currentSQ.isCorrect ? 'result-correct' : 'result-wrong'
             }`}>
               <div className="font-bold text-lg mb-1">
-                {currentSQ.isCorrect ? 'כל הכבוד! 🌟' : 'לא נורא, נלמד מזה! 💪'}
+                {currentSQ.isCorrect ? 'כל הכבוד! 🍉' : 'לא נורא, נלמד מזה! 💨'}
               </div>
               {currentSQ.isCorrect && combo >= 2 && (
                 <div className="text-sm text-warning font-bold mb-1">
@@ -489,7 +489,7 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
               onClick={advanceQuestion}
               className="btn-game w-full text-lg"
             >
-              {currentQuestionIdx < currentSection.questions.length - 1 ? 'שאלה הבאה ←' : 'סיום 🏁'}
+              {currentQuestionIdx < currentSection.questions.length - 1 ? 'שאלה הבאה ←' : 'סיום ⚔️'}
             </button>
           </div>
         )}

@@ -23,7 +23,7 @@ export default function PracticeSetup({ onBack, onStart }: Props) {
   const counts = [5, 10, 15, 20];
 
   const timerModes: { value: TimerMode; label: string; icon: string }[] = [
-    { value: 'none', label: 'בלי זמן', icon: '😌' },
+    { value: 'none', label: 'בלי זמן', icon: '🍃' },
     { value: 'per_question', label: 'זמן לשאלה', icon: '⏱️' },
     { value: 'per_section', label: 'זמן לפרק', icon: '⏰' },
   ];
@@ -32,8 +32,8 @@ export default function PracticeSetup({ onBack, onStart }: Props) {
     <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative">
       {/* Background */}
       <div className="bg-shapes">
-        <div className="bg-shape" style={{ width: 200, height: 200, top: '5%', left: '-10%', background: '#6C5CE7' }} />
-        <div className="bg-shape" style={{ width: 150, height: 150, bottom: '20%', right: '-5%', background: '#00CEC9', animationDelay: '3s' }} />
+        <div className="bg-shape" style={{ width: 200, height: 200, top: '5%', left: '-10%', background: '#E85D3A' }} />
+        <div className="bg-shape" style={{ width: 150, height: 150, bottom: '20%', right: '-5%', background: '#27AE60', animationDelay: '3s' }} />
       </div>
 
       {/* Header */}
@@ -88,7 +88,7 @@ export default function PracticeSetup({ onBack, onStart }: Props) {
                   onClick={() => setQuestionCount(c)}
                   className={`flex-1 py-3 rounded-xl border-2 text-center cursor-pointer font-bold transition-all ${
                     questionCount === c
-                      ? 'border-primary bg-primary/15 text-primary-light shadow-[0_0_15px_rgba(108,92,231,0.2)]'
+                      ? 'border-primary bg-primary/15 text-primary-light shadow-[0_0_15px_rgba(232,93,58,0.2)]'
                       : 'border-border bg-card hover:border-primary/30'
                   }`}
                 >
@@ -108,7 +108,7 @@ export default function PracticeSetup({ onBack, onStart }: Props) {
                   onClick={() => setTimerMode(t.value)}
                   className={`w-full p-3 rounded-xl border-2 text-right cursor-pointer flex items-center gap-3 transition-all ${
                     timerMode === t.value
-                      ? 'border-primary bg-primary/15 shadow-[0_0_15px_rgba(108,92,231,0.2)]'
+                      ? 'border-primary bg-primary/15 shadow-[0_0_15px_rgba(232,93,58,0.2)]'
                       : 'border-border bg-card hover:border-primary/30'
                   }`}
                 >
@@ -124,7 +124,7 @@ export default function PracticeSetup({ onBack, onStart }: Props) {
             onClick={() => onStart(section, difficulty, questionCount, timerMode)}
             className="btn-game w-full text-lg py-4"
           >
-            התחל תרגול! 🚀
+            התחל תרגול! ⚔️
           </button>
         </div>
       )}

@@ -99,7 +99,7 @@ export default function ParentDashboard({ childId, onBack }: Props) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 min-h-screen relative">
       <div className="bg-shapes">
-        <div className="bg-shape" style={{ width: 200, height: 200, top: '5%', right: '-10%', background: '#6C5CE7' }} />
+        <div className="bg-shape" style={{ width: 200, height: 200, top: '5%', right: '-10%', background: '#E85D3A' }} />
       </div>
 
       {/* Header */}
@@ -211,11 +211,11 @@ export default function ParentDashboard({ childId, onBack }: Props) {
             <div style={{ direction: 'ltr' }}>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={sectionChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#3D2F6B" />
-                  <XAxis dataKey="name" fontSize={12} stroke="#9B8FC2" />
-                  <YAxis domain={[0, 100]} fontSize={12} stroke="#9B8FC2" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#5C3D1E" />
+                  <XAxis dataKey="name" fontSize={12} stroke="#B8976A" />
+                  <YAxis domain={[0, 100]} fontSize={12} stroke="#B8976A" />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#1E1740', border: '1px solid #3D2F6B', borderRadius: '8px', color: '#F0EDFF' }}
+                    contentStyle={{ backgroundColor: '#3B2415', border: '1px solid #5C3D1E', borderRadius: '8px', color: '#FFF5E4' }}
                   />
                   <Bar dataKey="דיוק" radius={[6, 6, 0, 0]}>
                     {sectionChartData.map((entry, idx) => (
@@ -242,7 +242,7 @@ export default function ParentDashboard({ childId, onBack }: Props) {
                       style={{
                         backgroundColor: `rgba(${skill.mastery > 60 ? '0, 184, 148' : skill.mastery > 30 ? '253, 203, 110' : '255, 107, 107'}, ${Math.max(0.1, skill.mastery / 200)})`,
                         borderColor: `rgba(${skill.mastery > 60 ? '0, 184, 148' : skill.mastery > 30 ? '253, 203, 110' : '255, 107, 107'}, 0.3)`,
-                        color: '#F0EDFF',
+                        color: '#FFF5E4',
                       }}
                     >
                       <div className="font-medium">{skill.name}</div>
@@ -266,14 +266,14 @@ export default function ParentDashboard({ childId, onBack }: Props) {
                 <div style={{ direction: 'ltr' }}>
                   <ResponsiveContainer width="100%" height={250}>
                     <LineChart data={trendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#3D2F6B" />
-                      <XAxis dataKey="name" fontSize={12} stroke="#9B8FC2" />
-                      <YAxis domain={[0, 100]} fontSize={12} stroke="#9B8FC2" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#5C3D1E" />
+                      <XAxis dataKey="name" fontSize={12} stroke="#B8976A" />
+                      <YAxis domain={[0, 100]} fontSize={12} stroke="#B8976A" />
                       <Tooltip
-                        contentStyle={{ backgroundColor: '#1E1740', border: '1px solid #3D2F6B', borderRadius: '8px', color: '#F0EDFF' }}
+                        contentStyle={{ backgroundColor: '#3B2415', border: '1px solid #5C3D1E', borderRadius: '8px', color: '#FFF5E4' }}
                       />
                       <Legend />
-                      <Line type="monotone" dataKey="ציון" stroke="#A855F7" strokeWidth={2} dot={{ r: 4, fill: '#A855F7' }} />
+                      <Line type="monotone" dataKey="ציון" stroke="#E85D3A" strokeWidth={2} dot={{ r: 4, fill: '#E85D3A' }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -284,13 +284,13 @@ export default function ParentDashboard({ childId, onBack }: Props) {
                 <div style={{ direction: 'ltr' }}>
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={trendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#3D2F6B" />
-                      <XAxis dataKey="name" fontSize={12} stroke="#9B8FC2" />
-                      <YAxis fontSize={12} stroke="#9B8FC2" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#5C3D1E" />
+                      <XAxis dataKey="name" fontSize={12} stroke="#B8976A" />
+                      <YAxis fontSize={12} stroke="#B8976A" />
                       <Tooltip
-                        contentStyle={{ backgroundColor: '#1E1740', border: '1px solid #3D2F6B', borderRadius: '8px', color: '#F0EDFF' }}
+                        contentStyle={{ backgroundColor: '#3B2415', border: '1px solid #5C3D1E', borderRadius: '8px', color: '#FFF5E4' }}
                       />
-                      <Bar dataKey="זמן (דק)" fill="#6C5CE7" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="זמן (דק)" fill="#E85D3A" radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

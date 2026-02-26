@@ -22,14 +22,14 @@ export default function AchievementsScreen({ userId, onBack }: Props) {
   );
 
   const achievements = [
-    { icon: '🌟', title: 'צעד ראשון', desc: 'השלם תרגול ראשון', unlocked: totalSessions >= 1 },
+    { icon: '🍎', title: 'צעד ראשון', desc: 'השלם תרגול ראשון', unlocked: totalSessions >= 1 },
     { icon: '🔥', title: 'על גלגלים', desc: 'השלם 5 תרגולים', unlocked: totalSessions >= 5 },
-    { icon: '💎', title: 'מתרגל מסור', desc: 'השלם 10 תרגולים', unlocked: totalSessions >= 10 },
+    { icon: '⚔️', title: 'מתרגל מסור', desc: 'השלם 10 תרגולים', unlocked: totalSessions >= 10 },
     { icon: '🎯', title: 'חד-עין', desc: 'ענה נכון על 50 שאלות', unlocked: totalCorrect >= 50 },
     { icon: '🏆', title: 'אלוף', desc: 'קבל 90% ומעלה במבחן', unlocked: sessions.some(s => (s.totalScore || 0) >= 90) },
-    { icon: '⚡', title: 'בזק', desc: 'תרגל 30 דקות סה"כ', unlocked: totalMinutes >= 30 },
-    { icon: '🧠', title: 'חכם על', desc: 'שלוט ב-3 מיומנויות', unlocked: stats.filter(s => s.masteryScore >= 80).length >= 3 },
-    { icon: '🌈', title: 'מגוון', desc: 'תרגל את כל 5 הנושאים', unlocked: SECTION_CONFIGS.every(sc => sessions.some(s => s.sections.some(sec => sec.sectionType === sc.type))) },
+    { icon: '🍋', title: 'בזק', desc: 'תרגל 30 דקות סה"כ', unlocked: totalMinutes >= 30 },
+    { icon: '🥝', title: 'חכם על', desc: 'שלוט ב-3 מיומנויות', unlocked: stats.filter(s => s.masteryScore >= 80).length >= 3 },
+    { icon: '🍇', title: 'מגוון', desc: 'תרגל את כל 5 הנושאים', unlocked: SECTION_CONFIGS.every(sc => sessions.some(s => s.sections.some(sec => sec.sectionType === sc.type))) },
   ];
 
   const sectionMastery = SECTION_CONFIGS.map(sc => {
@@ -43,13 +43,13 @@ export default function AchievementsScreen({ userId, onBack }: Props) {
   return (
     <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative">
       <div className="bg-shapes">
-        <div className="bg-shape" style={{ width: 250, height: 250, top: '-5%', right: '-10%', background: '#FDCB6E' }} />
-        <div className="bg-shape" style={{ width: 150, height: 150, bottom: '15%', left: '-5%', background: '#A855F7', animationDelay: '2s' }} />
+        <div className="bg-shape" style={{ width: 250, height: 250, top: '-5%', right: '-10%', background: '#F39C12' }} />
+        <div className="bg-shape" style={{ width: 150, height: 150, bottom: '15%', left: '-5%', background: '#6C3483', animationDelay: '2s' }} />
       </div>
 
       <div className="flex items-center gap-3 mb-6 relative z-10">
         <button onClick={onBack} className="text-2xl cursor-pointer hover:opacity-70 text-primary-light">→</button>
-        <h1 className="text-2xl font-extrabold text-glow">ההצלחות שלי ⭐</h1>
+        <h1 className="text-2xl font-extrabold text-glow">ההצלחות שלי 🏆</h1>
       </div>
 
       {/* Stats */}
@@ -105,7 +105,7 @@ export default function AchievementsScreen({ userId, onBack }: Props) {
             key={i}
             className={`game-card p-3 text-center transition-all ${
               a.unlocked
-                ? 'border-warning/50 shadow-[0_0_15px_rgba(253,203,110,0.15)]'
+                ? 'border-warning/50 shadow-[0_0_15px_rgba(243,156,18,0.15)]'
                 : 'opacity-40'
             }`}
           >

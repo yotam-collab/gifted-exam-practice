@@ -883,7 +883,7 @@ export function NumberGrid({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: isMissing ? 'rgba(245, 158, 11, 0.15)' : '#1E1740',
+                background: isMissing ? 'rgba(245, 158, 11, 0.15)' : '#3B2415',
                 fontSize: 17,
                 fontWeight: 700,
                 color: isMissing ? '#f59e0b' : '#e2e8f0',
