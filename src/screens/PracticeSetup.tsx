@@ -9,9 +9,9 @@ interface Props {
 
 export default function PracticeSetup({ onBack, onStart }: Props) {
   const [section, setSection] = useState<SectionType | null>(null);
-  const [difficulty, setDifficulty] = useState<Difficulty>('medium');
+  const [difficulty, setDifficulty] = useState<Difficulty>('adaptive');
   const [questionCount, setQuestionCount] = useState(10);
-  const [timerMode, setTimerMode] = useState<TimerMode>('none');
+  const [timerMode, setTimerMode] = useState<TimerMode>('per_question');
 
   const difficulties: { value: Difficulty; label: string; desc: string }[] = [
     { value: 'easy', label: 'קל', desc: 'שאלות בסיסיות' },
@@ -29,7 +29,7 @@ export default function PracticeSetup({ onBack, onStart }: Props) {
   ];
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative">
+    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative page-enter">
       {/* Background */}
       <div className="bg-shapes">
         <div className="bg-shape" style={{ width: 200, height: 200, top: '5%', left: '-10%', background: '#E85D3A' }} />

@@ -41,7 +41,7 @@ export default function AchievementsScreen({ userId, onBack }: Props) {
   });
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative">
+    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative page-enter">
       <div className="bg-shapes">
         <div className="bg-shape" style={{ width: 250, height: 250, top: '-5%', right: '-10%', background: '#F39C12' }} />
         <div className="bg-shape" style={{ width: 150, height: 150, bottom: '15%', left: '-5%', background: '#6C3483', animationDelay: '2s' }} />

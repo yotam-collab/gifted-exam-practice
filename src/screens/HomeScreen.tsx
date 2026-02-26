@@ -52,7 +52,7 @@ export default function HomeScreen({ onNavigate, onStartAdaptive, onStartFullExa
   ];
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative">
+    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative ninja-enter">
       {/* Background Shapes */}
       <div className="bg-shapes">
         <div className="bg-shape" style={{ width: 300, height: 300, top: '-5%', right: '-10%', background: '#E85D3A' }} />
@@ -62,11 +62,11 @@ export default function HomeScreen({ onNavigate, onStartAdaptive, onStartFullExa
 
       {/* Header */}
       <div className="text-center mb-8 relative z-10">
-        <div className="text-5xl mb-3 animate-float">🍉</div>
-        <h1 className="text-3xl font-extrabold text-glow mb-2 bg-gradient-to-l from-orange-400 to-yellow-400 bg-clip-text text-transparent">
+        <div className="text-6xl mb-3" style={{ animation: 'fruit-drop 0.8s ease-out' }}>🍉</div>
+        <h1 className="text-3xl font-extrabold text-glow mb-2 bg-gradient-to-l from-orange-400 to-yellow-400 bg-clip-text text-transparent" style={{ animation: 'slide-up 0.5s ease-out 0.3s both' }}>
           שלום {childName}!
         </h1>
-        <p className="text-text-secondary text-lg">
+        <p className="text-text-secondary text-lg" style={{ animation: 'slide-up 0.5s ease-out 0.5s both' }}>
           מוכן למשימה חדשה?
         </p>
       </div>
@@ -101,8 +101,8 @@ export default function HomeScreen({ onNavigate, onStartAdaptive, onStartFullExa
           <button
             key={i}
             onClick={item.onClick}
-            className="menu-item w-full p-4 text-right flex items-center gap-4"
-            style={{ animationDelay: `${i * 0.1}s` }}
+            className="menu-item w-full p-4 text-right flex items-center gap-4 cascade-item"
+            style={{ animationDelay: `${0.4 + i * 0.1}s` }}
           >
             <div className={`menu-icon bg-gradient-to-br ${item.gradient} shadow-lg`}>
               {item.icon}

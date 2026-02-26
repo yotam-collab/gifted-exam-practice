@@ -82,8 +82,33 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
 
   const scoreColor = score >= 70 ? '#27AE60' : score >= 50 ? '#F39C12' : '#E74C3C';
 
+  // Time analysis for exam modes (item 10)
+  const isExamMode = session.mode === 'full_exam' || session.mode === 'mini_exam';
+  const slowQuestions = isExamMode ? session.sections.flatMap(section =>
+    section.questions
+      .filter(sq => {
+        const q = getQuestion(sq.questionId);
+        if (!q || !sq.timeSpentSec) return false;
+        return sq.timeSpentSec > (q.recommendedTimeSec || 60) * 1.3;
+      })
+      .map(sq => {
+        const q = getQuestion(sq.questionId)!;
+        return {
+          id: sq.id,
+          timeSpent: sq.timeSpentSec!,
+          recommended: q.recommendedTimeSec || 60,
+          stem: q.stem,
+          sectionConfig: getSectionConfig(q.sectionType),
+          isCorrect: sq.isCorrect,
+        };
+      })
+  ) : [];
+
+  // Calculate average time and find the fastest/slowest
+  const avgTimePerQuestion = totalQuestions > 0 ? Math.round(totalTime / totalQuestions) : 0;
+
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative">
+    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative ninja-enter">
       {/* Background decoration */}
       <div className="bg-shapes">
         <div className="bg-shape" style={{ width: 250, height: 250, top: '-5%', right: '-10%', background: scoreColor }} />
@@ -174,6 +199,51 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
         </div>
       )}
 
+      {/* Time Management Analysis - for exam modes (item 10) */}
+      {isExamMode && (
+        <div className="game-card p-4 mb-4 relative z-10" style={{ borderColor: 'rgba(243, 156, 18, 0.4)' }}>
+          <h3 className="font-bold text-warning mb-2 text-glow-warning">ניהול זמן ⏱️</h3>
+          <div className="text-sm text-text-secondary mb-3">
+            <div className="flex justify-between mb-1">
+              <span>זמן ממוצע לשאלה:</span>
+              <span className="font-bold text-text">{avgTimePerQuestion} שניות</span>
+            </div>
+          </div>
+
+          {slowQuestions.length > 0 ? (
+            <>
+              <p className="text-sm text-warning mb-2">
+                {slowQuestions.length} שאלות לקחו יותר זמן מהמומלץ:
+              </p>
+              <div className="space-y-2">
+                {slowQuestions.slice(0, 5).map(sq => (
+                  <div key={sq.id} className="flex items-center gap-2 text-sm p-2 rounded-lg bg-warning/10 border border-warning/20">
+                    <span>{sq.sectionConfig.icon}</span>
+                    <span className="flex-1 truncate text-text-secondary">
+                      {sq.stem.slice(0, 40)}{sq.stem.length > 40 ? '...' : ''}
+                    </span>
+                    <div className="text-left shrink-0">
+                      <span className="text-warning font-bold">{sq.timeSpent}</span>
+                      <span className="text-text-secondary"> / {sq.recommended} שנ'</span>
+                    </div>
+                  </div>
+                ))}
+                {slowQuestions.length > 5 && (
+                  <p className="text-xs text-text-secondary">...ועוד {slowQuestions.length - 5} שאלות</p>
+                )}
+              </div>
+              <p className="text-xs text-text-secondary mt-3">
+                💡 נסה לתרגל את סוגי השאלות האלה כדי לשפר את המהירות. זכור: עדיף לנחש ולהמשיך מאשר להתעכב יותר מדי!
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-success">
+              ✨ מצוין! עמדת בזמן המומלץ בכל השאלות!
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Question Review Button */}
       <button
         onClick={() => setShowReview(!showReview)}
@@ -205,6 +275,7 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
                   const wasAnswered = sq.selectedOption !== undefined;
                   const visual = questionVisuals[question.id];
                   const nsVisual = numberShapeVisuals[question.id];
+                  const wasSlow = isExamMode && sq.timeSpentSec && sq.timeSpentSec > (question.recommendedTimeSec || 60) * 1.3;
 
                   return (
                     <div
@@ -228,6 +299,9 @@ export default function ResultsScreen({ sessionId, userId, onHome, onPracticeAga
                         <div className="flex-1 text-sm font-medium truncate">
                           שאלה {qIdx + 1}: {question.stem.slice(0, 60)}{question.stem.length > 60 ? '...' : ''}
                         </div>
+                        {wasSlow && (
+                          <span className="text-warning text-xs shrink-0 mr-1" title="לקח יותר זמן מהמומלץ">⏱️</span>
+                        )}
                         <span className="text-text-secondary text-lg shrink-0">
                           {isExpanded ? '▲' : '▼'}
                         </span>

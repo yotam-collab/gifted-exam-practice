@@ -35,7 +35,7 @@ function App() {
       sections: ['math', 'sentence_completion', 'word_relations', 'shapes', 'numbers_in_shapes'],
       questionsPerSection: 5,
       difficulty: 'adaptive',
-      timerMode: 'none',
+      timerMode: 'per_question',
     };
     setSessionConfig({ mode: 'adaptive', config });
     setView('session_active');
@@ -102,7 +102,7 @@ function App() {
           config={sessionConfig.config}
           onEnd={onSessionEnd}
           onQuit={() => setView('home')}
-          isPracticeMode={sessionConfig.mode === 'practice'}
+          isPracticeMode={sessionConfig.mode === 'practice' || sessionConfig.mode === 'adaptive'}
         />
       )}
 

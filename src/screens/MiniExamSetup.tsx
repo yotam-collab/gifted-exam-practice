@@ -21,7 +21,7 @@ export default function MiniExamSetup({ onBack, onStart }: Props) {
   const counts = [3, 5, 8, 10];
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative">
+    <div className="max-w-lg mx-auto px-4 py-6 min-h-screen relative page-enter">
       <div className="bg-shapes">
         <div className="bg-shape" style={{ width: 200, height: 200, top: '10%', right: '-10%', background: '#6C3483' }} />
         <div className="bg-shape" style={{ width: 150, height: 150, bottom: '15%', left: '-5%', background: '#27AE60', animationDelay: '2s' }} />

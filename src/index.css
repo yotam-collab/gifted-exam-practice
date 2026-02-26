@@ -117,6 +117,38 @@ body {
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
+@keyframes page-enter {
+  0% { opacity: 0; transform: scale(0.96) translateY(15px); filter: blur(3px); }
+  60% { opacity: 1; filter: blur(0px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
+}
+@keyframes ninja-enter {
+  0% { opacity: 0; transform: scale(0.85) rotate(-3deg); filter: blur(4px); }
+  50% { opacity: 1; transform: scale(1.02) rotate(0.5deg); filter: blur(0px); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0px); }
+}
+@keyframes cascade-in {
+  0% { opacity: 0; transform: translateX(25px) scale(0.95); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes blade-slash {
+  0% { clip-path: inset(0 100% 0 0); opacity: 0; }
+  40% { clip-path: inset(0 0% 0 0); opacity: 1; }
+  100% { clip-path: inset(0 0% 0 0); opacity: 1; }
+}
+@keyframes timer-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+@keyframes juice-particles {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.4); }
+  100% { transform: scale(1); box-shadow: 0 0 0 20px rgba(39, 174, 96, 0); }
+}
+@keyframes bomb-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+  20%, 40%, 60%, 80% { transform: translateX(3px); }
+}
 
 /* ===== TIMER ===== */
 .timer-warning {
@@ -375,6 +407,47 @@ body {
 .shape-option.selected {
   border-color: var(--color-primary) !important;
   background: linear-gradient(145deg, #5C3D1E, #6B4A27) !important;
+}
+
+/* ===== PAGE TRANSITIONS ===== */
+.page-enter { animation: page-enter 0.5s ease-out; }
+.ninja-enter { animation: ninja-enter 0.6s ease-out; }
+.cascade-item { animation: cascade-in 0.4s ease-out both; }
+.blade-reveal { animation: blade-slash 0.5s ease-out both; }
+
+/* ===== ENHANCED PRACTICE ANIMATIONS ===== */
+.juice-burst {
+  animation: juice-particles 0.6s ease-out, juice-splash 0.6s ease-out;
+}
+.bomb-explode {
+  animation: bomb-shake 0.4s ease-out, smoke-puff 0.5s ease-out;
+}
+.timer-pulse {
+  animation: timer-pulse 0.3s ease-in-out;
+}
+
+/* ===== PER-QUESTION TIMER ===== */
+.question-timer {
+  background: linear-gradient(135deg, rgba(59, 36, 21, 0.8), rgba(78, 51, 32, 0.8));
+  border: 1px solid rgba(92, 61, 30, 0.5);
+  border-radius: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+.question-timer.warning {
+  border-color: rgba(243, 156, 18, 0.6);
+  color: var(--color-warning);
+  text-shadow: 0 0 8px rgba(243, 156, 18, 0.4);
+  animation: pulse-warning 1s ease-in-out infinite;
+}
+.question-timer.critical {
+  border-color: rgba(231, 76, 60, 0.6);
+  color: var(--color-danger);
+  text-shadow: 0 0 12px rgba(231, 76, 60, 0.6);
+  animation: pulse-warning 0.5s ease-in-out infinite;
 }
 
 /* ===== MISC ===== */
