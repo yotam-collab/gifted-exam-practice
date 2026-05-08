@@ -40,6 +40,8 @@ function sameTypeDiffFill(from: RenderShape): RenderShape {
 const shapeNameHe: Record<string, string> = {
   circle: 'עיגול', square: 'ריבוע', triangle: 'משולש',
   diamond: 'מעוין', star: 'כוכב', hexagon: 'משושה',
+  pacman: 'עיגול חסר רבע', semicircle: 'חצי עיגול',
+  square_corner_cut: 'ריבוע חסר פינה',
 };
 const fillNameHe: Record<string, string> = {
   none: 'ריק', solid: 'מלא', striped: 'מפוספס',
@@ -404,6 +406,73 @@ function genGrid3x3(): ShapeGenResult {
   };
 }
 
+// ── Cut-shape analogy (square-with-corner-cut → circle-with-quarter-cut) ──
+// Real Stage B uses these often. The "rule" is "remove a quadrant from the
+// shape" — kid recognizes that a notched-square → quarter-cut-circle is the
+// same operation applied to a different base shape.
+function genCutShapeAnalogy(): ShapeGenResult {
+  // Base pair: square + cut-corner-square. Then ask: "circle is to ? as base
+  // square is to cut-corner-square". The correct answer is pacman (3/4-disc).
+  // Distractors: full circle (no cut), semicircle (over-cut), triangle (wrong shape).
+  const A = s('square', 'none');
+  const B = s('square_corner_cut', 'none');
+  const C = s('circle', 'none');
+  const correct = s('pacman', 'none');
+  const wrongs = [
+    s('semicircle', 'none'),  // over-cut (half instead of quarter)
+    s('circle', 'none'),       // no cut applied (same as C)
+    s('triangle', 'none'),     // wrong base shape
+  ];
+  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]));
+  return {
+    skill: 'transformation',
+    stem: 'מהי הצורה החסרה?',
+    options: allOptions.map(describeShape),
+    correctOption: allOptions.indexOf(correct),
+    explanation: 'הכלל: מסירים רבע מהצורה (פינה אחת).\nריבוע ⟶ ריבוע ללא פינה.\nאותו הכלל על עיגול ⟶ עיגול ללא רבע (כמו פקמן).',
+    visualConfig: {
+      stemLayout: 'analogy',
+      stemShapes: [A, B, C],
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
+// ── Dot counting on hexagon perimeter (Stage B "count the dots") ────────
+// Real Stage B has hexagons with increasing dots on perimeter. The kid spots
+// the +1 progression and picks the next member.
+function genDotCountSeries(): ShapeGenResult {
+  // Series: 0 dots, 1 dot, 2 dots, 3 dots → next: 4 dots.
+  // Skill emphasizes counting under time pressure.
+  const startDots = Math.floor(Math.random() * 3); // 0, 1, or 2
+  const series: RenderShape[] = Array.from({ length: 4 }).map((_, i) => ({
+    type: 'hexagon',
+    fill: 'none',
+    color: '#1f2937',
+    perimeterDots: startDots + i,
+  }));
+  const correct: RenderShape = { type: 'hexagon', fill: 'none', color: '#1f2937', perimeterDots: startDots + 4 };
+  const wrongs: RenderShape[] = [
+    { type: 'hexagon', fill: 'none', color: '#1f2937', perimeterDots: startDots + 3 }, // off by one
+    { type: 'hexagon', fill: 'none', color: '#1f2937', perimeterDots: startDots + 5 }, // over
+    { type: 'hexagon', fill: 'none', color: '#1f2937', perimeterDots: startDots + 2 }, // way under
+  ];
+  const allOptions = [correct, ...wrongs];
+  shuffle(allOptions);
+  return {
+    skill: 'shape_sequence',
+    stem: 'מהי הצורה הבאה בסדרה?',
+    options: allOptions.map(o => `משושה עם ${o.perimeterDots} נקודות`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `מספר הנקודות גדל ב-1 בכל שלב: ${startDots}, ${startDots + 1}, ${startDots + 2}, ${startDots + 3}.\nהבא: ${startDots + 4}.`,
+    visualConfig: {
+      stemLayout: 'series',
+      stemShapes: series,
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
 // ── Mirror-symmetry odd-one-out ─────────────────────────────────────────
 // Three shapes are rotated identically; one is mirrored. Trains the
 // "rotation vs reflection" trap that's classic on Stage B figural items.
@@ -443,6 +512,8 @@ const generators: GenFn[] = [
   // Hard generators (multi-rule + mirror) added to the rotation. Real Stage B
   // routinely uses 3×3 multi-rule matrices; these were absent before.
   genGrid3x3, genMirrorOddOneOut,
+  // Real-Stage-B-pattern generators added after audit of the Michonan booklet.
+  genCutShapeAnalogy, genDotCountSeries,
 ];
 
 export interface ShapeQuestionWithVisual {

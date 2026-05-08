@@ -34,6 +34,22 @@ export type NSVisualConfig =
       bottomRight: number | string;
       center: number | string;
       missingPosition: 'top' | 'bottomLeft' | 'bottomRight' | 'center';
+    }
+  | {
+      // Real Stage B: a chain of boxes connected by N arrows, where the
+      // arrow count encodes the operation strength. E.g. 1 arrow = −1,
+      // 2 arrows = −2, 3 arrows = −3. Or 1 arrow = ×2, 2 arrows = ×3.
+      type: 'arrow_chain';
+      steps: { value: number | string; arrowsToNext?: number }[];
+      missingIndex: number;
+    }
+  | {
+      // Real Stage B: A → [box] → B for two rows, where the box performs
+      // the same arithmetic operation. The kid figures out the box's role
+      // from row 1, applies it to row 2.
+      type: 'bidirectional_flow';
+      rows: { left: number | string; box: number | string; right: number | string }[];
+      missing: { row: number; side: 'left' | 'right' | 'box' };
     };
 
 export const numberShapeVisuals: Record<string, NSVisualConfig> = {

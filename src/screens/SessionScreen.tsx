@@ -5,7 +5,7 @@ import { storage } from '../services/storage';
 import { updateMastery, selectAdaptiveQuestions } from '../services/adaptive';
 import { useTimer } from '../hooks/useTimer';
 import { selectForSection, getVisualConfig, getNSVisualConfig } from '../services/questionPool';
-import { ShapeAnalogy, ShapeSeries, ShapeGrid, ShapeRow, ShapeOddOneOut, ShapeOptions, DividedCirclePair, NumberPyramid, NumberGrid, NumberFlowChart, NumberTriangle } from '../utils/shapeRenderer';
+import { ShapeAnalogy, ShapeSeries, ShapeGrid, ShapeRow, ShapeOddOneOut, ShapeOptions, DividedCirclePair, NumberPyramid, NumberGrid, NumberFlowChart, NumberTriangle, ArrowChain, BidirectionalFlow } from '../utils/shapeRenderer';
 import { sounds } from '../services/sounds';
 
 interface Props {
@@ -464,6 +464,12 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
             )}
             {nsVisual.type === 'number_triangle' && (
               <NumberTriangle top={nsVisual.top} bottomLeft={nsVisual.bottomLeft} bottomRight={nsVisual.bottomRight} center={nsVisual.center} missingPosition={nsVisual.missingPosition} />
+            )}
+            {nsVisual.type === 'arrow_chain' && (
+              <ArrowChain steps={nsVisual.steps} missingIndex={nsVisual.missingIndex} />
+            )}
+            {nsVisual.type === 'bidirectional_flow' && (
+              <BidirectionalFlow rows={nsVisual.rows} missing={nsVisual.missing} />
             )}
           </div>
         )}

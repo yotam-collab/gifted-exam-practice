@@ -587,6 +587,153 @@ const mc3: TemplateGen = (_d) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════
+// REAL-EXAM-STYLE TEMPLATES (added after auditing the Michonan booklet)
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Digit puzzle: ones digit is double / triple / etc. of tens digit ───
+const dp1: TemplateGen = (d) => {
+  // Real-exam pattern: "I'm a 2-digit number. My ones digit is double my tens digit. Who am I?"
+  // For grade 2 we keep tens ≤ 4 (so ones ≤ 8). At hard, allow 3-digit "and hundreds digit equal to tens twice".
+  const useThreeDigit = d === 'hard';
+  if (useThreeDigit) {
+    // 3-digit puzzle: tens = hundreds + 1, ones = 2 × tens
+    const h = rand(1, 3);
+    const t = h + 1;
+    const o = 2 * t;
+    if (o > 9) return dp1('medium'); // re-roll into easier bucket
+    const answer = h * 100 + t * 10 + o;
+    const stem = `אני מספר תלת-ספרתי. ספרת העשרות שלי גדולה באחת מספרת המאות, וספרת האחדות שלי גדולה בשתיים מספרת העשרות. מי אני?`;
+    const wrongs = [answer + 1, answer + 11, answer - 110];
+    const allOpts = shuffle([answer, ...wrongs.filter(w => w > 0)]).map(String).slice(0, 4);
+    while (allOpts.length < 4) allOpts.push(String(answer + rand(10, 50)));
+    const correctOption = allOpts.indexOf(String(answer));
+    return {
+      stem,
+      options: allOpts,
+      correctOption,
+      explanation: `נסמן את ספרת המאות h, ספרת העשרות t, ספרת האחדות o.\nאנחנו יודעים: t = h + 1, o = t + 2.\nניסוי: h=${h}, אז t=${t}, ו-o=${o}.\nהמספר: ${answer}.`,
+    };
+  }
+  const t = rand(1, 4);
+  const o = 2 * t;
+  const answer = t * 10 + o;
+  const stem = `אני מספר דו-ספרתי. ספרת האחדות שלי כפולה מספרת העשרות שלי. מי אני?`;
+  // Distractors: each must be UNIQUE and ≠ answer. We deduplicate before
+  // returning so the kid never sees two identical options.
+  const candidates = [
+    (t + 1) * 10 + o,           // tens digit too high
+    t * 10 + (o + 1),            // ones digit not double (off by 1)
+    (t + 2) * 10 + (o - 1),      // both wrong
+    Math.max(11, answer - 11),   // way different
+    answer + 11,                 // way different
+    Math.max(11, t * 10 + (o - 2)), // ones digit too low
+  ];
+  const uniqueWrongs: number[] = [];
+  for (const c of candidates) {
+    if (c !== answer && !uniqueWrongs.includes(c) && c >= 10 && c <= 99) {
+      uniqueWrongs.push(c);
+      if (uniqueWrongs.length === 3) break;
+    }
+  }
+  while (uniqueWrongs.length < 3) {
+    const fallback = answer + rand(3, 25);
+    if (!uniqueWrongs.includes(fallback) && fallback !== answer) uniqueWrongs.push(fallback);
+  }
+  const allOpts = shuffle([answer, ...uniqueWrongs]).map(String);
+  const correctOption = allOpts.indexOf(String(answer));
+  return {
+    stem,
+    options: allOpts,
+    correctOption,
+    explanation: `אם ספרת העשרות היא ${t}, אז ספרת האחדות היא ${t} × 2 = ${o}.\nהמספר: ${answer}.\nאפשר לבדוק את כל המספרים מ-12 עד 48: רק ${answer} מקיים שהאחדות = פי שניים מהעשרות (${t} ו-${o}).`,
+  };
+};
+
+// ── Age problem with multiplier ────────────────────────────────────────
+const ag1: TemplateGen = (d) => {
+  // "Avigail is 10, brother is 4. When she's 24, how old will brother be?"
+  // The trick: ages grow at the same rate; difference stays constant.
+  const childA = rand(8, 12);
+  const childB = rand(2, 6);
+  const futureA = rand(20, d === 'hard' ? 35 : 28);
+  const answer = futureA - (childA - childB);
+  const names = shuffle([...girls]).slice(0, 2);
+  const stem = `${names[0]} בת ${childA}, ו${names[1]} בן ${childB}. כש${names[0]} תהיה בת ${futureA}, בן כמה יהיה ${names[1]}?`;
+  const { options, correctOption } = makeOptions(answer, [futureA, futureA - childA, childA + childB]);
+  const explanation = `ההפרש בין ${names[0]} ל${names[1]} הוא ${childA - childB} שנים.\nההפרש לא משתנה — שניהם מתבגרים ביחד.\nכש${names[0]} בת ${futureA}, ${names[1]} בן ${futureA} − ${childA - childB} = ${answer}.`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── Items × rows (orchard layout, parking lot, etc.) ───────────────────
+const ir1: TemplateGen = (d) => {
+  const items = [
+    { p: 'עצים', container: 'שורה', containers: 'שורות' },
+    { p: 'מכוניות', container: 'שורה', containers: 'שורות' },
+    { p: 'תלמידים', container: 'שורה', containers: 'שורות' },
+    { p: 'משבצות', container: 'טור', containers: 'טורים' },
+  ];
+  const it = pick(items);
+  const rows = rand(d === 'easy' ? 3 : 4, d === 'hard' ? 9 : 7);
+  const cols = rand(d === 'easy' ? 3 : 4, d === 'hard' ? 9 : 7);
+  const total = rows * cols;
+  const stem = `במטע ${it.p} מסודרים ב-${cols} ${it.containers}. בכל ${it.container} ${rows} ${it.p}. כמה ${it.p} יש סך הכול?`;
+  const { options, correctOption } = makeOptions(total, [rows + cols, rows * 2, cols * 2]);
+  const explanation = `${cols} ${it.containers} × ${rows} ${it.p} = ${total} ${it.p}.`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── Multi-week shopping comparison ─────────────────────────────────────
+const mw1: TemplateGen = (d) => {
+  const week1 = rand(d === 'easy' ? 30 : 50, d === 'hard' ? 200 : 100);
+  const diff = rand(3, 15);
+  const week2 = week1 - diff;
+  const total = week1 + week2;
+  const stem = `בשבוע הראשון של החופש הוצא שקד ${week1} ש"ח. בשבוע השני הוציא ${diff} ש"ח פחות. כמה הוציא בשני השבועות יחד?`;
+  const { options, correctOption } = makeOptions(total, [week1 + diff, week1, week2]);
+  const explanation = `שבוע 1: ${week1} ₪.\nשבוע 2: ${week1} − ${diff} = ${week2} ₪.\nיחד: ${week1} + ${week2} = ${total} ₪.`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── Speed/rate extrapolation ────────────────────────────────────────────
+const sp1: TemplateGen = (d) => {
+  // "X moves Y meters per Z minutes. How far in 1 hour?"
+  const meters = pick([100, 200, 250, 500]);
+  const minutes = pick([5, 10, 15, 20]);
+  const hours = d === 'hard' ? pick([1, 2, 3]) : 1;
+  const totalMin = hours * 60;
+  if (totalMin % minutes !== 0) return sp1(d); // re-roll for clean answer
+  const factor = totalMin / minutes;
+  const totalMeters = meters * factor;
+  const km = Math.floor(totalMeters / 1000);
+  const isWholeKm = totalMeters % 1000 === 0;
+  if (!isWholeKm || km === 0) return sp1(d);
+  const subjects = [
+    { n: 'מכונית', verb: 'נוסעת' },
+    { n: 'אופניים', verb: 'נוסעות' },
+    { n: 'רץ', verb: 'רץ' },
+  ];
+  const sub = pick(subjects);
+  const stem = `${sub.n} ${sub.verb} ${meters} מטר כל ${minutes} דקות. איזה מרחק יעבור ב${hours === 1 ? 'שעה' : `${hours} שעות`}?`;
+  const { options, correctOption } = makeOptions(km, [km + 1, km - 1, hours * meters / 100]);
+  const explanation = `ב-${minutes} דקות עובר ${meters} מטר.\nב-${totalMin} דקות (= ${hours === 1 ? 'שעה' : `${hours} שעות`}) זה ${factor} פעמים יותר: ${meters} × ${factor} = ${totalMeters} מטר = ${km} ק"מ.`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── Group division with leftover (real exam pattern) ────────────────────
+const gd1: TemplateGen = (d) => {
+  const total = rand(d === 'easy' ? 12 : 17, d === 'hard' ? 30 : 23);
+  const groupSize = rand(d === 'easy' ? 3 : 4, d === 'hard' ? 6 : 5);
+  const groups = Math.floor(total / groupSize);
+  const leftover = total % groupSize;
+  if (leftover === 0 || groups < 2) return gd1(d); // re-roll for non-trivial
+  const answer = groups + (leftover > 0 ? 1 : 0); // total groups including the leftover
+  const stem = `המדריכה חילקה ${total} ילדים לקבוצות. בכל קבוצה היו ${groupSize} ילדים, אבל בקבוצה האחרונה היו רק ${leftover} ילדים. כמה קבוצות יצאו?`;
+  const { options, correctOption } = makeOptions(answer, [groups, total - groups, leftover]);
+  const explanation = `${groups} קבוצות מלאות (${groups} × ${groupSize} = ${groups * groupSize} ילדים) + 1 קבוצה אחרונה עם ${leftover} ילדים = ${answer} קבוצות.`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ═══════════════════════════════════════════════════════════════════════
 // Template Registry
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -597,11 +744,16 @@ interface SkillTemplates {
 
 // Templates marked "*" are reserved for hard difficulty only — they reach
 // pre-algebra / multi-step territory above grade-2 norm.
+//
+// Real-Stage-B templates (dp1, ag1, ir1, mw1, sp1, gd1) added after auditing
+// the Michonan booklet. They cover patterns the previous bank lacked:
+// digit puzzles, age-with-multiplier, items×rows layouts, multi-week shopping,
+// rate extrapolation, group division with leftover.
 const allTemplates: SkillTemplates[] = [
-  { skill: 'word_problems', templates: [wp1, wp2, wp3, wp4, wp5, wp7, wp8] },
+  { skill: 'word_problems', templates: [wp1, wp2, wp3, wp4, wp5, wp7, wp8, ir1, mw1, gd1] },
   { skill: 'number_sequences', templates: [seq1, seq2, seq4, seq5] },
-  { skill: 'math_logic', templates: [ml2, ml4] },
-  { skill: 'time_clock', templates: [tc1, tc2, tc3] },
+  { skill: 'math_logic', templates: [ml2, ml4, dp1, ag1] },
+  { skill: 'time_clock', templates: [tc1, tc2, tc3, sp1] },
   { skill: 'money_change', templates: [mc1, mc2, mc3] },
 ];
 

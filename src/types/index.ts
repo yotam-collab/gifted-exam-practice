@@ -36,7 +36,12 @@ export type WordRelationSkill =
   | 'material_product'
   | 'category_item'
   | 'cause_effect'
-  | 'verbal_analogy';
+  | 'verbal_analogy'
+  | 'synonyms'             // exact synonyms (שמש : חמה, ענן : עב, סוד : כמוס)
+  | 'action_object'        // action and required object (sleep : mattress, sit : chair)
+  | 'disease_cure'         // disease and remedy (hunger : food, illness : medicine)
+  | 'animal_baby'          // special parent-baby names (frog : tadpole, cow : calf)
+  | 'animal_trait';        // animal and its prominent trait (turtle : slow, ant : industrious)
 
 export type ShapeSkill =
   | 'shape_analogy'

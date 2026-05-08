@@ -49,6 +49,11 @@ export const SECTION_CONFIGS: SectionConfig[] = [
       { tag: 'category_item', nameHe: 'קטגוריה-פריט' },
       { tag: 'cause_effect', nameHe: 'סיבה-תוצאה' },
       { tag: 'verbal_analogy', nameHe: 'אנלוגיות מילוליות' },
+      { tag: 'synonyms', nameHe: 'נרדפות' },
+      { tag: 'action_object', nameHe: 'פעולה-חפץ' },
+      { tag: 'disease_cure', nameHe: 'בעיה-פתרון' },
+      { tag: 'animal_baby', nameHe: 'בעל חיים-צאצא מיוחד' },
+      { tag: 'animal_trait', nameHe: 'בעל חיים-תכונה' },
     ],
   },
   {

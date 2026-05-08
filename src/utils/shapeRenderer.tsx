@@ -14,13 +14,18 @@ export interface RenderShape {
     | 'hexagon'
     | 'rectangle'
     | 'arrow'
-    | 'plus';
+    | 'plus'
+    | 'pacman'             // 3/4-disc, as in real Stage B "cut shape" analogies
+    | 'semicircle'         // half disc, flat side down
+    | 'square_corner_cut'; // square with top-right corner notched out (L-shape)
   fill: 'none' | 'solid' | 'striped' | 'dotted' | 'half';
   color: string;
   rotation?: number;
   scale?: number;
   border?: 'thin' | 'thick' | 'dashed' | 'none';
   innerShape?: RenderShape;
+  /** Optional decorative dots placed on the perimeter (for "count-the-dots" hexagon questions). */
+  perimeterDots?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -186,6 +191,43 @@ function buildShapeElement(
       return <polygon points={pts} {...common} />;
     }
 
+    case 'pacman': {
+      // 3/4 pie — disc with one quadrant removed (like the classic Pacman).
+      // Used in real Stage B "cut-shape" analogies: square-with-corner-cut → circle-with-quarter-cut.
+      const r = half * 0.85;
+      const path = [
+        `M 0 0`,                            // start at center
+        `L ${r} 0`,                          // out to right
+        `A ${r} ${r} 0 1 1 0 ${-r}`,         // arc 270° clockwise to top
+        `L 0 0`,                             // back to center → closes the open mouth
+        `Z`,
+      ].join(' ');
+      return <path d={path} {...common} />;
+    }
+
+    case 'semicircle': {
+      // Half disc — flat side on the bottom.
+      const r = half * 0.85;
+      const path = `M ${-r} 0 A ${r} ${r} 0 0 1 ${r} 0 Z`;
+      return <path d={path} {...common} />;
+    }
+
+    case 'square_corner_cut': {
+      // Square with the top-right corner removed (an L-shape / step-shape).
+      // The cut depth scales with size for visual consistency.
+      const s2 = half * 0.8;
+      const cut = s2 * 0.6;
+      const points = [
+        `${-s2},${-s2}`,
+        `${s2 - cut},${-s2}`,
+        `${s2 - cut},${-s2 + cut}`,
+        `${s2},${-s2 + cut}`,
+        `${s2},${s2}`,
+        `${-s2},${s2}`,
+      ].join(' ');
+      return <polygon points={points} {...common} />;
+    }
+
     case 'plus': {
       const arm = half * 0.3;
       const ext = half * 0.85;
@@ -305,6 +347,28 @@ function renderShape(
       )}
 
       {shape.innerShape && renderShape(shape.innerShape, 0, 0, size * 0.4)}
+
+      {/* Perimeter dots — used for the "count the dots on the hexagon" Stage B
+          question family. Dots are placed at evenly-spaced angles around the
+          shape's bounding circle. */}
+      {shape.perimeterDots != null && shape.perimeterDots > 0 && (() => {
+        const n = shape.perimeterDots;
+        const r = size * 0.45;
+        return Array.from({ length: n }).map((_, i) => {
+          const a = -Math.PI / 2 + (2 * Math.PI * i) / n;
+          return (
+            <circle
+              key={i}
+              cx={Math.cos(a) * r}
+              cy={Math.sin(a) * r}
+              r={Math.max(2, size * 0.04)}
+              fill="#2563eb"
+              stroke="#1e40af"
+              strokeWidth={0.8}
+            />
+          );
+        });
+      })()}
     </g>
   );
 }
@@ -1050,6 +1114,118 @@ export function NumberFlowChart({
             )}
           </React.Fragment>
         ))}
+      </div>
+    </DiagramPaper>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Component: ArrowChain – boxes connected by 1+ arrows, where the number of
+// arrows encodes the strength/repetition of an operation (e.g. one arrow
+// subtracts 1, two arrows subtract 2). Used in real Stage B.
+// ---------------------------------------------------------------------------
+
+export function ArrowChain({
+  steps,
+  missingIndex,
+}: {
+  steps: { value: number | string; arrowsToNext?: number }[];
+  missingIndex: number;
+}): React.ReactElement {
+  const boxW = 56;
+  const boxH = 64;
+  return (
+    <DiagramPaper>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, direction: 'ltr', flexWrap: 'wrap' }}>
+        {steps.map((step, i) => (
+          <React.Fragment key={i}>
+            <div
+              style={{
+                width: boxW,
+                height: boxH,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: i === missingIndex ? `2px dashed ${DIAGRAM_THEME.missing}` : `2px solid ${DIAGRAM_THEME.ink}`,
+                background: i === missingIndex ? DIAGRAM_THEME.missingBg : '#ffffff',
+                borderRadius: 6,
+                fontSize: 22,
+                fontWeight: 700,
+                color: i === missingIndex ? DIAGRAM_THEME.missing : DIAGRAM_THEME.ink,
+              }}
+            >
+              {i === missingIndex ? '?' : step.value}
+            </div>
+            {step.arrowsToNext != null && step.arrowsToNext > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                {Array.from({ length: step.arrowsToNext }).map((_, k) => (
+                  <span key={k} style={{ fontSize: 22, color: DIAGRAM_THEME.ink, lineHeight: 0.8, fontWeight: 700 }}>
+                    {'➜'}
+                  </span>
+                ))}
+              </div>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    </DiagramPaper>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Component: BidirectionalFlow – two parallel rows: A → [op] → B, then
+// A2 → [op2] → ?. Real Stage B uses this for "the box transforms the input"
+// puzzles.
+// ---------------------------------------------------------------------------
+
+export function BidirectionalFlow({
+  rows,
+  missing, // [rowIndex, side: 'left'|'right']
+}: {
+  rows: { left: number | string; box: number | string; right: number | string }[];
+  missing: { row: number; side: 'left' | 'right' | 'box' };
+}): React.ReactElement {
+  const cellSize = 52;
+  const renderCell = (val: number | string, isMissing: boolean, square = false) => (
+    <div
+      style={{
+        width: cellSize,
+        height: cellSize,
+        borderRadius: square ? 6 : '50%',
+        border: isMissing
+          ? `2px dashed ${DIAGRAM_THEME.missing}`
+          : `2px solid ${DIAGRAM_THEME.ink}`,
+        background: isMissing ? DIAGRAM_THEME.missingBg : '#ffffff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 18,
+        fontWeight: 700,
+        color: isMissing ? DIAGRAM_THEME.missing : DIAGRAM_THEME.ink,
+      }}
+    >
+      {isMissing ? '?' : val}
+    </div>
+  );
+  const arrowChar = '←';
+
+  return (
+    <DiagramPaper>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, direction: 'ltr' }}>
+        {rows.map((row, ri) => {
+          const isMissingLeft = missing.row === ri && missing.side === 'left';
+          const isMissingBox = missing.row === ri && missing.side === 'box';
+          const isMissingRight = missing.row === ri && missing.side === 'right';
+          return (
+            <div key={ri} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+              {renderCell(row.left, isMissingLeft, false)}
+              <span style={{ fontSize: 22, color: DIAGRAM_THEME.ink, fontWeight: 800 }}>{arrowChar}</span>
+              {renderCell(row.box, isMissingBox, true)}
+              <span style={{ fontSize: 22, color: DIAGRAM_THEME.ink, fontWeight: 800 }}>{arrowChar}</span>
+              {renderCell(row.right, isMissingRight, false)}
+            </div>
+          );
+        })}
       </div>
     </DiagramPaper>
   );

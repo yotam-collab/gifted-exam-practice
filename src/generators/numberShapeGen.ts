@@ -362,6 +362,141 @@ function genTriangle(d: Difficulty): NSGenResult {
   };
 }
 
+// ── Arrow chain (real Stage B): N arrows = N units of operation ────────
+function genArrowChain(d: Difficulty): NSGenResult {
+  // Two flavors: subtractive (1 arrow = −1) and additive (1 arrow = +k).
+  // Hard difficulty allows multiplicative (1 arrow = ×2 → 2 arrows = ×2 again).
+  const flavor = d === 'hard' ? pick(['sub', 'add', 'mult'] as const) : pick(['sub', 'add'] as const);
+  const steps: { value: number; arrowsToNext?: number }[] = [];
+  if (flavor === 'sub') {
+    let cur = rand(15, 25);
+    steps.push({ value: cur, arrowsToNext: 1 });
+    cur = cur - 1;
+    steps.push({ value: cur, arrowsToNext: 2 });
+    cur = cur - 2;
+    steps.push({ value: cur, arrowsToNext: 3 });
+    cur = cur - 3;
+    steps.push({ value: cur });
+  } else if (flavor === 'add') {
+    const k = rand(2, 5);
+    let cur = rand(2, 6);
+    steps.push({ value: cur, arrowsToNext: 1 });
+    cur = cur + k;
+    steps.push({ value: cur, arrowsToNext: 2 });
+    cur = cur + 2 * k;
+    steps.push({ value: cur, arrowsToNext: 3 });
+    cur = cur + 3 * k;
+    steps.push({ value: cur });
+  } else {
+    // multiplicative: 1 arrow = ×2; chain doubles each time
+    let cur = rand(2, 4);
+    steps.push({ value: cur, arrowsToNext: 1 });
+    cur *= 2;
+    steps.push({ value: cur, arrowsToNext: 2 });
+    cur *= 4; // 2^2
+    steps.push({ value: cur });
+  }
+
+  // Hide last step
+  const hideIdx = steps.length - 1;
+  const answer = steps[hideIdx].value;
+  const displaySteps = steps.map((s, i) => ({
+    value: i === hideIdx ? ('?' as const) : s.value,
+    arrowsToNext: s.arrowsToNext,
+  }));
+
+  const stem = 'בשרשרת המספרים, כל חץ מסמל פעולה אחת. מהו המספר החסר?';
+  const { options, correctOption } = makeNumOptions(answer, [steps[hideIdx - 1].value]);
+  const explanation = flavor === 'sub'
+    ? `כל חץ = להחסיר 1. בין המספר האחרון יש 3 חצים → להחסיר 3.\n${steps[hideIdx - 1].value} − 3 = ${answer}.`
+    : flavor === 'add'
+      ? `כל חץ = להוסיף ${(steps[1].value as number) - (steps[0].value as number)}. בין המספר האחרון יש 3 חצים → להוסיף ${3 * ((steps[1].value as number) - (steps[0].value as number))}.\nהתשובה: ${answer}.`
+      : `כל חץ = לכפול ב-2. בין המספר האחרון יש 2 חצים → לכפול ב-4.\nהתשובה: ${answer}.`;
+
+  return {
+    skill: 'number_flow',
+    stem,
+    options,
+    correctOption,
+    explanation,
+    visualConfig: {
+      type: 'arrow_chain',
+      steps: displaySteps,
+      missingIndex: hideIdx,
+    },
+  };
+}
+
+// ── Bidirectional flow (A → [op] → B with two rows; box's role is
+//    consistent across rows) ────────────────────────────────────────────
+function genBidirectionalFlow(d: Difficulty): NSGenResult {
+  // Pick a "box rule": the box performs (right − left = box) or (left + box = right) or (left × right = box).
+  // We use simple subtraction in this version: box = left + right is the rule.
+  const ruleType = pick(['sum_box', 'diff_right', 'product_box'] as const);
+  let row1: { left: number; box: number; right: number };
+  let row2: { left: number; box: number; right: number };
+  // Note: in the current rule set we only hide 'box' or 'right' — `left` is
+  // always shown so the kid can apply the rule. Type intentionally widened to
+  // make future rule types easier to add.
+  let missingSide: 'left' | 'right' | 'box' = 'box';
+  let answer: number;
+  let explanation: string;
+
+  if (ruleType === 'sum_box') {
+    // box = left + right
+    const l1 = rand(3, 12), r1 = rand(3, 12);
+    row1 = { left: l1, box: l1 + r1, right: r1 };
+    const l2 = rand(3, 12), r2 = rand(3, 12);
+    row2 = { left: l2, box: l2 + r2, right: r2 };
+    missingSide = 'box';
+    answer = row2.box;
+    explanation = `הכלל בקופסה: שמאל + ימין = קופסה.\nשורה 1: ${l1} + ${r1} = ${row1.box} ✓\nשורה 2: ${l2} + ${r2} = ${answer}.`;
+  } else if (ruleType === 'diff_right') {
+    // right = left − box (the box subtracts)
+    const l1 = rand(15, 30), b1 = rand(2, d === 'hard' ? 12 : 8);
+    row1 = { left: l1, box: b1, right: l1 - b1 };
+    const l2 = rand(15, 30), b2 = rand(2, d === 'hard' ? 12 : 8);
+    row2 = { left: l2, box: b2, right: l2 - b2 };
+    missingSide = 'right';
+    answer = row2.right;
+    explanation = `הכלל: הקופסה מורידה מהמספר השמאלי.\nשורה 1: ${l1} − ${b1} = ${row1.right} ✓\nשורה 2: ${l2} − ${b2} = ${answer}.`;
+  } else {
+    // box = left × right (small numbers)
+    const l1 = rand(2, 6), r1 = rand(2, 6);
+    row1 = { left: l1, box: l1 * r1, right: r1 };
+    const l2 = rand(2, 6), r2 = rand(2, 6);
+    row2 = { left: l2, box: l2 * r2, right: r2 };
+    missingSide = 'box';
+    answer = row2.box;
+    explanation = `הכלל בקופסה: שמאל × ימין = קופסה.\nשורה 1: ${l1} × ${r1} = ${row1.box} ✓\nשורה 2: ${l2} × ${r2} = ${answer}.`;
+  }
+
+  const { options, correctOption } = makeNumOptions(answer, [row1.box, row2.left, row2.right].filter(v => v !== answer));
+
+  return {
+    skill: 'number_flow',
+    stem: 'הקופסה מבצעת פעולה חשבונית קבועה. מהו המספר החסר?',
+    options,
+    correctOption,
+    explanation,
+    visualConfig: {
+      type: 'bidirectional_flow',
+      rows: [row1, row2 as unknown as typeof row1].map((r, i) => {
+        if (i === 1) {
+          const ms = missingSide as string;
+          return {
+            left: ms === 'left' ? '?' : r.left,
+            box: ms === 'box' ? '?' : r.box,
+            right: ms === 'right' ? '?' : r.right,
+          };
+        }
+        return r;
+      }),
+      missing: { row: 1, side: missingSide },
+    },
+  };
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // Public API
 // ═══════════════════════════════════════════════════════════════════════
@@ -379,6 +514,9 @@ const allGenerators: Array<{ skill: NumbersInShapesSkill; gen: NSGenFn }> = [
   { skill: 'number_flow', gen: genFlow },
   { skill: 'number_grid', gen: genGrid },
   { skill: 'number_pattern', gen: genTriangle },
+  // Real-Stage-B-pattern generators added after audit:
+  { skill: 'number_flow', gen: genArrowChain },
+  { skill: 'number_flow', gen: genBidirectionalFlow },
 ];
 
 export function generateNSQuestions(difficulty: Difficulty, count: number): NSQuestionWithVisual[] {
