@@ -473,6 +473,159 @@ function genDotCountSeries(): ShapeGenResult {
   };
 }
 
+// ── HARD: Multi-rule analogy — TWO rules change at once ──────────────────
+// Real Stage B "hard" analogies vary fill AND shape AND rotation simultaneously.
+// Distractors are designed as "right rule applied wrong" or "applied only one
+// of the two rules" so a kid who spots one rule but misses the other still
+// gets it wrong.
+function genMultiRuleAnalogy(): ShapeGenResult {
+  // Rule = fill change + scale change (small→big with fill flip)
+  const type1 = pick(SHAPE_TYPES);
+  const type2 = pick(SHAPE_TYPES.filter(t => t !== type1));
+  const fillStart = pick(FILL_TYPES);
+  const fillEnd = pick(FILL_TYPES.filter(f => f !== fillStart));
+
+  const A = s(type1, fillStart, { scale: 0.55 });
+  const B = s(type1, fillEnd, { scale: 1.15 });
+  const C = s(type2, fillStart, { scale: 0.55 });
+  const correct = s(type2, fillEnd, { scale: 1.15 });
+
+  // Distractors hit common traps: only-fill-change, only-size-change, both-but-wrong-direction.
+  const distractors = [
+    s(type2, fillEnd, { scale: 0.55 }),    // applied fill but not size (small + new fill)
+    s(type2, fillStart, { scale: 1.15 }),  // applied size but not fill (big + old fill)
+    s(type1, fillEnd, { scale: 1.15 }),    // wrong shape (= B itself)
+  ];
+
+  const allOptions = dedupShapeOptions(shuffle([correct, ...distractors]));
+  return {
+    skill: 'multi_rule_jump',
+    stem: 'מהי הצורה החסרה?',
+    options: allOptions.map(describeShape),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `שני שינויים בו-זמנית:\n1) הצורה גדלה (קטן → גדול).\n2) המילוי השתנה (${fillNameHe[fillStart]} → ${fillNameHe[fillEnd]}).\n${shapeNameHe[type1]} ${fillNameHe[fillStart]} קטן ⟶ ${shapeNameHe[type1]} ${fillNameHe[fillEnd]} גדול.\nאותם שינויים על ${shapeNameHe[type2]}: התשובה היא ${shapeNameHe[type2]} ${fillNameHe[fillEnd]} גדול.`,
+    visualConfig: {
+      stemLayout: 'analogy',
+      stemShapes: [A, B, C],
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
+// ── HARD: Multi-rule series — 5 visible steps with TWO progressions ──────
+// Shape rotates AND fill morphs as we walk the series. Kid must apply both
+// rules at once. Real Stage B uses 5-6 step series at this difficulty.
+function genMultiRuleSeries(): ShapeGenResult {
+  // Use arrows so rotation is unambiguous.
+  // Rule: rotate +90° per step AND fill cycles none → striped → solid → none.
+  const fills: RenderShape['fill'][] = ['none', 'striped', 'solid'];
+  const baseRot = 0;
+  const series: RenderShape[] = [];
+  for (let i = 0; i < 5; i++) {
+    series.push(s('arrow', fills[i % 3], { rotation: (baseRot + 90 * i) % 360 }));
+  }
+  const correctIdx = 5;
+  const correct = s('arrow', fills[correctIdx % 3], { rotation: (baseRot + 90 * correctIdx) % 360 });
+
+  // Smart distractors: each gets ONE rule right and ONE wrong.
+  const distractors = [
+    s('arrow', fills[(correctIdx + 1) % 3], { rotation: (baseRot + 90 * correctIdx) % 360 }), // wrong fill
+    s('arrow', fills[correctIdx % 3], { rotation: (baseRot + 90 * (correctIdx - 1)) % 360 }), // wrong rotation (didn't advance)
+    s('arrow', fills[(correctIdx - 1) % 3], { rotation: (baseRot + 90 * (correctIdx + 1)) % 360 }), // both wrong
+  ];
+
+  const allOptions = dedupShapeOptions(shuffle([correct, ...distractors]));
+  const rotName = (r: number) => ({ 0: 'למעלה', 90: 'ימינה', 180: 'למטה', 270: 'שמאלה' }[r % 360] || `${r}°`);
+  return {
+    skill: 'multi_rule_jump',
+    stem: 'מהי הצורה הבאה בסדרה?',
+    options: allOptions.map(o => `חץ ${fillNameHe[o.fill] || ''} מצביע ${rotName(o.rotation || 0)}`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `יש שני כללים פועלים בו-זמנית:\n1) החץ מסתובב ב-90° בכיוון השעון בכל שלב.\n2) המילוי מתחלף במחזור: ריק → מפוספס → מלא → ריק...\nהשלב הבא: סיבוב ${90 * correctIdx % 360}°, מילוי ${fillNameHe[fills[correctIdx % 3]]}.`,
+    visualConfig: {
+      stemLayout: 'series',
+      stemShapes: series,
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
+// ── HARD: Compound transformation — outer shape AND inner shape both change ─
+// Tests whether the kid applies the same rule to both layers, not just the outer.
+function genCompoundTransformation(): ShapeGenResult {
+  const outer1 = pick(SHAPE_TYPES);
+  const outer2 = pick(SHAPE_TYPES.filter(t => t !== outer1));
+  const inner1 = pick(SHAPE_TYPES.filter(t => t !== outer1 && t !== outer2));
+  const inner2 = pick(SHAPE_TYPES.filter(t => t !== outer1 && t !== outer2 && t !== inner1));
+
+  const A: RenderShape = { type: outer1, fill: 'none', color: '#1f2937', innerShape: { type: inner1, fill: 'solid', color: '#1f2937' } };
+  const B: RenderShape = { type: outer2, fill: 'none', color: '#1f2937', innerShape: { type: inner2, fill: 'solid', color: '#1f2937' } };
+  const C: RenderShape = { type: outer1, fill: 'none', color: '#1f2937', innerShape: { type: inner2, fill: 'solid', color: '#1f2937' } };
+  // Correct: outer changes outer1→outer2, inner changes inner2→inner1 (mirror swap)
+  const correct: RenderShape = { type: outer2, fill: 'none', color: '#1f2937', innerShape: { type: inner1, fill: 'solid', color: '#1f2937' } };
+
+  const distractors: RenderShape[] = [
+    // only outer changed
+    { type: outer2, fill: 'none', color: '#1f2937', innerShape: { type: inner2, fill: 'solid', color: '#1f2937' } },
+    // only inner changed
+    { type: outer1, fill: 'none', color: '#1f2937', innerShape: { type: inner1, fill: 'solid', color: '#1f2937' } },
+    // wrong combination
+    { type: outer1, fill: 'solid', color: '#1f2937', innerShape: { type: inner2, fill: 'none', color: '#1f2937' } },
+  ];
+
+  const allOptions = [correct, ...distractors];
+  shuffle(allOptions);
+  return {
+    skill: 'multi_rule_jump',
+    stem: 'מהי הצורה החסרה? שים לב לצורה החיצונית וגם לצורה הפנימית.',
+    options: allOptions.map(o => `${shapeNameHe[o.type] || o.type} עם ${shapeNameHe[(o.innerShape?.type) || ''] || 'צורה'} בפנים`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `שני שינויים שמתחלפים:\n• הצורה החיצונית מתחלפת בין ${shapeNameHe[outer1]} ל-${shapeNameHe[outer2]}.\n• הצורה הפנימית מתחלפת בין ${shapeNameHe[inner1]} ל-${shapeNameHe[inner2]}.\nהזוג הזה ($A→B$) ⟶ הזוג הבא ($C→?$) צריך לקיים את אותם שני חילופים. התשובה: ${shapeNameHe[outer2]} עם ${shapeNameHe[inner1]} בפנים.`,
+    visualConfig: {
+      stemLayout: 'analogy',
+      stemShapes: [A, B, C],
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
+// ── HARD: Long arithmetic-like series (count + position changes) ─────────
+function genLongSeries(): ShapeGenResult {
+  // Series of 6 shapes: shape stays same; each step adds 1 perimeter dot AND
+  // toggles fill between none/striped.
+  const type = pick(['hexagon', 'square', 'triangle'] as const);
+  const series: RenderShape[] = [];
+  for (let i = 0; i < 6; i++) {
+    series.push({
+      type,
+      fill: i % 2 === 0 ? 'none' : 'striped',
+      color: '#1f2937',
+      perimeterDots: i + 1,
+    });
+  }
+  const correct: RenderShape = { type, fill: 'none', color: '#1f2937', perimeterDots: 7 };
+  const distractors: RenderShape[] = [
+    { type, fill: 'striped', color: '#1f2937', perimeterDots: 7 },   // wrong fill
+    { type, fill: 'none', color: '#1f2937', perimeterDots: 6 },      // wrong dot count
+    { type, fill: 'striped', color: '#1f2937', perimeterDots: 8 },   // both wrong
+  ];
+
+  const allOptions = [correct, ...distractors];
+  shuffle(allOptions);
+  return {
+    skill: 'multi_rule_jump',
+    stem: 'מהי הצורה הבאה בסדרה?',
+    options: allOptions.map(o => `${shapeNameHe[o.type]} ${fillNameHe[o.fill]} עם ${o.perimeterDots} נקודות`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `שני כללים פועלים יחד:\n• מספר הנקודות עולה ב-1 בכל שלב.\n• המילוי מתחלף: ריק/מפוספס לסירוגין.\nאחרי 6 שלבים, השלב הבא: 7 נקודות, מילוי ריק.`,
+    visualConfig: {
+      stemLayout: 'series',
+      stemShapes: series,
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
 // ── Mirror-symmetry odd-one-out ─────────────────────────────────────────
 // Three shapes are rotated identically; one is mirrored. Trains the
 // "rotation vs reflection" trap that's classic on Stage B figural items.
@@ -506,15 +659,29 @@ function genMirrorOddOneOut(): ShapeGenResult {
 
 type GenFn = () => ShapeGenResult;
 
-const generators: GenFn[] = [
-  genAnalogy, genScaleAnalogy, genTransformation, genSeries,
-  genFillSeries, genOddOneOut, genFillOddOneOut, genGridPattern,
-  // Hard generators (multi-rule + mirror) added to the rotation. Real Stage B
-  // routinely uses 3×3 multi-rule matrices; these were absent before.
-  genGrid3x3, genMirrorOddOneOut,
-  // Real-Stage-B-pattern generators added after audit of the Michonan booklet.
-  genCutShapeAnalogy, genDotCountSeries,
+// Tiered generator pools. Real Stage B difficulty calibration:
+//   • Easy = single-rule (just shape OR just fill changes).
+//   • Medium = two related dimensions or 2×2 grids.
+//   • Hard = multi-rule (≥2 rules apply simultaneously), 3×3 matrices,
+//     long series (5+ steps), compound shapes, mirror traps.
+const easyGenerators: GenFn[] = [
+  genAnalogy, genTransformation, genSeries, genFillSeries,
+  genOddOneOut, genFillOddOneOut,
 ];
+const mediumGenerators: GenFn[] = [
+  genAnalogy, genScaleAnalogy, genTransformation, genSeries,
+  genFillSeries, genGridPattern, genCutShapeAnalogy, genDotCountSeries,
+  genMirrorOddOneOut,
+];
+const hardGenerators: GenFn[] = [
+  genScaleAnalogy, genGridPattern, genGrid3x3, genMirrorOddOneOut,
+  genCutShapeAnalogy, genDotCountSeries,
+  // Genuinely hard generators added when audit showed the previous "hard"
+  // pool was indistinguishable from "medium" — multi-rule combinations,
+  // long-step series, compound transformations.
+  genMultiRuleAnalogy, genMultiRuleSeries, genCompoundTransformation, genLongSeries,
+];
+
 
 export interface ShapeQuestionWithVisual {
   question: Question;
@@ -525,15 +692,23 @@ export function generateShapeQuestions(difficulty: Difficulty, count: number): S
   const result: ShapeQuestionWithVisual[] = [];
   const effectiveDiff: Difficulty = difficulty === 'adaptive' ? 'medium' : difficulty;
 
-  for (let i = 0; i < count; i++) {
-    const gen = pick(generators);
-    const r = gen();
+  // Pick the right pool by difficulty so "hard" actually surfaces multi-rule
+  // generators, "easy" stays single-rule. (Previously every difficulty drew
+  // from the same pool, which is why hard felt indistinguishable from easy.)
+  const poolFor = (d: Difficulty): GenFn[] => {
+    if (d === 'easy') return easyGenerators;
+    if (d === 'hard') return hardGenerators;
+    return mediumGenerators;
+  };
 
-    // Assign difficulty based on question type
+  for (let i = 0; i < count; i++) {
     let d = effectiveDiff;
     if (difficulty === 'adaptive') {
-      d = pick(['easy', 'medium', 'hard']);
+      // Adaptive sweeps all difficulty levels — biased slightly toward medium.
+      d = pick(['easy', 'medium', 'medium', 'hard']);
     }
+    const gen = pick(poolFor(d));
+    const r = gen();
 
     const question: Question = {
       id: uid(),
