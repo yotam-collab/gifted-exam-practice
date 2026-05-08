@@ -154,70 +154,10 @@ function genPyramid(d: Difficulty): NSGenResult {
   };
 }
 
-// ── Number Flow: chain of operations ────────────────────────────────────
-
-function genFlow(d: Difficulty): NSGenResult {
-  const steps = d === 'easy' ? 3 : d === 'hard' ? 5 : 4;
-  const nodes: number[] = [rand(2, 10)];
-  const operations: string[] = [];
-
-  for (let i = 1; i < steps; i++) {
-    const prev = nodes[i - 1];
-    const op = pick(['add', 'multiply', 'subtract'] as const);
-    let val: number;
-
-    if (op === 'add') {
-      const addVal = rand(2, d === 'hard' ? 15 : 8);
-      val = prev + addVal;
-      operations.push(`+${addVal}`);
-    } else if (op === 'multiply') {
-      const multVal = rand(2, d === 'hard' ? 4 : 3);
-      val = prev * multVal;
-      operations.push(`×${multVal}`);
-    } else {
-      const subVal = rand(1, Math.max(1, prev - 1));
-      val = prev - subVal;
-      // Use a true minus sign (− U+2212) with no leading space hack so the
-      // explanation reads `8 − 3 = 5`, not `8 -3 = 5`.
-      operations.push(`−${subVal}`);
-    }
-    nodes.push(val);
-  }
-
-  // Hide one node (not first)
-  const hideIdx = rand(1, nodes.length - 1);
-  const answer = nodes[hideIdx];
-  const displayNodes: (number | string)[] = nodes.map((v, i) => (i === hideIdx ? '?' : v));
-
-  const { options, correctOption } = makeNumOptions(answer, [nodes[hideIdx - 1]]);
-
-  // Walk the chain in Hebrew so the explanation reads like a story, not just
-  // a one-line equation. Previous version was 9-12 chars and contained zero
-  // Hebrew letters, which audit flagged as broken.
-  const walk: string[] = [];
-  walk.push(`מתחילים ב-${nodes[0]}.`);
-  for (let i = 1; i < nodes.length; i++) {
-    if (i === hideIdx) {
-      walk.push(`מבצעים ${operations[i - 1]} → המספר החסר הוא ${nodes[i]}.`);
-    } else {
-      walk.push(`מבצעים ${operations[i - 1]} → ${nodes[i]}.`);
-    }
-  }
-
-  return {
-    skill: 'number_flow',
-    stem: 'בשרשרת המספרים, כל מספר מתקבל מהקודם על ידי פעולה חשבונית. מהו המספר החסר?',
-    options,
-    correctOption,
-    explanation: walk.join('\n'),
-    visualConfig: {
-      type: 'number_flow',
-      nodes: displayNodes,
-      operations,
-      missingIndex: hideIdx,
-    },
-  };
-}
+// (genFlow removed: it labeled operations explicitly which gave the answer
+// away. Replaced by genFunctionMachine + genBidirectionalFlow + genArrowChain
+// — all of which require the kid to INFER the rule from numbers, like the
+// real Stage B exam.)
 
 // ── Number Grid: rows/columns follow a rule ─────────────────────────────
 
@@ -497,6 +437,74 @@ function genBidirectionalFlow(d: Difficulty): NSGenResult {
   };
 }
 
+// ── Function machine (real Stage B sim 1 Q5 / sim 2 Q7 pattern) ────────
+// 3 rows of input → output with the SAME hidden rule. Kid infers the rule
+// from rows 1 & 2, applies to row 3. CRITICAL: the rule is NEVER shown
+// as a label — that's exactly what made the previous genFlow give the
+// answer away. Kid figures out the operation from the visible pairs.
+function genFunctionMachine(d: Difficulty): NSGenResult {
+  // Rule families: +k, -k, ×k, ÷k. Pick one; same k across all 3 rows.
+  const rule = pick(['add', 'sub', 'mul', 'div'] as const);
+  let k: number;
+  let inputs: number[];
+  let outputs: number[];
+
+  if (rule === 'add') {
+    k = rand(d === 'hard' ? 4 : 2, d === 'hard' ? 15 : 9);
+    inputs = [rand(2, 12), rand(2, 12), rand(2, 12)];
+    outputs = inputs.map(v => v + k);
+  } else if (rule === 'sub') {
+    k = rand(2, d === 'hard' ? 9 : 5);
+    inputs = [rand(k + 5, 25), rand(k + 5, 25), rand(k + 5, 25)];
+    outputs = inputs.map(v => v - k);
+  } else if (rule === 'mul') {
+    k = rand(2, d === 'hard' ? 5 : 3);
+    inputs = [rand(2, 9), rand(2, 9), rand(2, 9)];
+    outputs = inputs.map(v => v * k);
+  } else {
+    k = rand(2, d === 'hard' ? 5 : 3);
+    inputs = [rand(2, 9) * k, rand(2, 9) * k, rand(2, 9) * k];
+    outputs = inputs.map(v => v / k);
+  }
+
+  const answer = outputs[2];
+  // Build display rows: rows 1 & 2 fully visible, row 3 right-side hidden.
+  const rows = [
+    { left: inputs[0], box: '?', right: outputs[0] },
+    { left: inputs[1], box: '?', right: outputs[1] },
+    { left: inputs[2], box: '?', right: '?' },
+  ] as { left: number | string; box: number | string; right: number | string }[];
+  // Mark only the LAST right-side as the answer slot (the empty box in each
+  // row is just decorative — it's the "rule machine" placeholder).
+
+  const opSymbol = rule === 'add' ? '+' : rule === 'sub' ? '−' : rule === 'mul' ? '×' : '÷';
+
+  const ruleText = rule === 'add' ? `הקלט + ${k} = הפלט`
+    : rule === 'sub' ? `הקלט − ${k} = הפלט`
+    : rule === 'mul' ? `הקלט × ${k} = הפלט`
+    : `הקלט ÷ ${k} = הפלט`;
+
+  const stem = 'בכל שורה נכנס מספר משמאל למכונה, ויוצא מספר מימין. המכונה עושה את אותה פעולה בכל שורה. מהו המספר החסר בשורה האחרונה?';
+  const { options, correctOption } = makeNumOptions(answer, [
+    rule === 'add' ? inputs[2] : inputs[2] + 1,
+    inputs[2],
+    answer + k,
+  ]);
+
+  return {
+    skill: 'number_flow',
+    stem,
+    options,
+    correctOption,
+    explanation: `מהשורה הראשונה: ${inputs[0]} ${opSymbol} ? = ${outputs[0]} → המכונה מבצעת ${opSymbol}${k}.\nמהשורה השנייה: ${inputs[1]} ${opSymbol} ${k} = ${outputs[1]} ✓ (אותו כלל).\nשורה אחרונה: ${inputs[2]} ${opSymbol} ${k} = ${answer}.\nהכלל: ${ruleText}.`,
+    visualConfig: {
+      type: 'bidirectional_flow',
+      rows,
+      missing: { row: 2, side: 'right' },
+    },
+  };
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // Public API
 // ═══════════════════════════════════════════════════════════════════════
@@ -511,12 +519,15 @@ type NSGenFn = (d: Difficulty) => NSGenResult;
 const allGenerators: Array<{ skill: NumbersInShapesSkill; gen: NSGenFn }> = [
   { skill: 'divided_circle', gen: genDividedCircle },
   { skill: 'number_pyramid', gen: genPyramid },
-  { skill: 'number_flow', gen: genFlow },
   { skill: 'number_grid', gen: genGrid },
   { skill: 'number_pattern', gen: genTriangle },
-  // Real-Stage-B-pattern generators added after audit:
+  // Real Stage B patterns: arrow-count encodes operation strength;
+  // bidirectional flow infers the operation from the visible numbers.
+  // (genFlow was removed — it labeled the operation explicitly which
+  // gave the answer away; real-exam questions REQUIRE the kid to infer.)
   { skill: 'number_flow', gen: genArrowChain },
   { skill: 'number_flow', gen: genBidirectionalFlow },
+  { skill: 'number_flow', gen: genFunctionMachine },
 ];
 
 export function generateNSQuestions(difficulty: Difficulty, count: number): NSQuestionWithVisual[] {

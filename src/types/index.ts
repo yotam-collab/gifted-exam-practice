@@ -41,7 +41,11 @@ export type WordRelationSkill =
   | 'action_object'        // action and required object (sleep : mattress, sit : chair)
   | 'disease_cure'         // disease and remedy (hunger : food, illness : medicine)
   | 'animal_baby'          // special parent-baby names (frog : tadpole, cow : calf)
-  | 'animal_trait';        // animal and its prominent trait (turtle : slow, ant : industrious)
+  | 'animal_trait'         // animal and its prominent trait (turtle : slow, ant : industrious)
+  | 'animal_habitat'       // animal and the formal name of its habitat (dove : dovecote)
+  | 'liquid_container'     // liquid and its typical container (water : cup, wine : bottle)
+  | 'tool_domain'          // measurement tool and its domain (watch : time, ruler : length)
+  | 'work_part';           // creative work and its named part (book : chapter, song : stanza)
 
 export type ShapeSkill =
   | 'shape_analogy'

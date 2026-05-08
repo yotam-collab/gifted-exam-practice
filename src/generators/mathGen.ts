@@ -829,6 +829,81 @@ const ba1: TemplateGen = (d) => {
   };
 };
 
+// ── Reading speed: pages/day → days needed (sim 1 Q8 pattern) ─────────
+const rs1: TemplateGen = (d) => {
+  const perDay = pick([10, 15, 20, 25, 30, 40, 50]);
+  const days = rand(d === 'easy' ? 3 : 5, d === 'hard' ? 12 : 8);
+  const total = perDay * days;
+  const name = pick([...girls]);
+  const stem = `${name} קוראת ${perDay} עמודים ביום. תוך כמה ימים תגמור ספר בעל ${total} עמודים?`;
+  const { options, correctOption } = makeOptions(days, [days + 2, days - 1, perDay]);
+  const explanation = `${total} עמודים ÷ ${perDay} עמודים ליום = ${days} ימים.`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── Hourly wage (sim 1 Q13 pattern) ────────────────────────────────────
+const hw1: TemplateGen = (d) => {
+  const startHour = rand(15, 18);
+  const hours = rand(d === 'easy' ? 2 : 2, d === 'hard' ? 5 : 4);
+  const endHour = startHour + hours;
+  const ratePerHour = pick([15, 20, 25, 30, 40]);
+  const total = ratePerHour * hours;
+  const name = pick([...boys, ...girls]);
+  const stem = `${name} עובדת בשמרטפות ומקבלת ${ratePerHour} ש"ח לשעה. אם שמרה על הילדים מ-${startHour}:00 ועד ${endHour}:00, כמה הרוויחה?`;
+  const { options, correctOption } = makeOptions(total, [ratePerHour, total + ratePerHour, total - ratePerHour]);
+  const explanation = `שמרה ${endHour} − ${startHour} = ${hours} שעות.\nכל שעה: ${ratePerHour} ש"ח.\nסך הכול: ${hours} × ${ratePerHour} = ${total} ש"ח.`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── Reverse equation: number = N × X − K (sim 1 Q11 pattern) ───────────
+const re1: TemplateGen = (d) => {
+  // "I'm a number equal to 7 × 5 − 14" → 21. Frame as: "what is the number?"
+  const factor = rand(2, d === 'hard' ? 9 : 7);
+  const multiplier = rand(d === 'easy' ? 3 : 4, d === 'hard' ? 9 : 7);
+  const subtract = rand(2, d === 'hard' ? 14 : 8);
+  const product = factor * multiplier;
+  if (product < subtract + 5) return re1(d);
+  const answer = product - subtract;
+  const stem = `מספר שווה ל-${factor} פעמים ${multiplier}, פחות ${subtract}. מהו המספר?`;
+  const { options, correctOption } = makeOptions(answer, [product, answer + 1, factor + multiplier]);
+  const explanation = `${factor} × ${multiplier} = ${product}.\n${product} − ${subtract} = ${answer}.`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── Weight comparison: A weighs X, B weighs Y more, total? (sim 1 Q15) ──
+const wt1: TemplateGen = (d) => {
+  const itemA = pick([
+    { name: 'שוקו', plural: 'שוקואים' },
+    { name: 'בורקס', plural: 'בורקסים' },
+    { name: 'חבילת קמח', plural: 'חבילות קמח' },
+  ]);
+  const itemB = pick([
+    { name: 'חבילת אורז', plural: 'חבילות אורז' },
+    { name: 'בקבוק שתייה', plural: 'בקבוקי שתייה' },
+  ].filter(x => x.name !== itemA.name));
+  // Use halves to match real exam style
+  const baseHalf = rand(1, d === 'hard' ? 5 : 3); // 1.5, 2.5, etc.
+  const aWeight = baseHalf + 0.5;
+  const diffHalf = rand(0, 2);
+  const bWeight = aWeight + (diffHalf + 0.5);
+  const total = aWeight + bWeight;
+  const fmt = (n: number) => n === Math.floor(n) ? `${n} ק"ג` : `${Math.floor(n)} וחצי ק"ג`;
+  const stem = `${itemA.name} שוקל ${fmt(aWeight)}, ו${itemB.name} שוקל ${fmt(bWeight - aWeight)} יותר. כמה ישקלו ${itemA.name} ו${itemB.name} יחד?`;
+  const correctStr = fmt(total);
+  const wrongs = [
+    fmt(total + 1),
+    fmt(aWeight),
+    fmt(total - 0.5),
+  ];
+  const allOpts = shuffle([correctStr, ...wrongs]);
+  return {
+    stem,
+    options: allOpts,
+    correctOption: allOpts.indexOf(correctStr),
+    explanation: `${itemA.name}: ${fmt(aWeight)}.\n${itemB.name}: ${fmt(aWeight)} + ${fmt(bWeight - aWeight)} = ${fmt(bWeight)}.\nיחד: ${fmt(aWeight)} + ${fmt(bWeight)} = ${fmt(total)}.`,
+  };
+};
+
 // ═══════════════════════════════════════════════════════════════════════
 // Template Registry
 // ═══════════════════════════════════════════════════════════════════════
@@ -846,11 +921,11 @@ interface SkillTemplates {
 // digit puzzles, age-with-multiplier, items×rows layouts, multi-week shopping,
 // rate extrapolation, group division with leftover.
 const allTemplates: SkillTemplates[] = [
-  { skill: 'word_problems', templates: [wp1, wp2, wp3, wp4, wp5, wp7, wp8, ir1, mw1, gd1, inv1, sf1] },
+  { skill: 'word_problems', templates: [wp1, wp2, wp3, wp4, wp5, wp7, wp8, ir1, mw1, gd1, inv1, sf1, rs1, wt1] },
   { skill: 'number_sequences', templates: [seq1, seq2, seq4, seq5] },
-  { skill: 'math_logic', templates: [ml2, ml4, dp1, ag1, by1] },
+  { skill: 'math_logic', templates: [ml2, ml4, dp1, ag1, by1, re1] },
   { skill: 'time_clock', templates: [tc1, tc2, tc3, sp1, ba1] },
-  { skill: 'money_change', templates: [mc1, mc2, mc3] },
+  { skill: 'money_change', templates: [mc1, mc2, mc3, hw1] },
 ];
 
 // Hard-only templates: pre-algebra patterns only surfaced when the adaptive

@@ -54,6 +54,10 @@ export const SECTION_CONFIGS: SectionConfig[] = [
       { tag: 'disease_cure', nameHe: 'בעיה-פתרון' },
       { tag: 'animal_baby', nameHe: 'בעל חיים-צאצא מיוחד' },
       { tag: 'animal_trait', nameHe: 'בעל חיים-תכונה' },
+      { tag: 'animal_habitat', nameHe: 'בעל חיים-בית גידול' },
+      { tag: 'liquid_container', nameHe: 'נוזל-כלי קיבול' },
+      { tag: 'tool_domain', nameHe: 'כלי מדידה-תחום' },
+      { tag: 'work_part', nameHe: 'יצירה-חלק' },
     ],
   },
   {

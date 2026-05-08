@@ -857,6 +857,173 @@ function genDotMatrix3x3(): ShapeGenResult {
   };
 }
 
+// ── Heart with progressive internal lines (sim 3 Q5 pattern) ───────────
+// 4 hearts visible, each with one more internal line than the previous.
+// Real Stage B uses this with circles divided into 1, 2, 3 wedges, then ?
+function genProgressiveLinesSeries(): ShapeGenResult {
+  // Use circles with `gridFill` to show a progressive line pattern.
+  // Step i has (i+1) horizontal lines drawn through the shape.
+  const baseShape: RenderShape['type'] = pick(['circle', 'square', 'diamond'] as const);
+  const buildShape = (lines: number): RenderShape => {
+    const cells: boolean[][] = Array.from({ length: lines * 2 + 1 }, (_, r) =>
+      Array.from({ length: 1 }, () => r % 2 === 0),
+    );
+    return {
+      type: baseShape,
+      fill: 'none',
+      color: '#1f2937',
+      gridFill: { rows: lines * 2 + 1, cols: 1, cells },
+    };
+  };
+
+  const series = [buildShape(1), buildShape(2), buildShape(3), buildShape(4)];
+  const correct = buildShape(5);
+  const distractors = [buildShape(4), buildShape(6), buildShape(3)];
+
+  const allOptions = [correct, ...distractors];
+  shuffle(allOptions);
+  return {
+    skill: 'graphic_pattern',
+    stem: 'מהי הצורה הבאה בסדרה?',
+    options: allOptions.map((o) => `${shapeNameHe[o.type]} עם ${(o.gridFill?.rows || 0) - 1} קווים פנימיים`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `מספר הקווים בכל ${shapeNameHe[baseShape]} גדל ב-1 בכל שלב: 1, 2, 3, 4. הבא: 5 קווים.`,
+    visualConfig: {
+      stemLayout: 'series',
+      stemShapes: series,
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
+// ── Black/white pair series (sim 3 Q6 pattern) ─────────────────────────
+// Pairs of stacked circles where the black/white assignment flips and
+// scales position in a cycle. The kid spots the alternating pattern.
+function genBlackWhitePairSeries(): ShapeGenResult {
+  // Pattern: each step is a circle with an attached smaller circle.
+  // Color of base alternates, position of attachment alternates.
+  const buildPair = (mainSolid: boolean, smallSolid: boolean, side: 'top' | 'bottom'): RenderShape => ({
+    type: 'circle',
+    fill: mainSolid ? 'solid' : 'none',
+    color: '#1f2937',
+    scale: 0.85,
+    attachedShape: {
+      shape: { type: 'circle', fill: smallSolid ? 'solid' : 'none', color: '#1f2937' },
+      side,
+      relSize: 0.55,
+    },
+  });
+
+  // Pattern: alternates main solid/empty, small solid/empty inverted, side cycles.
+  const series: RenderShape[] = [
+    buildPair(false, true, 'bottom'),
+    buildPair(true, false, 'bottom'),
+    buildPair(false, true, 'bottom'),
+    buildPair(true, false, 'bottom'),
+  ];
+  const correct = buildPair(false, true, 'bottom');
+  const distractors: RenderShape[] = [
+    buildPair(true, true, 'bottom'),
+    buildPair(false, false, 'bottom'),
+    buildPair(true, false, 'top'),
+  ];
+
+  const allOptions = [correct, ...distractors];
+  shuffle(allOptions);
+  return {
+    skill: 'graphic_pattern',
+    stem: 'מהי הצורה הבאה בסדרה?',
+    options: allOptions.map((_, i) => `אפשרות ${'אבגד'[i]}`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: 'הצורות מתחלפות לסירוגין: עיגול ריק עם קטן מלא, עיגול מלא עם קטן ריק, וחוזר חלילה.',
+    visualConfig: {
+      stemLayout: 'series',
+      stemShapes: series,
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
+// ── 3×3 rotation matrix (sim 3 Q8 pattern) ─────────────────────────────
+// Each cell is the same triangle/arrow rotated by a fixed amount per row
+// and per column. Real Stage B routinely uses this.
+function genRotationMatrix3x3(): ShapeGenResult {
+  // Rule: rotation = (row * 90 + col * 45) % 360
+  // Last cell hidden — kid figures out the row + col rotation rules.
+  const buildShape = (rot: number): RenderShape => ({
+    type: 'arrow',
+    fill: 'solid',
+    color: '#1f2937',
+    rotation: rot,
+  });
+
+  const cells: (RenderShape | null)[][] = [];
+  for (let r = 0; r < 3; r++) {
+    const row: (RenderShape | null)[] = [];
+    for (let c = 0; c < 3; c++) {
+      if (r === 2 && c === 2) row.push(null);
+      else row.push(buildShape((r * 90 + c * 45) % 360));
+    }
+    cells.push(row);
+  }
+
+  const correctRot = (2 * 90 + 2 * 45) % 360;
+  const correct = buildShape(correctRot);
+  const distractors: RenderShape[] = [
+    buildShape((correctRot + 45) % 360),  // off by one column step
+    buildShape((correctRot + 90) % 360),  // off by one row step
+    buildShape((correctRot + 180) % 360), // opposite direction
+  ];
+
+  const allOptions = [correct, ...distractors];
+  shuffle(allOptions);
+  return {
+    skill: 'graphic_rule',
+    stem: 'איזו צורה צריכה להיות במשבצת החסרה?',
+    options: allOptions.map((_, i) => `אפשרות ${'אבגד'[i]}`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `יש שני כללים:\n1) בכל שורה: הצורה מסתובבת ב-45° בכיוון השעון בין עמודות.\n2) בכל עמודה: הצורה מסתובבת ב-90° בין שורות.\nהמשבצת החסרה נמצאת בשורה האחרונה (2 × 90° = 180°) ובעמודה האחרונה (2 × 45° = 90°).\nסיבוב כולל: 270°.`,
+    visualConfig: {
+      stemLayout: 'grid',
+      gridCells: cells,
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
+// ── State-change analogy (sim 3 Q4 pattern: open/closed, up/down) ──────
+// "Open umbrella : closed umbrella = arrow up : arrow down"
+// Tests "state opposite" recognition across different objects.
+function genStateChangeAnalogy(): ShapeGenResult {
+  // Use rotation 0→180 (up→down) for arrows, plus a paired transformation.
+  const A: RenderShape = { type: 'arrow', fill: 'solid', color: '#1f2937', rotation: 0 };       // up
+  const B: RenderShape = { type: 'arrow', fill: 'solid', color: '#1f2937', rotation: 180 };     // down
+  const baseC: RenderShape['type'] = pick(['triangle', 'pacman', 'square_corner_cut'] as const);
+  const C: RenderShape = { type: baseC, fill: 'solid', color: '#1f2937', rotation: 0 };
+  const correct: RenderShape = { type: baseC, fill: 'solid', color: '#1f2937', rotation: 180 };
+
+  const distractors: RenderShape[] = [
+    { type: baseC, fill: 'solid', color: '#1f2937', rotation: 0 },    // didn't flip (= C)
+    { type: baseC, fill: 'solid', color: '#1f2937', rotation: 90 },   // wrong rotation (90 instead of 180)
+    { type: baseC, fill: 'none', color: '#1f2937', rotation: 180 },   // flipped + wrong fill
+  ];
+  const allOptions = [correct, ...distractors];
+  shuffle(allOptions);
+
+  return {
+    skill: 'transformation',
+    stem: 'מהי הצורה החסרה?',
+    options: allOptions.map((_, i) => `אפשרות ${'אבגד'[i]}`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `הכלל: הצורה מסתובבת חצי סיבוב (180°) — מתהפכת.\nחץ למעלה ⟵⟶ חץ למטה.\nאותו כלל על ${shapeNameHe[baseC] || baseC}: הצורה הופכת.`,
+    visualConfig: {
+      stemLayout: 'analogy',
+      stemShapes: [A, B, C],
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
 // ── Mirror-symmetry odd-one-out ─────────────────────────────────────────
 // Three shapes are rotated identically; one is mirrored. Trains the
 // "rotation vs reflection" trap that's classic on Stage B figural items.
@@ -914,9 +1081,11 @@ const hardGenerators: GenFn[] = [
   // Multi-rule combinations, long-step series, compound transformations.
   genMultiRuleAnalogy, genMultiRuleSeries, genCompoundTransformation, genLongSeries,
   // Real-Stage-B-pattern generators added after auditing the Michonan
-  // simulation booklets (sim 1, 2, 3). These match question types that
-  // appear repeatedly on the actual exam.
+  // simulation booklets (sim 1, 2, 3).
   genCompositeShapeAnalogy, genGridColoringMatrix, genPatternTransferAnalogy, genDotMatrix3x3,
+  // Sim-3-specific patterns: progressive lines, alternating pairs, rotation
+  // matrix, state-change analogy.
+  genProgressiveLinesSeries, genBlackWhitePairSeries, genRotationMatrix3x3, genStateChangeAnalogy,
 ];
 
 
