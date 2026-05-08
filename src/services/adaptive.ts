@@ -7,7 +7,7 @@ import type {
   Recommendation,
 } from '../types';
 import { storage } from './storage';
-import { generateFresh } from './questionPool';
+import { selectForSection, generateFresh } from './questionPool';
 import { SECTION_CONFIGS } from '../config/sections';
 
 // ── Mastery Update ─────────────────────────────────────────────────
@@ -15,9 +15,12 @@ import { SECTION_CONFIGS } from '../config/sections';
 /**
  * Update mastery score after answering a question.
  *
- * Correct answer: +5 to +15 (more if fast, less if slow)
- * Wrong answer:   -8 to -15 (less penalty if slow = thoughtful, more if fast = careless)
- * Clamp to 0-100. Tracks last 10 results.
+ * Cognitive-training research on 7-year-olds suggests staying in the 70–85%
+ * success band, so the deltas are tuned to be gentler than before:
+ *   correct: +3 to +10
+ *   wrong:  -5 to -10
+ * (Previous +5..+15 / -8..-15 swings were too volatile and ping-ponged the
+ * "weak skill" flag after a single bad day.)
  */
 export function updateMastery(
   userId: string,
@@ -44,42 +47,28 @@ export function updateMastery(
     };
   }
 
-  // Calculate time ratio (< 1 means faster than recommended)
   const timeRatio = recommendedTimeSec > 0 ? timeSec / recommendedTimeSec : 1;
-
   let delta: number;
-
   if (isCorrect) {
-    // Fast & correct -> bigger reward, slow & correct -> smaller reward
-    // Range: +5 (very slow) to +15 (very fast)
-    const speedBonus = Math.max(0, Math.min(1, 1.5 - timeRatio)); // 0..1
-    delta = 5 + speedBonus * 10; // 5..15
+    const speedBonus = Math.max(0, Math.min(1, 1.5 - timeRatio));
+    delta = 3 + speedBonus * 7; // +3 .. +10
   } else {
-    // Fast & wrong -> bigger penalty (careless), slow & wrong -> smaller penalty (thoughtful)
-    // Range: -8 (slow) to -15 (fast)
-    const carelessFactor = Math.max(0, Math.min(1, 1 - timeRatio * 0.5)); // 0..1
-    delta = -(8 + carelessFactor * 7); // -8..-15
+    const carelessFactor = Math.max(0, Math.min(1, 1 - timeRatio * 0.5));
+    delta = -(5 + carelessFactor * 5); // -5 .. -10
   }
 
-  // Update mastery score
   stats.masteryScore = Math.max(0, Math.min(100, stats.masteryScore + delta));
-
-  // Update counters
   stats.attempts += 1;
   if (isCorrect) stats.correctCount += 1;
-
-  // Update average time
   stats.avgTimeSec =
     (stats.avgTimeSec * (stats.attempts - 1) + timeSec) / stats.attempts;
 
-  // Track recent results (keep last 10)
   stats.recentResults.push(isCorrect);
   if (stats.recentResults.length > 10) {
     stats.recentResults = stats.recentResults.slice(-10);
   }
 
   stats.lastUpdated = new Date().toISOString();
-
   storage.saveSkillStats(stats);
   return stats;
 }
@@ -88,84 +77,109 @@ export function updateMastery(
 
 /**
  * Select next questions for adaptive mode.
- * Generates fresh questions — distributes across all section types.
- * Difficulty is based on mastery: weak skills get easier, strong get harder.
+ *
+ * Key changes from the previous implementation:
+ *   • Targets specific weak SKILLS, not just sections — so a child weak in
+ *     `time_clock` actually gets time-clock practice (the old engine averaged
+ *     all skills in a section and missed the specific gap).
+ *   • Pulls from the manual bank first (carefully-authored items with good
+ *     distractors), tops up with generated content.
+ *   • Aims for the Vygotsky 70–85% productive band: easy-skewed for weak
+ *     skills (build confidence), medium for unknown skills, hard only on
+ *     skills the child has actually mastered.
  */
 export function selectAdaptiveQuestions(
   userId: string,
   count: number
 ): Question[] {
-  const weakSkills = getWeakSkills(userId);
-  const strongSkills = getStrongSkills(userId);
   const allStats = storage.getSkillStats(userId);
+  const weakStats = getWeakSkills(userId);
+  const strongStats = getStrongSkills(userId);
 
-  // Determine which sections need focus
-  const weakSections = new Set(weakSkills.map(s => s.sectionType));
-  const strongSections = new Set(strongSkills.map(s => s.sectionType));
-
-  // All section types to distribute across
   const allSections: SectionType[] = ['math', 'sentence_completion', 'word_relations', 'shapes', 'numbers_in_shapes'];
 
-  // Weighted distribution: more questions for weak areas
-  const weakCount = Math.round(count * 0.6);
-  const mixedCount = Math.round(count * 0.25);
+  // Allocation: 60% weak-skill targeting, 25% mixed reinforcement, 15% stretch.
+  const weakBudget = Math.round(count * 0.6);
+  const mixedBudget = Math.round(count * 0.25);
+  const stretchBudget = Math.max(0, count - weakBudget - mixedBudget);
 
   const selected: Question[] = [];
 
-  // 1. Weak area questions (60%) — generate as easy/medium
-  if (weakSections.size > 0) {
-    const perSection = Math.max(1, Math.ceil(weakCount / weakSections.size));
-    for (const sType of weakSections) {
-      const avgMastery = allStats.filter(s => s.sectionType === sType).reduce((sum, s) => sum + s.masteryScore, 0)
-        / Math.max(1, allStats.filter(s => s.sectionType === sType).length);
-      const diff = getAdaptiveDifficulty(avgMastery);
-      const generated = generateFresh(sType, diff, perSection);
-      selected.push(...generated);
+  // 1) Weak SKILLS — easy-leaning to rebuild confidence.
+  if (weakStats.length > 0 && weakBudget > 0) {
+    const weakSorted = [...weakStats].sort((a, b) => a.masteryScore - b.masteryScore);
+    const perSkill = Math.max(1, Math.ceil(weakBudget / Math.min(weakStats.length, 4)));
+    for (const s of weakSorted.slice(0, 4)) {
+      if (selected.length >= weakBudget) break;
+      const need = Math.min(perSkill, weakBudget - selected.length);
+      // Easy if mastery <30, otherwise medium.
+      const diff: Difficulty = s.masteryScore < 30 ? 'easy' : 'medium';
+      selected.push(...selectForSection(s.sectionType, diff, need, { skill: s.skillTag }));
     }
   }
 
-  // 2. Mixed reinforcement (25%) — distribute across all sections
-  const remainingForMixed = Math.max(0, weakCount + mixedCount - selected.length);
-  if (remainingForMixed > 0) {
-    const perSection = Math.max(1, Math.ceil(remainingForMixed / allSections.length));
-    const shuffledSections = [...allSections];
-    shuffleArray(shuffledSections);
-    for (const sType of shuffledSections) {
-      if (selected.length >= weakCount + mixedCount) break;
-      const generated = generateFresh(sType, 'medium', perSection);
-      selected.push(...generated);
+  // 2) Mixed reinforcement across all sections, medium difficulty.
+  if (selected.length < weakBudget + mixedBudget) {
+    const need = weakBudget + mixedBudget - selected.length;
+    const perSection = Math.max(1, Math.ceil(need / allSections.length));
+    for (const sType of shuffle(allSections)) {
+      if (selected.length >= weakBudget + mixedBudget) break;
+      const slice = Math.min(perSection, weakBudget + mixedBudget - selected.length);
+      selected.push(...selectForSection(sType, 'medium', slice));
     }
   }
 
-  // 3. Strong area questions (15%) — harder to maintain growth
-  const remainingForStrong = Math.max(0, count - selected.length);
-  if (remainingForStrong > 0) {
-    const strongSectionsList = strongSections.size > 0
-      ? Array.from(strongSections)
-      : allSections;
-    const perSection = Math.max(1, Math.ceil(remainingForStrong / strongSectionsList.length));
-    const shuffledStrongSections = [...strongSectionsList];
-    shuffleArray(shuffledStrongSections);
-    for (const sType of shuffledStrongSections) {
+  // 3) Stretch on strong skills only — hard items where mastery >75.
+  if (stretchBudget > 0 && strongStats.length > 0) {
+    const strongSorted = [...strongStats].sort((a, b) => b.masteryScore - a.masteryScore);
+    const perSkill = Math.max(1, Math.ceil(stretchBudget / Math.min(strongStats.length, 3)));
+    for (const s of strongSorted.slice(0, 3)) {
       if (selected.length >= count) break;
-      const generated = generateFresh(sType, 'hard', perSection);
-      selected.push(...generated);
+      const need = Math.min(perSkill, count - selected.length);
+      selected.push(...selectForSection(s.sectionType, 'hard', need, { skill: s.skillTag }));
     }
   }
 
-  // Trim to exact count and shuffle
-  shuffleArray(selected);
-  return selected.slice(0, count);
+  // Top up if nothing's been seen yet (cold start)
+  if (selected.length < count) {
+    const fallbackSections = allStats.length === 0 ? shuffle(allSections) : allSections;
+    for (const sType of fallbackSections) {
+      if (selected.length >= count) break;
+      const slice = Math.min(2, count - selected.length);
+      selected.push(...selectForSection(sType, 'medium', slice));
+    }
+  }
+
+  // Drop accidental duplicates (manual bank reuse) and trim to exact count.
+  const seen = new Set<string>();
+  const deduped: Question[] = [];
+  for (const q of shuffle(selected)) {
+    if (seen.has(q.id)) continue;
+    seen.add(q.id);
+    deduped.push(q);
+    if (deduped.length === count) break;
+  }
+  // Pad if dedup left us short
+  while (deduped.length < count) {
+    const sType = pick(allSections);
+    const extra = generateFresh(sType, 'medium', 1);
+    if (extra[0] && !seen.has(extra[0].id)) {
+      seen.add(extra[0].id);
+      deduped.push(extra[0]);
+    } else {
+      break;
+    }
+  }
+  return deduped;
 }
 
 // ── Skill Classification ───────────────────────────────────────────
 
-/** Get weak skills — mastery below 40, or 3+ wrong in a row recently. */
+/** Get weak skills — mastery below 40, or 3 wrong in a row recently. */
 export function getWeakSkills(userId: string): SkillStats[] {
   const allStats = storage.getSkillStats(userId);
   return allStats.filter((s) => {
     if (s.masteryScore < 40) return true;
-    // Check for 3 wrong in a row at the end of recentResults
     const recent = s.recentResults;
     if (recent.length >= 3) {
       const lastThree = recent.slice(-3);
@@ -175,7 +189,6 @@ export function getWeakSkills(userId: string): SkillStats[] {
   });
 }
 
-/** Get strong skills — mastery above 75. */
 export function getStrongSkills(userId: string): SkillStats[] {
   const allStats = storage.getSkillStats(userId);
   return allStats.filter((s) => s.masteryScore > 75);
@@ -183,13 +196,11 @@ export function getStrongSkills(userId: string): SkillStats[] {
 
 // ── Weekly Plan Generation ─────────────────────────────────────────
 
-/** Generate weekly practice plan recommendations based on weak/strong skills. */
 export function generateWeeklyPlan(userId: string): Recommendation[] {
   const weakSkills = getWeakSkills(userId);
   const allStats = storage.getSkillStats(userId);
   const recommendations: Recommendation[] = [];
 
-  // Find section-level config for Hebrew names
   const skillNameMap = new Map<string, string>();
   for (const sec of SECTION_CONFIGS) {
     for (const skill of sec.skills) {
@@ -197,12 +208,9 @@ export function generateWeeklyPlan(userId: string): Recommendation[] {
     }
   }
 
-  // Recommendation for each weak skill
   for (const stat of weakSkills) {
     const skillName = skillNameMap.get(stat.skillTag) ?? stat.skillTag;
-    const sectionConfig = SECTION_CONFIGS.find(
-      (s) => s.type === stat.sectionType
-    );
+    const sectionConfig = SECTION_CONFIGS.find((s) => s.type === stat.sectionType);
     const sectionName = sectionConfig?.nameHe ?? stat.sectionType;
 
     recommendations.push({
@@ -221,7 +229,6 @@ export function generateWeeklyPlan(userId: string): Recommendation[] {
     });
   }
 
-  // If there are no weak skills, encourage maintenance
   if (weakSkills.length === 0 && allStats.length > 0) {
     recommendations.push({
       id: `rec_${Date.now()}_encouragement`,
@@ -237,7 +244,6 @@ export function generateWeeklyPlan(userId: string): Recommendation[] {
     });
   }
 
-  // Generate a general practice plan recommendation
   recommendations.push({
     id: `rec_${Date.now()}_weekly`,
     userId,
@@ -245,13 +251,13 @@ export function generateWeeklyPlan(userId: string): Recommendation[] {
     type: 'practice_plan',
     payload: {
       message: `תוכנית שבועית: ${weakSkills.length > 0 ? `יש ${weakSkills.length} נושאים לחיזוק` : 'תרגול שמירה על רמה'}`,
-      suggestedQuestions: weakSkills.length > 0 ? weakSkills.length * 10 : 20,
-      suggestedMinutes: weakSkills.length > 0 ? weakSkills.length * 15 : 30,
+      // Research-backed: 15–20 min/day for grade 2 attention span. Daily over weekly.
+      suggestedQuestions: weakSkills.length > 0 ? 15 : 10,
+      suggestedMinutes: 18,
     },
     status: 'active',
   });
 
-  // Save all recommendations
   for (const rec of recommendations) {
     storage.saveRecommendation(rec);
   }
@@ -261,21 +267,23 @@ export function generateWeeklyPlan(userId: string): Recommendation[] {
 
 // ── Adaptive Difficulty ────────────────────────────────────────────
 
-/**
- * Determine appropriate difficulty based on mastery score.
- * Low mastery -> easy, medium -> medium, high -> hard.
- */
 export function getAdaptiveDifficulty(masteryScore: number): Difficulty {
   if (masteryScore < 35) return 'easy';
-  if (masteryScore < 65) return 'medium';
+  if (masteryScore < 70) return 'medium';
   return 'hard';
 }
 
 // ── Utilities ──────────────────────────────────────────────────────
 
-function shuffleArray<T>(array: T[]): void {
-  for (let i = array.length - 1; i > 0; i--) {
+function shuffle<T>(array: T[]): T[] {
+  const a = [...array];
+  for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
+    [a[i], a[j]] = [a[j], a[i]];
   }
+  return a;
+}
+
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
 }

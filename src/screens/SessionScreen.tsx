@@ -4,7 +4,7 @@ import { getSectionConfig } from '../config/sections';
 import { storage } from '../services/storage';
 import { updateMastery, selectAdaptiveQuestions } from '../services/adaptive';
 import { useTimer } from '../hooks/useTimer';
-import { generateFresh, getVisualConfig, getNSVisualConfig } from '../services/questionPool';
+import { selectForSection, getVisualConfig, getNSVisualConfig } from '../services/questionPool';
 import { ShapeAnalogy, ShapeSeries, ShapeGrid, ShapeRow, ShapeOddOneOut, ShapeOptions, DividedCirclePair, NumberPyramid, NumberGrid, NumberFlowChart, NumberTriangle } from '../utils/shapeRenderer';
 import { sounds } from '../services/sounds';
 
@@ -65,8 +65,17 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
   const [feedbackMsg, setFeedbackMsg] = useState('');
   const [timedOut, setTimedOut] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  // eliminatedOptions: indices the child has crossed out using the hint feature
+  // for the CURRENT question. Reset on every advanceQuestion.
+  const [eliminatedOptions, setEliminatedOptions] = useState<number[]>([]);
+  const [hintsUsedThisQuestion, setHintsUsedThisQuestion] = useState(0);
   const questionStartTime = useRef<number>(Date.now());
   const [questionsMap, setQuestionsMap] = useState<Map<string, Question>>(new Map());
+  // Soft session cap: research on grade-2 cognitive practice recommends 15-20
+  // min sessions. We non-blockingly suggest a break at 18 min in practice mode.
+  const sessionStartedAt = useRef<number>(Date.now());
+  const [showBreakSuggestion, setShowBreakSuggestion] = useState(false);
+  const [breakDismissed, setBreakDismissed] = useState(false);
 
   // Refs for timer callback (avoid stale closures)
   const showResultRef = useRef(false);
@@ -99,8 +108,16 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
       if (mode === 'adaptive') {
         availableQuestions = selectAdaptiveQuestions(userId, count);
       } else {
-        // Generate fresh questions every time — no repeats!
-        availableQuestions = generateFresh(sectionType, config.difficulty || 'medium', count);
+        // Blend manual bank items (polished distractors + explanations) with
+        // generated content. Exam mode uses zero manual share so every full
+        // exam attempt feels new; practice modes get half manual.
+        const manualShare = mode === 'full_exam' || mode === 'mini_exam' ? 0 : 0.5;
+        availableQuestions = selectForSection(
+          sectionType,
+          config.difficulty || 'medium',
+          count,
+          { manualShare },
+        );
       }
 
       const sessionQuestions: SessionQuestion[] = availableQuestions.map((q, i) => {
@@ -191,6 +208,20 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
     }
   }, [currentSectionIdx, initialized, isPerSectionTimer, sectionTimeSec]);
 
+  // Soft cap watcher — only in practice modes; checks every 30s after the 18 min
+  // mark and surfaces a friendly break suggestion. The child can dismiss to
+  // continue (we suppress for the rest of the session after a dismissal).
+  useEffect(() => {
+    if (!isPracticeMode || breakDismissed) return;
+    const id = window.setInterval(() => {
+      const elapsedMin = (Date.now() - sessionStartedAt.current) / 60000;
+      if (elapsedMin >= 18 && !showBreakSuggestion) {
+        setShowBreakSuggestion(true);
+      }
+    }, 30_000);
+    return () => window.clearInterval(id);
+  }, [isPracticeMode, breakDismissed, showBreakSuggestion]);
+
   // Per-QUESTION timer: reset on each new question
   useEffect(() => {
     if (initialized && isPerQuestionTimer && currentQuestion) {
@@ -256,10 +287,11 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
 
     if (isPracticeMode) {
       setShowResult(true);
-      // Auto-expand explanation when wrong (item 3)
-      if (!isCorrect) {
-        setShowExplanation(true);
-      }
+      // Always show the explanation — research on grade-2 cognitive practice
+      // shows kids learn faster from "why was that right?" than just "right ✓".
+      setShowExplanation(true);
+      // Persist hint usage on the session question for the parent dashboard.
+      if (hintsUsedThisQuestion > 0) sq.hintsUsed = hintsUsedThisQuestion;
     } else {
       // In exam mode, auto-advance after short delay
       setTimeout(() => {
@@ -275,6 +307,8 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
     setShowResult(false);
     setShowExplanation(false);
     setTimedOut(false);
+    setEliminatedOptions([]);
+    setHintsUsedThisQuestion(0);
 
     if (currentQuestionIdx < currentSection.questions.length - 1) {
       setCurrentQuestionIdx(prev => prev + 1);
@@ -284,12 +318,33 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
     }
   }, [currentSection, currentQuestionIdx]);
 
+  // Hint: eliminate one wrong distractor that hasn't already been eliminated.
+  // Strategy hint, not answer hint — child still has to choose between the
+  // remaining options. Encourages the "narrow it down" metacognitive habit
+  // that transfers directly to the real exam.
+  const useEliminationHint = useCallback(() => {
+    if (!currentQuestion || selectedOption !== null) return;
+    const correct = currentQuestion.correctOption;
+    const candidates: number[] = [];
+    for (let i = 0; i < currentQuestion.options.length; i++) {
+      if (i === correct) continue;
+      if (eliminatedOptions.includes(i)) continue;
+      candidates.push(i);
+    }
+    if (candidates.length <= 1) return; // never eliminate down to 1
+    const drop = candidates[Math.floor(Math.random() * candidates.length)];
+    setEliminatedOptions(prev => [...prev, drop]);
+    setHintsUsedThisQuestion(prev => prev + 1);
+    sounds.playHint();
+  }, [currentQuestion, selectedOption, eliminatedOptions]);
+
   const handleNextSection = useCallback(() => {
     if (!session) return;
 
     timer.pause();
 
     if (currentSectionIdx < session.sections.length - 1) {
+      sounds.playSectionComplete();
       setSectionTransition(true);
       setTimeout(() => {
         setCurrentSectionIdx(prev => prev + 1);
@@ -420,9 +475,38 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
     <div className="max-w-lg mx-auto px-4 py-4 min-h-screen flex flex-col relative page-enter">
       {/* Combo popup - only in practice modes */}
       {isPracticeMode && showCombo && combo >= 3 && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-bounce-in">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-bounce-in streak-glow">
           <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 py-3 rounded-2xl font-extrabold text-lg shadow-lg">
             {combo >= 5 ? '🔥🔥🔥' : combo >= 3 ? '🔥🔥' : '🔥'} רצף של {combo}!
+          </div>
+        </div>
+      )}
+
+      {/* Soft cap suggestion — appears once after 18 min of practice */}
+      {showBreakSuggestion && !breakDismissed && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 animate-bounce-in">
+          <div className="game-card max-w-sm w-full p-6 text-center">
+            <div className="text-5xl mb-3">🎉</div>
+            <h3 className="text-xl font-bold mb-2 text-glow">כל הכבוד!</h3>
+            <p className="text-text-secondary mb-4 leading-relaxed">
+              תרגלת כבר 18 דקות ברצף. <br/>
+              מומלץ לקחת הפסקה קצרה — לקום, לשתות מים, לזוז קצת. <br/>
+              המוח עובד הכי טוב כשנותנים לו לנשום!
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setBreakDismissed(true); setShowBreakSuggestion(false); endSession(); }}
+                className="flex-1 btn-game-success btn-game"
+              >
+                מספיק להיום ✓
+              </button>
+              <button
+                onClick={() => { setBreakDismissed(true); setShowBreakSuggestion(false); }}
+                className="flex-1 px-4 py-3 rounded-2xl bg-card border border-border text-text-secondary cursor-pointer hover:border-primary transition-colors"
+              >
+                עוד קצת
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -505,6 +589,20 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
           </p>
         </div>
 
+        {/* Hint button — only in practice mode, before answering, max 2 hints/question */}
+        {isPracticeMode && selectedOption === null && !showResult && currentQuestion.options.length >= 3 && (
+          <div className="flex justify-center mb-3">
+            <button
+              onClick={useEliminationHint}
+              disabled={hintsUsedThisQuestion >= 2 || eliminatedOptions.length >= currentQuestion.options.length - 2}
+              className="text-sm px-4 py-1.5 rounded-full bg-warning/15 border border-warning/40 text-warning font-bold disabled:opacity-40 disabled:cursor-default cursor-pointer hover:bg-warning/25 transition-colors"
+            >
+              💡 רמז: בטל אפשרות שגויה
+              {hintsUsedThisQuestion > 0 && ` (${hintsUsedThisQuestion}/2)`}
+            </button>
+          </div>
+        )}
+
         {/* Visual Shape Options (when available) */}
         {hasVisualOptions && visual.optionShapes ? (
           <div className="mb-4">
@@ -513,6 +611,7 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
               selected={selectedOption ?? undefined}
               onSelect={(idx) => handleAnswer(idx)}
               disabled={selectedOption !== null}
+              eliminated={eliminatedOptions}
             />
             {showResult && (
               <div className="flex justify-center gap-4 mt-3">
@@ -532,7 +631,8 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
           /* Text Options (default) */
           <div className="space-y-3 mb-4">
             {currentQuestion.options.map((option, idx) => {
-              let btnClass = 'option-btn w-full p-4 rounded-xl text-right cursor-pointer';
+              const isEliminated = eliminatedOptions.includes(idx);
+              let btnClass = 'option-btn w-full p-4 rounded-xl text-right cursor-pointer relative';
 
               if (showResult) {
                 if (idx === currentQuestion.correctOption) {
@@ -540,17 +640,21 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
                 } else if (idx === selectedOption && idx !== currentQuestion.correctOption) {
                   btnClass += isPracticeMode ? ' wrong bomb-explode' : ' wrong';
                 } else {
-                  btnClass += ' opacity-40';
+                  // Keep non-selected non-correct options clearly visible (was opacity-40,
+                  // which kids on a small mobile read as "missing"). They still recede next
+                  // to the green/red highlights but stay readable.
+                  btnClass += ' opacity-70';
                 }
               } else if (selectedOption === idx) {
                 btnClass += ' selected';
               }
+              if (isEliminated) btnClass += ' opacity-30';
 
               return (
                 <button
                   key={idx}
                   onClick={() => handleAnswer(idx)}
-                  disabled={selectedOption !== null}
+                  disabled={selectedOption !== null || isEliminated}
                   className={btnClass}
                 >
                   <div className="flex items-center gap-3">
@@ -565,17 +669,20 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
                     }`}>
                       {String.fromCharCode(1488 + idx)}
                     </div>
-                    <span className="text-base">{option}</span>
+                    <span className={`text-base ${isEliminated ? 'line-through' : ''}`}>{option}</span>
                   </div>
+                  {isEliminated && (
+                    <span aria-hidden className="absolute inset-0 flex items-center justify-center text-5xl text-danger/60 pointer-events-none font-black leading-none">✕</span>
+                  )}
                 </button>
               );
             })}
           </div>
         )}
 
-        {/* Practice Mode: Result & Explanation */}
+        {/* Practice Mode: Result & Explanation (no next-button here — it's sticky below) */}
         {isPracticeMode && showResult && currentSQ && (
-          <div className="mb-4 animate-slide-up">
+          <div className="mb-32 animate-slide-up">
             <div className={`p-4 rounded-xl mb-3 ${
               timedOut ? 'result-wrong' :
               currentSQ.isCorrect ? 'result-correct' : 'result-wrong'
@@ -588,17 +695,8 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
                   🔥 רצף של {combo} תשובות נכונות!
                 </div>
               )}
-              {!showExplanation && (
-                <button
-                  onClick={() => setShowExplanation(true)}
-                  className="text-primary-light text-sm underline cursor-pointer"
-                >
-                  הראה הסבר
-                </button>
-              )}
               {showExplanation && (
                 <div className="mt-2">
-                  {/* Diagram in explanation for shapes/NS questions (item 7) */}
                   {(hasVisual || hasNSVisual) && (
                     <div className="mb-2 p-2 rounded-lg bg-black/20">
                       <div className="text-xs text-text-secondary mb-1 text-center">תרשים לעיון:</div>
@@ -606,29 +704,57 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
                     </div>
                   )}
                   <p className="text-sm text-text-secondary whitespace-pre-line">{currentQuestion.explanation}</p>
+                  {hintsUsedThisQuestion > 0 && (
+                    <p className="text-xs text-warning mt-2">השתמשת ב-{hintsUsedThisQuestion} רמז{hintsUsedThisQuestion > 1 ? 'ים' : ''} בשאלה הזו.</p>
+                  )}
                 </div>
               )}
             </div>
+          </div>
+        )}
+      </div>
 
+      {/* Sticky bottom action bar — keeps "Next question" reachable on mobile
+          regardless of explanation length. Backed with a soft gradient so content
+          fading underneath stays visible but the button always pops. */}
+      {isPracticeMode && showResult && currentSQ && (
+        <div
+          className="fixed left-0 right-0 bottom-0 z-30 px-4 pt-6 pb-[max(env(safe-area-inset-bottom),12px)] pointer-events-none"
+          style={{
+            background: 'linear-gradient(to top, rgba(26,16,8,0.98) 35%, rgba(26,16,8,0.85) 70%, rgba(26,16,8,0))',
+          }}
+        >
+          <div className="max-w-lg mx-auto pointer-events-auto">
             <button
               onClick={advanceQuestion}
-              className="btn-game w-full text-lg"
+              autoFocus
+              className="btn-game w-full text-lg py-4 shadow-2xl"
             >
               {currentQuestionIdx < currentSection.questions.length - 1 ? 'שאלה הבאה ←' : 'סיום ⚔️'}
             </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Exam mode: Next button (shown after selection) */}
-        {!isPracticeMode && selectedOption !== null && !showResult && (
-          <button
-            onClick={advanceQuestion}
-            className="btn-game w-full text-lg mb-4"
-          >
-            {currentQuestionIdx < currentSection.questions.length - 1 ? 'הבאה ←' : 'סיום פרק'}
-          </button>
-        )}
-      </div>
+      {/* Exam mode: same sticky-bottom approach for consistency on mobile */}
+      {!isPracticeMode && selectedOption !== null && !showResult && (
+        <div
+          className="fixed left-0 right-0 bottom-0 z-30 px-4 pt-6 pb-[max(env(safe-area-inset-bottom),12px)] pointer-events-none"
+          style={{
+            background: 'linear-gradient(to top, rgba(26,16,8,0.98) 35%, rgba(26,16,8,0.85) 70%, rgba(26,16,8,0))',
+          }}
+        >
+          <div className="max-w-lg mx-auto pointer-events-auto">
+            <button
+              onClick={advanceQuestion}
+              autoFocus
+              className="btn-game w-full text-lg py-4 shadow-2xl"
+            >
+              {currentQuestionIdx < currentSection.questions.length - 1 ? 'הבאה ←' : 'סיום פרק'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -176,7 +176,7 @@ export default function ParentDashboard({ childId, onBack }: Props) {
                   const skill = sc?.skills.find(sk => sk.tag === s.skillTag);
                   return (
                     <li key={s.id}>
-                      {sc?.icon} {skill?.nameHe} - שליטה {s.masteryScore}%
+                      {sc?.icon} {skill?.nameHe} - שליטה {Math.round(s.masteryScore)}%
                     </li>
                   );
                 })}
@@ -193,7 +193,7 @@ export default function ParentDashboard({ childId, onBack }: Props) {
                   const skill = sc?.skills.find(sk => sk.tag === s.skillTag);
                   return (
                     <li key={s.id}>
-                      {sc?.icon} {skill?.nameHe} - שליטה {s.masteryScore}%
+                      {sc?.icon} {skill?.nameHe} - שליטה {Math.round(s.masteryScore)}%
                     </li>
                   );
                 })}

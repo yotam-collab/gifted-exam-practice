@@ -8,8 +8,11 @@ interface Props {
 }
 
 export default function MiniExamSetup({ onBack, onStart }: Props) {
-  const [selectedSections, setSelectedSections] = useState<SectionType[]>([]);
-  const [questionsPerSection, setQuestionsPerSection] = useState(5);
+  // Default to "all sections + max questions + timer on" — fastest path to a
+  // realistic exam-style run. Kid can deselect what they don't want.
+  const allSections = SECTION_CONFIGS.map(s => s.type);
+  const [selectedSections, setSelectedSections] = useState<SectionType[]>(allSections);
+  const [questionsPerSection, setQuestionsPerSection] = useState(10);
   const [useTimer, setUseTimer] = useState(true);
 
   const toggleSection = (type: SectionType) => {
@@ -27,14 +30,37 @@ export default function MiniExamSetup({ onBack, onStart }: Props) {
         <div className="bg-shape" style={{ width: 150, height: 150, bottom: '15%', left: '-5%', background: '#27AE60', animationDelay: '2s' }} />
       </div>
 
-      <div className="flex items-center gap-3 mb-6 relative z-10">
+      <div className="flex items-center gap-3 mb-4 relative z-10">
         <button onClick={onBack} className="text-2xl cursor-pointer hover:opacity-70 text-primary-light">→</button>
         <h1 className="text-2xl font-extrabold text-glow">מבחן מקוצר</h1>
       </div>
 
+      {/* PRIMARY CTA — surfaces immediately. Defaults are tuned so a kid can tap
+          this without changing anything. Picky users can scroll down to tweak. */}
+      <div className="relative z-10 mb-4">
+        <button
+          onClick={() => onStart(selectedSections, questionsPerSection, useTimer)}
+          disabled={selectedSections.length < 2}
+          className={`w-full py-4 text-lg font-bold rounded-2xl cursor-pointer transition-all ${
+            selectedSections.length >= 2
+              ? 'btn-game'
+              : 'bg-border text-text-secondary cursor-not-allowed'
+          }`}
+        >
+          {selectedSections.length < 2 ? 'בחר לפחות 2 פרקים' : 'התחל מבחן! ⚔️'}
+        </button>
+        <div className="text-xs text-text-secondary text-center mt-2 leading-relaxed">
+          <b className="text-primary-light">{selectedSections.length}</b> פרקים
+          {' · '}
+          <b className="text-primary-light">{questionsPerSection}</b> שאלות לפרק
+          {' · '}
+          <b className="text-primary-light">{useTimer ? 'עם טיימר' : 'בלי טיימר'}</b>
+        </div>
+      </div>
+
       {/* Section Selection */}
       <div className="mb-6 relative z-10">
-        <h2 className="text-lg font-semibold mb-3 text-text-secondary">בחר פרקים (2-5):</h2>
+        <h2 className="text-base font-semibold mb-2 text-text-secondary">פרקים:</h2>
         <div className="space-y-2">
           {SECTION_CONFIGS.map((s) => (
             <button
@@ -95,8 +121,8 @@ export default function MiniExamSetup({ onBack, onStart }: Props) {
         </div>
       </div>
 
-      {/* Start */}
-      <div className="relative z-10">
+      {/* Start (mirror at bottom for thumb reach after long-form scrolling) */}
+      <div className="relative z-10 mb-4">
         <button
           onClick={() => onStart(selectedSections, questionsPerSection, useTimer)}
           disabled={selectedSections.length < 2}

@@ -293,20 +293,117 @@ const templates: SentenceTemplate[] = [
     correct: 'הַהֲצָלָחוֹת, מִצְּעָדִים', wrongs: ['הַבְּעָיוֹת, מִמַּעֲשִׂים', 'הַהֲצָלָחוֹת, מִטְּעוּיוֹת', 'הַמַּתָּנוֹת, מִחֲנוּיוֹת'],
     explanation: 'ההצלחות הגדולות מתחילות מצעדים קטנים — כל דבר גדול מתחיל בקטן.',
   },
+
+  // ═══════════════ ADDITIONAL TEMPLATES (variety expansion) ═══════════════
+  // Real Stage B sentence-completion sees ~10 distinct items per kid; with only
+  // ~30 templates, repeat rate hits >30% per session. These extras lift the
+  // working set so a child can do 4-5 sessions before seeing a repeat.
+
+  {
+    skill: 'logical_connection', difficulty: 'easy',
+    stem: 'הַשֶּׁמֶשׁ ______, וּלְכֵן הַחוֹל בְּחוֹף הַיָּם הִתְ______ מְאוֹד.',
+    correct: 'זָרְחָה, חַמֵּם', wrongs: ['שָׁקְעָה, קָרֵר', 'נֶעֶלְמָה, חַמֵּם', 'זָרְחָה, רְטַב'],
+    explanation: 'שמש זורחת → חום → החול מתחמם.',
+  },
+  {
+    skill: 'logical_connection', difficulty: 'easy',
+    stem: 'הַתִּינוֹקֶת ______ מְאוֹד וּלְכֵן אִמָּא הָלְכָה לְהָכִין לָהּ ______.',
+    correct: 'בָּכְתָה, אֹכֶל', wrongs: ['צָחֲקָה, אֹכֶל', 'בָּכְתָה, מַתָּנָה', 'יָשְׁנָה, חָלָב'],
+    explanation: 'תינוקת בוכה לרוב כי היא רעבה — לכן אמא מכינה אוכל.',
+  },
+  {
+    skill: 'logical_connection', difficulty: 'medium',
+    stem: 'נִיר רָץ מַהֵר מְאוֹד לְבֵית הַסֵּפֶר, כִּי ______ אוֹתוֹ שֶׁכְּבָר ______.',
+    correct: 'הִזְהִירוּ, אִחֵר', wrongs: ['חִכּוּ, סִיֵּם', 'בִּקְשׁוּ, יָשַׁן', 'שָׁאֲלוּ, הִתְעוֹרֵר'],
+    explanation: 'מי שמאחר רץ מהר. הוזהר שהוא מאחר → רץ.',
+  },
+  {
+    skill: 'vocabulary', difficulty: 'easy',
+    stem: 'הָעוֹף שֶׁ______ בַּשָּׁמַיִם נִקְרָא נֶשֶׁר.',
+    correct: 'מַמְרִיא', wrongs: ['שׂוֹחֶה', 'זוֹחֵל', 'הוֹלֵךְ'],
+    explanation: 'נשרים עפים גבוה — "ממריא" = ממריא לאוויר ועף.',
+  },
+  {
+    skill: 'vocabulary', difficulty: 'medium',
+    stem: 'הַמְּלוֹנָאִי הוּא הָאִישׁ שֶׁ______ אֶת הַמָּלוֹן.',
+    correct: 'מְנַהֵל', wrongs: ['קוֹנֶה', 'בּוֹנֶה', 'נוֹקֶה'],
+    explanation: '"מְלוֹנַאי" הוא בעל המקצוע שמנהל מלון, כמו "סַפָּר" שמספר.',
+  },
+  {
+    skill: 'vocabulary', difficulty: 'easy',
+    stem: 'אֶמְצָעִי שֶׁמְּשַׁמֵּשׁ לִשְׁמֹעַ מוּזִיקָה בְּלִי לְהַפְרִיעַ לַאֲחֵרִים נִקְרָא ______.',
+    correct: 'אֹזְנִיּוֹת', wrongs: ['רַמְקוֹלִים', 'מִקְרוֹפוֹן', 'מַחְשֵׁב'],
+    explanation: 'אוזניות = מכשיר אישי לאוזן. רמקולים משמיעים לכולם — מפריעים.',
+  },
+  {
+    skill: 'semantic_context', difficulty: 'easy',
+    stem: 'בַּחֹרֶף יֵרֵד הַרְבֵּה ______, וְלָכֵן צָרִיךְ לִלְבֹּשׁ ______.',
+    correct: 'גֶּשֶׁם, מְעִיל', wrongs: ['גֶּשֶׁם, סַנְדָּלִים', 'שֶׁמֶשׁ, מְעִיל', 'שֶׁלֶג, בֶּגֶד יָם'],
+    explanation: 'גשם בחורף → לבישת מעיל כדי להישאר יבש וחם.',
+  },
+  {
+    skill: 'semantic_context', difficulty: 'medium',
+    stem: 'בַּסּוּפֶּרְמַרְקֶט הַחָלָב נִמְצָא בַּ______, וְהַלֶּחֶם בַּ______.',
+    correct: 'מְקָרֵר, מַדָּף', wrongs: ['מַדָּף, מְקָרֵר', 'מַקְפִּיא, תַּנּוּר', 'אַרוֹן, מְכוֹנִית'],
+    explanation: 'חלב שומרים קר במקרר. לחם נשמר טרי על מדף בטמפרטורת חדר.',
+  },
+  {
+    skill: 'contrast_completion', difficulty: 'easy',
+    stem: 'דַּנִּי ______ קָטָן וְצָנוּעַ, אֲבָל אֵיתָן ______ גָּבוֹהַּ וּבִטּוּחַ בְּעַצְמוֹ.',
+    correct: 'נִרְאָה, נִרְאָה', wrongs: ['חָשַׁב, רָץ', 'דִּבֵּר, יָשַׁן', 'נִרְאָה, חָתַךְ'],
+    explanation: 'הניגוד דורש שני בני אדם המתוארים בצורה שונה — שניהם "נראים" בצורה שונה.',
+  },
+  {
+    skill: 'contrast_completion', difficulty: 'medium',
+    stem: 'הַסְּפָרִים הַחֲדָשִׁים ______ וְ______, אֲבָל הַסְּפָרִים הַיְשָׁנִים ______ וִמְצֻמְצָמִים.',
+    correct: 'גְּדוֹלִים, מְלֵאִים, קְטַנִּים', wrongs: ['קְטַנִּים, רֵיקִים, גְּדוֹלִים', 'יָפִים, מְעַנְיְנִים, מְשַׁעֲמְמִים', 'בְּהִירִים, חַדִּים, כֵּהִים'],
+    explanation: 'ניגוד גודל: גדולים ומלאים מול קטנים ומצומצמים — שניהם נכונים יחד.',
+  },
+  {
+    skill: 'general_knowledge', difficulty: 'easy',
+    stem: 'יִשְׂרָאֵל נִמְצֵאת בַּיַּבֶּשֶׁת ______.',
+    correct: 'אַסְיָה', wrongs: ['אֵירוֹפָּה', 'אַפְרִיקָה', 'אֲמֵרִיקָה'],
+    explanation: 'ישראל היא חלק מיבשת אסיה (במזרח התיכון).',
+  },
+  {
+    skill: 'general_knowledge', difficulty: 'medium',
+    stem: 'בַּהֲלִיכַת הַחוֹף הַחוֹלִית, רוּת רָאֲתָה ______ שֶׁשּׂוֹחָה בַּיָּם.',
+    correct: 'דֹּלְפִין', wrongs: ['גָּמָל', 'נָמֵר', 'אֲרִי'],
+    explanation: 'דולפין הוא היונק היחיד מבין הארבעה שחי במים.',
+  },
+  {
+    skill: 'general_knowledge', difficulty: 'easy',
+    stem: 'הַ______ נוֹתֶנֶת לָנוּ אוֹר בַּיּוֹם, וְהַ______ מְאִירָה אוֹתָנוּ בַּלַּיְלָה.',
+    correct: 'שֶׁמֶשׁ, לְבָנָה', wrongs: ['לְבָנָה, שֶׁמֶשׁ', 'שֶׁמֶשׁ, כּוֹכָב', 'נוּרָה, פָּנָס'],
+    explanation: 'בשעות היום השמש מאירה את העולם. בלילה הירח (לבנה) משקף אור ומאיר אותנו.',
+  },
 ];
 
 // ── Public API ──────────────────────────────────────────────────────────
 
-export function generateSentenceQuestions(difficulty: Difficulty, count: number): Question[] {
-  let candidates = templates;
+export function generateSentenceQuestions(
+  difficulty: Difficulty,
+  count: number,
+  options?: { skill?: SentenceSkill },
+): Question[] {
+  // Hide proverbs by default — real Stage B doesn't use idioms.
+  // (They remain available only when explicitly requested via skill targeting.)
+  let candidates = options?.skill
+    ? templates.filter(t => t.skill === options.skill)
+    : templates.filter(t => t.skill !== 'idioms_proverbs');
 
-  // Filter by difficulty if not adaptive
+  // Filter by difficulty if not adaptive — prefer exact match, fall back to
+  // matching adjacent difficulty rather than mixing all (audit found the old
+  // fall-back silently surfaced hard items inside an "easy" set).
   if (difficulty !== 'adaptive') {
-    const filtered = templates.filter(t => t.difficulty === difficulty);
+    const filtered = candidates.filter(t => t.difficulty === difficulty);
     if (filtered.length >= count) {
       candidates = filtered;
+    } else if (difficulty === 'easy') {
+      candidates = candidates.filter(t => t.difficulty === 'easy' || t.difficulty === 'medium');
+    } else if (difficulty === 'hard') {
+      candidates = candidates.filter(t => t.difficulty === 'hard' || t.difficulty === 'medium');
     }
-    // If not enough for the difficulty, use all
   }
 
   // Pick random templates

@@ -100,51 +100,102 @@ const banks: RelationBank[] = [
       ['פַּחַד', 'בְּרִיחָה'], ['חֹסֶר שֵׁנָה', 'עֲיֵפוּת'],
     ],
   },
+  // verbal_analogy was previously a kitchen-sink "any analogy" bank that mixed
+  // profession-workplace, animal-habitat, parent-offspring, country-capital,
+  // and singular-plural — meaning the "correct" pair often had a totally different
+  // semantic relation than the stem pair. Split into 4 coherent sub-banks.
   {
     skill: 'verbal_analogy',
-    label: 'אנלוגיה מילולית',
+    label: 'אנלוגיה: בעל מקצוע ומקום עבודה',
     pairs: [
-      // profession : workplace
       ['מוֹרֶה', 'בֵּית סֵפֶר'], ['רוֹפֵא', 'בֵּית חוֹלִים'], ['שֵׁף', 'מִסְעָדָה'],
-      ['טַיָּס', 'מָטוֹס'], ['סַפָּר', 'מִסְפָּרָה'],
-      // tool : profession
-      ['סְטֶטוֹסְקוֹפּ', 'רוֹפֵא'], ['גִּיר', 'מוֹרֶה'], ['מַזְלֵג', 'שֵׁף'],
-      // animal : habitat
+      ['טַיָּס', 'מָטוֹס'], ['סַפָּר', 'מִסְפָּרָה'], ['חַקְלַאי', 'שָׂדֶה'],
+      ['שׁוֹפֵט', 'בֵּית מִשְׁפָּט'], ['שָׂחְקָן', 'בָּמָה'], ['פַּסְיוֹן', 'גַּן יְלָדִים'],
+    ],
+  },
+  {
+    skill: 'verbal_analogy',
+    label: 'אנלוגיה: בעל חיים וצאצא',
+    pairs: [
+      ['פָּרָה', 'עֵגֶל'], ['כֶּלֶב', 'גּוּר'], ['תַּרְנְגֹלֶת', 'אֶפְרוֹחַ'],
+      ['חֲתוּלָה', 'גּוֹרָה'], ['כִּבְשָׂה', 'טָלֶה'], ['חֲזִירָה', 'חֲזַרְזִיר'],
+      ['סוּסָה', 'סְיָח'], ['ארנבת', 'שָׁפָן'],
+    ],
+  },
+  {
+    skill: 'verbal_analogy',
+    label: 'אנלוגיה: בעל חיים ומקום מחיה',
+    pairs: [
       ['דָּג', 'מַיִם'], ['צִפּוֹר', 'קֵן'], ['דֹּב', 'מְעָרָה'],
-      // baby : parent
-      ['גּוּר', 'כֶּלֶב'], ['אֶפְרוֹחַ', 'תַּרְנְגֹלֶת'], ['עֶגְלָה', 'פָּרָה'],
-      // country : capital
-      ['יִשְׂרָאֵל', 'יְרוּשָׁלַיִם'], ['צָרְפַת', 'פָּרִיז'], ['אַנְגְּלְיָה', 'לוֹנְדוֹן'],
-      // singular : plural feel
-      ['יוֹם', 'שָׁבוּעַ'], ['טִפָּה', 'נָהָר'], ['אוֹת', 'מִלָּה'],
+      ['דְּבוֹרָה', 'כַּוֶּרֶת'], ['נְמָלָה', 'קֵן נְמָלִים'], ['חַפַרְפֶּרֶת', 'מַחִלָּה'],
+      ['גָּמָל', 'מִדְבָּר'], ['דֻּבּוֹן', 'יַעַר'],
+    ],
+  },
+  {
+    skill: 'verbal_analogy',
+    label: 'אנלוגיה: מדינה ובירה',
+    pairs: [
+      ['יִשְׂרָאֵל', 'יְרוּשָׁלַיִם'], ['צָרְפַת', 'פָּרִיז'], ['אַנְגְּלִיָּה', 'לוֹנְדוֹן'],
+      ['אִיטַלְיָה', 'רוֹמָא'], ['יָוָן', 'אָתוּנָה'], ['רוּסְיָה', 'מוֹסְקְבָה'],
+      ['גֶּרְמַנְיָה', 'בֶּרְלִין'],
     ],
   },
 ];
 
 // ── Generator logic ─────────────────────────────────────────────────────
 
-function generateOneRelation(skill: WordRelationSkill, difficulty: Difficulty): Question | null {
-  const bank = banks.find(b => b.skill === skill);
-  if (!bank || bank.pairs.length < 4) return null;
+/** Build a "plausible-looking but wrong" distractor by reversing the pair order
+ *  (e.g. "father:son" ↔ "son:father") — same words, opposite direction.
+ *  This is the single most common trap on the real Stage B exam. */
+function reversedPairDistractor(bank: RelationBank, stemPair: Pair): Pair | null {
+  const candidates = bank.pairs.filter(
+    p => !(p[0] === stemPair[0] && p[1] === stemPair[1])
+  );
+  if (candidates.length === 0) return null;
+  const p = pick(candidates);
+  return [p[1], p[0]];
+}
 
-  // Shuffle pairs and pick stem + correct option from same bank
+function generateOneRelation(
+  skill: WordRelationSkill,
+  difficulty: Difficulty,
+  recentStems?: Set<string>,
+): Question | null {
+  // Pick a SUB-bank that matches the skill — there may be more than one
+  // (verbal_analogy now has 4 sub-banks). The chosen sub-bank defines BOTH
+  // stem and correct answer, so they always share the precise relation.
+  const matchingBanks = banks.filter(b => b.skill === skill);
+  if (matchingBanks.length === 0) return null;
+  const bank = pick(matchingBanks);
+  if (bank.pairs.length < 4) return null;
+
+  // Shuffle pairs and pick stem + correct option from same sub-bank
   const shuffledPairs = shuffle(bank.pairs);
-  const stemPair = shuffledPairs[0];
-  const correctPair = shuffledPairs[1]; // same relationship type
+  let stemPair = shuffledPairs[0];
+  // Avoid stems we just showed
+  if (recentStems && recentStems.size > 0) {
+    const fresh = shuffledPairs.find(p => !recentStems.has(`${p[0]}:${p[1]}`));
+    if (fresh) stemPair = fresh;
+  }
+  const correctPair = shuffledPairs.find(p => p !== stemPair) ?? shuffledPairs[1];
 
-  // Pick 3 distractors from OTHER relationship banks
-  const otherBanks = banks.filter(b => b.skill !== skill);
+  // Distractor strategy:
+  //   • slot 1: a REVERSED pair from the same bank — same words, wrong direction.
+  //     This is the canonical Stage B trap (kid sees the right relation but
+  //     in the wrong order).
+  //   • slots 2–3: pairs from OTHER banks (clearly different relation) so the
+  //     question stays solvable for a 7-year-old who's grasped the concept.
   const distractorPairs: Pair[] = [];
-  const usedDistractors = shuffle(otherBanks);
-  for (const ob of usedDistractors) {
+  const reversed = reversedPairDistractor(bank, stemPair);
+  if (reversed) distractorPairs.push(reversed);
+
+  const otherBanks = banks.filter(b => b.skill !== skill);
+  for (const ob of shuffle(otherBanks)) {
     if (distractorPairs.length >= 3) break;
     distractorPairs.push(pick(ob.pairs));
   }
-
-  // Ensure we have 3 distractors
   while (distractorPairs.length < 3) {
-    const extraBank = pick(otherBanks);
-    distractorPairs.push(pick(extraBank.pairs));
+    distractorPairs.push(pick(pick(otherBanks).pairs));
   }
 
   const fmtPair = (p: Pair) => `${p[0]} : ${p[1]}`;
@@ -155,6 +206,8 @@ function generateOneRelation(skill: WordRelationSkill, difficulty: Difficulty): 
 
   const effectiveDiff = difficulty === 'adaptive' ? pick(['easy', 'medium', 'hard'] as Difficulty[]) : difficulty;
 
+  if (recentStems) recentStems.add(`${stemPair[0]}:${stemPair[1]}`);
+
   return {
     id: uid(),
     sectionType: 'word_relations',
@@ -164,7 +217,7 @@ function generateOneRelation(skill: WordRelationSkill, difficulty: Difficulty): 
     stem: fmtPair(stemPair),
     options: allOptions,
     correctOption: allOptions.indexOf(fmtPair(correctPair)),
-    explanation: `הקשר: ${bank.label}.\n${stemPair[0]} ← → ${stemPair[1]}.\nאותו קשר: ${correctPair[0]} ← → ${correctPair[1]}.`,
+    explanation: `הקשר: ${bank.label}.\n${stemPair[0]} ⟵⟶ ${stemPair[1]}.\nאותו קשר ובאותו כיוון: ${correctPair[0]} ⟵⟶ ${correctPair[1]}.\nשים לב: זוג שהמילים בו בכיוון ההפוך — אינו אותו קשר!`,
     recommendedTimeSec: effectiveDiff === 'easy' ? 40 : effectiveDiff === 'hard' ? 60 : 50,
     generatorSource: 'generated',
     qualityScore: 89,
@@ -174,9 +227,15 @@ function generateOneRelation(skill: WordRelationSkill, difficulty: Difficulty): 
 
 // ── Public API ──────────────────────────────────────────────────────────
 
-export function generateWordRelQuestions(difficulty: Difficulty, count: number): Question[] {
+export function generateWordRelQuestions(
+  difficulty: Difficulty,
+  count: number,
+  options?: { skill?: WordRelationSkill },
+): Question[] {
   const result: Question[] = [];
-  const skills = banks.map(b => b.skill);
+  const recentStems = new Set<string>();
+  const uniqueSkills = Array.from(new Set(banks.map(b => b.skill)));
+  const skills = options?.skill ? [options.skill] : uniqueSkills;
 
   // Distribute evenly across skills
   const perSkill = Math.max(1, Math.floor(count / skills.length));
@@ -188,7 +247,7 @@ export function generateWordRelQuestions(difficulty: Difficulty, count: number):
   while (pool.length < count) pool.push(pick(skills));
 
   for (const skill of shuffle(pool).slice(0, count)) {
-    const q = generateOneRelation(skill, difficulty);
+    const q = generateOneRelation(skill, difficulty, recentStems);
     if (q) result.push(q);
   }
 

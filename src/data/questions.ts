@@ -109,7 +109,7 @@ export const questionBank: Question[] = [
     recommendedTimeSec: 90,
     generatorSource: 'manual',
     qualityScore: 95,
-    isActive: true,
+    isActive: false, // out-of-grade for kita bet — geometric doubling-sum (3 multiplications + 4-term sum) is 4th-grade material.
   },
   {
     id: 'math_008',
@@ -250,7 +250,7 @@ export const questionBank: Question[] = [
     recommendedTimeSec: 80,
     generatorSource: 'manual',
     qualityScore: 95,
-    isActive: true,
+    isActive: false, // second-difference sequences are above grade 2 — keep authored item but hide from default rotation.
   },
   {
     id: 'math_017',
@@ -282,7 +282,7 @@ export const questionBank: Question[] = [
     recommendedTimeSec: 75,
     generatorSource: 'manual',
     qualityScore: 95,
-    isActive: true,
+    isActive: false, // pre-algebra (introduce variable + plug in equation) — out-of-scope for grade 2.
   },
   {
     id: 'math_019',
@@ -297,7 +297,7 @@ export const questionBank: Question[] = [
     recommendedTimeSec: 85,
     generatorSource: 'manual',
     qualityScore: 95,
-    isActive: true,
+    isActive: false, // 3-step reverse operation chain (×, +, ÷) is too long for grade 2 working memory.
   },
   {
     id: 'math_020',
@@ -312,7 +312,7 @@ export const questionBank: Question[] = [
     recommendedTimeSec: 90,
     generatorSource: 'manual',
     qualityScore: 95,
-    isActive: true,
+    isActive: false, // requires variable substitution — pre-algebra, out-of-scope for grade 2.
   },
 
   // ============================================================
@@ -341,10 +341,10 @@ export const questionBank: Question[] = [
     skillTag: 'logical_connection',
     difficulty: 'easy',
     questionType: 'text',
-    stem: 'אִמָּא שֶׁל אֲבִיגַיִל ______ מְאוֹד, וְזֹאת אַחַת הַסִּבּוֹת שֶׁהִיא מְשַׂחֶקֶת ______ בִּשְׁעוֹת הַפְּנַאי.',
-    options: ['מְהִירָה, שַׁחְמָט', 'חֲכָמָה, שַׁחְמָט', 'גְּבוֹהָה, כַּדּוּרְסַל', 'רָזָה, בְּתֵאַטְרוֹן'],
+    stem: 'אֲבִיגַיִל ______ מְאוֹד, וְזֹאת אַחַת הַסִּבּוֹת שֶׁהִיא מְשַׂחֶקֶת ______ טוֹב.',
+    options: ['מְהִירָה, שַׁחְמָט', 'חֲכָמָה, מַחְבּוֹאִים', 'גְּבוֹהָה, כַּדּוּרְסַל', 'רָזָה, תֵּאַטְרוֹן'],
     correctOption: 2,
-    explanation: 'אִמָּא גְּבוֹהָה – זֶה קָשׁוּר לְכַדּוּרְסַל, שֶׁבּוֹ גֹּבַהּ הוּא יִתְרוֹן.\n"חֲכָמָה" וְ"שַׁחְמָט" נִשְׁמָע הֶגְיוֹנִי, אֲבָל חׇכְמַת הָאִמָּא לֹא סִבָּה יְשִׁירָה שֶׁהַבַּת מְשַׂחֶקֶת שַׁחְמָט.\nגֹּבַהּ, לְעוּמַּת זֹאת, הוּא תְּכוּנָה תּוֹרַשְׁתִּית שֶׁמַּשְׁפִּיעָה עַל הַבְּחִירָה בִּסְפּוֹרְט.',
+    explanation: 'גֹּבַהּ הוּא יִתְרוֹן בְּכַדּוּרְסַל. "גְּבוֹהָה ⟶ כַּדּוּרְסַל" הוּא הַקֶּשֶׁר הַהֶגְיוֹנִי הַיָּשִׁיר. זְהִירוּת מַסִּיחִים: "מְהִירָה" אוֹ "חֲכָמָה" נִשְׁמָעוֹת חִיּוּבִיּוֹת, אֲבָל לֹא קְשׁוּרוֹת בְּדִיּוּק לַסְּפּוֹרְט הַזֶּה.',
     recommendedTimeSec: 60,
     generatorSource: 'manual',
     qualityScore: 94,
@@ -589,6 +589,8 @@ export const questionBank: Question[] = [
     id: 'sc_018',
     sectionType: 'sentence_completion',
     skillTag: 'idioms_proverbs',
+    // NOTE: real Stage B exam doesn't include proverb questions for grade 2.
+    // Kept as advanced bonus material — not surfaced in default rotation.
     difficulty: 'hard',
     questionType: 'text',
     stem: 'אִמָּא אָמְרָה לְדָוִד שֶׁמִּי שֶׁ______ בָּרוּחַ ______ בַּסְּעָרָה, כְּלוֹמַר: מַעֲשִׂים רָעִים יָבִיאוּ תּוֹצָאוֹת גְּרוּעוֹת.',
@@ -598,12 +600,14 @@ export const questionBank: Question[] = [
     recommendedTimeSec: 65,
     generatorSource: 'manual',
     qualityScore: 94,
-    isActive: true,
+    isActive: false, // proverb — not on real Stage B for grade 2
   },
   {
     id: 'sc_019',
     sectionType: 'sentence_completion',
     skillTag: 'idioms_proverbs',
+    // NOTE: real Stage B exam doesn't include proverb questions for grade 2.
+    // Kept as advanced bonus material — not surfaced in default rotation.
     difficulty: 'hard',
     questionType: 'text',
     stem: 'הַמּוֹרָה אָמְרָה שֶׁ"אֵין ______ בְּלִי ______", כְּלוֹמַר: כְּדֵי לְהַצְלִיחַ צָרִיךְ לְהִתְאַמֵּץ.',
@@ -613,12 +617,14 @@ export const questionBank: Question[] = [
     recommendedTimeSec: 60,
     generatorSource: 'manual',
     qualityScore: 93,
-    isActive: true,
+    isActive: false, // proverb — not on real Stage B for grade 2
   },
   {
     id: 'sc_020',
     sectionType: 'sentence_completion',
     skillTag: 'idioms_proverbs',
+    // NOTE: real Stage B exam doesn't include proverb questions for grade 2.
+    // Kept as advanced bonus material — not surfaced in default rotation.
     difficulty: 'medium',
     questionType: 'text',
     stem: 'סָבָא תָּמִיד אוֹמֵר שֶׁ"______ טוֹב מִשְּׁנַיִם עַל הָ______", כְּלוֹמַר: עָדִיף דָּבָר בָּטוּחַ עַל פְּנֵי דָּבָר לֹא בָּטוּחַ.',
@@ -628,7 +634,7 @@ export const questionBank: Question[] = [
     recommendedTimeSec: 60,
     generatorSource: 'manual',
     qualityScore: 92,
-    isActive: true,
+    isActive: false, // proverb — not on real Stage B for grade 2
   },
 
   // ============================================================
@@ -705,28 +711,34 @@ export const questionBank: Question[] = [
     skillTag: 'part_whole',
     difficulty: 'medium',
     questionType: 'text',
-    stem: 'מִילָּה : פִּסְקָה',
-    options: ['תָּו : מַנְגִּינָה', 'סֵפֶר : מַדָּף', 'עֵט : דְּיוֹ', 'כּוֹתֶרֶת : עִתּוֹן'],
+    stem: 'אוֹת : מִלָּה',
+    // Replaced the old "מילה : פסקה" stem because its distractor "כותרת : עיתון" was
+    // also a defensible part-whole — the old item had two correct answers.
+    // New stem uses a much cleaner part-whole (letter→word) with distractors
+    // that have CLEARLY different relations.
+    options: ['חֶדֶר : בַּיִת', 'סֵפֶר : סוֹפֵר', 'תְּפוּחַ : פְּרִי', 'גֶּשֶׁם : שְׁלוּלִית'],
     correctOption: 0,
-    explanation: 'הַיַּחַס בַּגֶּזַע: מִילָּה הִיא יְחִידָה קְטַנָּה שֶׁמַּרְכִּיבָה פִּסְקָה (חֵלֶק מִשָּׁלֵם).\nנִבְדוֹק אֶת הָאֶפְשָׁרוּיוֹת:\nא) תָּו : מַנְגִּינָה — יְחִידָה קְטַנָּה שֶׁמַּרְכִּיבָה שָׁלֵם ✓\nב) סֵפֶר : מַדָּף — חֵפֶץ עַל מָקוֹם, לֹא חֵלֶק מִשָּׁלֵם\nג) עֵט : דְּיוֹ — כְּלִי וְחֹמֶר\nד) כּוֹתֶרֶת : עִתּוֹן — חֵלֶק מִשָּׁלֵם, אֲבָל כּוֹתֶרֶת הִיא רַכִּיב מִבְנִי, לֹא יְחִידָה שֶׁחוֹזֶרֶת',
+    explanation: 'הַיַּחַס בַּגֶּזַע: אוֹת הִיא חֵלֶק קָטָן שֶׁמַּרְכִּיב מִלָּה.\nא) חֶדֶר : בַּיִת — חֵלֶק שֶׁמַּרְכִּיב שָׁלֵם ✓ (אוֹתוֹ קֶשֶׁר)\nב) סֵפֶר : סוֹפֵר — תּוֹצָר וְיוֹצֵר\nג) תְּפוּחַ : פְּרִי — פְּרָט וְקָטֶגוֹרִיָּה\nד) גֶּשֶׁם : שְׁלוּלִית — סִבָּה וְתוֹצָאָה',
     recommendedTimeSec: 50,
     generatorSource: 'manual',
-    qualityScore: 93,
+    qualityScore: 95,
     isActive: true,
   },
   {
     id: 'wr_006',
     sectionType: 'word_relations',
     skillTag: 'part_whole',
-    difficulty: 'hard',
+    difficulty: 'medium',
     questionType: 'text',
     stem: 'שְׁנִיָּה : דַּקָּה',
-    options: ['סֶנְטִימֶטֶר : מֶטֶר', 'שָׁעוֹן : זְמַן', 'יוֹם : לַיְלָה', 'סַרְגֵּל : מְדִידָה'],
+    // Removed the "יום : לילה" distractor (a 7-year-old reads it as "small time:big time"
+    // and picks it). Replaced with clearly non-quantitative distractors.
+    options: ['סֶנְטִימֶטֶר : מֶטֶר', 'שָׁעוֹן : קִיר', 'דַּקָּה : שָׁעוֹן', 'מַיִם : גֶּשֶׁם'],
     correctOption: 0,
-    explanation: 'הַיַּחַס בַּגֶּזַע: שְׁנִיָּה הִיא יְחִידָה קְטַנָּה יוֹתֵר שֶׁמַּרְכִּיבָה דַּקָּה (60 שְׁנִיּוֹת = דַּקָּה).\nנִבְדוֹק אֶת הָאֶפְשָׁרוּיוֹת:\nא) סֶנְטִימֶטֶר : מֶטֶר — יְחִידָה קְטַנָּה שֶׁמַּרְכִּיבָה גְּדוֹלָה (100 ס"מ = מֶטֶר) ✓\nב) שָׁעוֹן : זְמַן — כְּלִי מְדִידָה וּמוּשָׂג\nג) יוֹם : לַיְלָה — חֲלָקִים שֶׁל יְמָמָה, לֹא יַחַס כָּמוּתִי\nד) סַרְגֵּל : מְדִידָה — כְּלִי וּפְעוּלָה',
+    explanation: 'הַיַּחַס בַּגֶּזַע: שְׁנִיָּה הִיא יְחִידָה קְטַנָּה שֶׁמַּרְכִּיבָה דַּקָּה (60 שְׁנִיּוֹת = דַּקָּה).\nא) סֶנְטִימֶטֶר : מֶטֶר — יְחִידָה קְטַנָּה שֶׁמַּרְכִּיבָה גְּדוֹלָה (100 סנטימטר = מטר) ✓\nב) שָׁעוֹן : קִיר — חֵפֶץ וּמְקוֹמוֹ\nג) דַּקָּה : שָׁעוֹן — מוּשָׂג וּכְלִי מְדִידָה\nד) מַיִם : גֶּשֶׁם — חֹמֶר וּתְצוּגָה שֶׁלּוֹ',
     recommendedTimeSec: 55,
     generatorSource: 'manual',
-    qualityScore: 94,
+    qualityScore: 95,
     isActive: true,
   },
 
@@ -832,12 +844,14 @@ export const questionBank: Question[] = [
     difficulty: 'medium',
     questionType: 'text',
     stem: 'אַשְׁכּוֹלִית : פְּרִי הָדָר',
-    options: ['עֲרָבָה : עֵץ', 'כָּרִישׁ : דָּג', 'וֶרֶד : אָדֹם', 'דְּבוֹרָה : דְּבַשׁ'],
-    correctOption: 1,
-    explanation: 'הַיַּחַס בַּגֶּזַע: אַשְׁכּוֹלִית הִיא סוּג שֶׁל פְּרִי הָדָר (מִין סְפֶּצִיפִי → תַּת-קָטֵגוֹרְיָה).\nנִבְדוֹק אֶת הָאֶפְשָׁרוּיוֹת:\nא) עֲרָבָה : עֵץ — מִין סְפֶּצִיפִי שֶׁל קָטֵגוֹרְיָה כְּלָלִית מִדַּי\nב) כָּרִישׁ : דָּג — מִין סְפֶּצִיפִי שֶׁל קָטֵגוֹרְיָה (כְּמוֹ בַּגֶּזַע) ✓\nג) וֶרֶד : אָדֹם — פְּרָט וְצֶבַע\nד) דְּבוֹרָה : דְּבַשׁ — בַּעַל חַיִּים וּמוּצָר',
+    // Replaced "ערבה : עץ" distractor (which IS also item-category, made the
+    // item ambiguous) with a clearly different relation.
+    options: ['וַנִיל : תַּבְלִין', 'וֶרֶד : אָדֹם', 'דְּבוֹרָה : דְּבַשׁ', 'גֶּשֶׁם : עָנָן'],
+    correctOption: 0,
+    explanation: 'הַיַּחַס בַּגֶּזַע: אַשְׁכּוֹלִית הִיא סוּג שֶׁל פְּרִי הָדָר (פְּרָט → תַּת-קָטֵגוֹרְיָה).\nא) וַנִיל : תַּבְלִין — פְּרָט שֶׁל תַּת-קָטֵגוֹרְיָה ✓\nב) וֶרֶד : אָדֹם — פֶּרַח וְצֶבַע\nג) דְּבוֹרָה : דְּבַשׁ — בַּעַל חַיִּים וּמוּצָר\nד) גֶּשֶׁם : עָנָן — תּוֹצָאָה וְסִבָּה',
     recommendedTimeSec: 50,
     generatorSource: 'manual',
-    qualityScore: 93,
+    qualityScore: 94,
     isActive: true,
   },
 
@@ -948,10 +962,11 @@ export const questionBank: Question[] = [
     skillTag: 'verbal_analogy',
     difficulty: 'hard',
     questionType: 'text',
-    stem: 'גִּשְׁמֵי זֶרֶם : טַפְטוּף',
-    options: ['סְעָרָה : מַשַּׁב רוּחַ', 'יָם : נָהָר', 'הַר : גִּבְעָה', 'שֶׁלֶג : קֶרַח'],
+    stem: 'גֶּשֶׁם חָזָק : טִפְטוּף',
+    // Replaced "גשמי זרם" / "משב רוח" — high-register phrases above grade-2 vocab.
+    options: ['רוּחַ חֲזָקָה : רוּחַ קַלָּה', 'יָם : נָהָר', 'הַר : גִּבְעָה', 'שֶׁלֶג : קֶרַח'],
     correctOption: 0,
-    explanation: 'הַיַּחַס בַּגֶּזַע: גִּשְׁמֵי זֶרֶם הֵם גֶּשֶׁם חָזָק, טַפְטוּף הוּא גֶּשֶׁם חַלָּשׁ (עֹצְמָה חֲזָקָה → עֹצְמָה חַלָּשָׁה שֶׁל אוֹתָהּ תּוֹפָעָה).\nנִבְדוֹק אֶת הָאֶפְשָׁרוּיוֹת:\nא) סְעָרָה : מַשַּׁב רוּחַ — רוּחַ חֲזָקָה מוּל רוּחַ חַלָּשָׁה ✓\nב) יָם : נָהָר — גּוּף מַיִם גָּדוֹל מוּל קָטָן, אֲבָל אֵלוּ דְּבָרִים שׁוֹנִים\nג) הַר : גִּבְעָה — גָּדוֹל מוּל קָטָן, אֲבָל אֵלוּ צוּרוֹת שֶׁטַח שׁוֹנוֹת\nד) שֶׁלֶג : קֶרַח — מַצְבֵי צְבִירָה, לֹא דַּרְגוֹת עֹצְמָה',
+    explanation: 'הַיַּחַס בַּגֶּזַע: גֶּשֶׁם חָזָק וְטִפְטוּף הֵם אוֹתָהּ תּוֹפָעָה בְּעֹצְמוֹת שׁוֹנוֹת.\nא) רוּחַ חֲזָקָה : רוּחַ קַלָּה — אוֹתָהּ תּוֹפָעָה, עֹצְמָה אַחֶרֶת ✓\nב) יָם : נָהָר — גּוּפִים שׁוֹנִים שֶׁל מַיִם\nג) הַר : גִּבְעָה — צוּרוֹת שֶׁטַח שׁוֹנוֹת\nד) שֶׁלֶג : קֶרַח — מַצְבֵי צְבִירָה שׁוֹנִים, לֹא דַּרְגוֹת עֹצְמָה',
     recommendedTimeSec: 60,
     generatorSource: 'manual',
     qualityScore: 95,
@@ -1236,13 +1251,13 @@ export const questionBank: Question[] = [
     questionType: 'shape_svg',
     stem: 'מהי הצורה החסרה?',
     options: [
-      'עיגול עם קו אנכי באמצע',
-      'ריבוע עם קו אנכי',
+      'עיגול מנוקד',
+      'ריבוע מנוקד',
       'עיגול ריק',
-      'עיגול עם X באמצע',
+      'עיגול חצי-מלא',
     ],
     correctOption: 0,
-    explanation: 'הקו השתנה מאופקי לאנכי. אותו שינוי קורה לעיגול: קו אופקי → קו אנכי.',
+    explanation: 'המילוי השתנה: ממופספס למנוקד (אותה צורה, מילוי אחר). אותו שינוי על העיגול: עיגול מופספס ⟵ עיגול מנוקד.',
     recommendedTimeSec: 45,
     generatorSource: 'manual',
     qualityScore: 93,
@@ -1756,10 +1771,10 @@ export const questionBank: Question[] = [
     skillTag: 'divided_circle',
     difficulty: 'medium',
     questionType: 'text',
-    stem: 'בעיגול מחולק ל-4 חלקים: למעלה 2 ו-3, למטה 5 ו-6. בעיגול נוסף: למעלה 4 ו-5, למטה 9 ו-?. הכלל: המספר השלישי הוא סכום שני הראשונים, המספר הרביעי הוא מכפלתם. מהו המספר החסר?',
+    stem: 'בעיגול מחולק ל-4 חלקים: למעלה 2, מימין 3, למטה 5, משמאל 6. בעיגול נוסף: למעלה 4, מימין 5, למטה 9, משמאל ?. הכלל: למטה = למעלה + מימין; משמאל = למעלה × מימין. מהו המספר החסר?',
     options: ['14', '18', '20', '22'],
     correctOption: 2,
-    explanation: 'הכלל: המספר השלישי = סכום (2+3=5), המספר הרביעי = מכפלה (2×3=6). בעיגול השני: 4+5=9 (נכון), 4×5=20.',
+    explanation: 'הכלל: למטה = למעלה + מימין (2+3=5 ✓). משמאל = למעלה × מימין (2×3=6 ✓). בעיגול השני: 4+5=9 ✓, 4×5=20.',
     recommendedTimeSec: 65,
     generatorSource: 'manual',
     qualityScore: 91,
@@ -2004,10 +2019,10 @@ export const questionBank: Question[] = [
     skillTag: 'number_pattern',
     difficulty: 'hard',
     questionType: 'text',
-    stem: 'בצורת יהלום (מעוין): למעלה 5, משמאל 3, מימין 4, למטה 12. ביהלום נוסף: למעלה 6, משמאל 2, מימין 5, למטה ?. הכלל: המספר התחתון = סכום שלושת האחרים. מהו המספר החסר?',
+    stem: 'בעיגול מחולק לארבעה חלקים: למעלה 5, מימין 4, למטה 12, משמאל 3. בעיגול נוסף: למעלה 6, מימין 5, למטה ?, משמאל 2. הכלל: המספר התחתון = סכום שלושת האחרים. מהו המספר החסר?',
     options: ['11', '13', '15', '17'],
     correctOption: 1,
-    explanation: 'הכלל: תחתון = עליון + שמאל + ימין. 5+3+4=12 (נכון). לכן 6+2+5=13.',
+    explanation: 'הכלל: למטה = למעלה + מימין + משמאל. 5+4+3=12 ✓. לכן 6+5+2=13.',
     recommendedTimeSec: 65,
     generatorSource: 'manual',
     qualityScore: 90,

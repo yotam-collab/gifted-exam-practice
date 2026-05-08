@@ -177,7 +177,9 @@ function genFlow(d: Difficulty): NSGenResult {
     } else {
       const subVal = rand(1, Math.max(1, prev - 1));
       val = prev - subVal;
-      operations.push(`-${subVal}`);
+      // Use a true minus sign (− U+2212) with no leading space hack so the
+      // explanation reads `8 − 3 = 5`, not `8 -3 = 5`.
+      operations.push(`−${subVal}`);
     }
     nodes.push(val);
   }
@@ -189,12 +191,25 @@ function genFlow(d: Difficulty): NSGenResult {
 
   const { options, correctOption } = makeNumOptions(answer, [nodes[hideIdx - 1]]);
 
+  // Walk the chain in Hebrew so the explanation reads like a story, not just
+  // a one-line equation. Previous version was 9-12 chars and contained zero
+  // Hebrew letters, which audit flagged as broken.
+  const walk: string[] = [];
+  walk.push(`מתחילים ב-${nodes[0]}.`);
+  for (let i = 1; i < nodes.length; i++) {
+    if (i === hideIdx) {
+      walk.push(`מבצעים ${operations[i - 1]} → המספר החסר הוא ${nodes[i]}.`);
+    } else {
+      walk.push(`מבצעים ${operations[i - 1]} → ${nodes[i]}.`);
+    }
+  }
+
   return {
     skill: 'number_flow',
     stem: 'בשרשרת המספרים, כל מספר מתקבל מהקודם על ידי פעולה חשבונית. מהו המספר החסר?',
     options,
     correctOption,
-    explanation: `${nodes[hideIdx - 1]} ${operations[hideIdx - 1]} = ${answer}.`,
+    explanation: walk.join('\n'),
     visualConfig: {
       type: 'number_flow',
       nodes: displayNodes,
@@ -272,24 +287,28 @@ function genGrid(d: Difficulty): NSGenResult {
 function genTriangle(d: Difficulty): NSGenResult {
   const ruleType = pick(['sum_center', 'product'] as const);
   let top: number, bl: number, br: number, center: number;
+  let hidePos: 'top' | 'bottomLeft' | 'bottomRight' | 'center';
 
   if (ruleType === 'sum_center') {
     top = rand(2, d === 'hard' ? 12 : 8);
     bl = rand(2, d === 'hard' ? 12 : 8);
     br = rand(2, d === 'hard' ? 12 : 8);
     center = top + bl + br;
+    // Any of the 4 positions can be hidden — they're all derivable from the rule.
+    hidePos = pick(['top', 'bottomLeft', 'bottomRight', 'center'] as const);
   } else {
-    top = rand(2, 5);
-    bl = rand(2, 5);
+    // Product rule: top × bottomLeft = bottomRight. The center is decorative
+    // and has NO derivable rule, so we never hide it (previous bug: hiding
+    // center under product rule produced an unsolvable item).
+    top = rand(2, 6);
+    bl = rand(2, 6);
     br = top * bl;
-    center = rand(1, 5); // decorative
+    center = top * bl; // also = product (transparent — no decorative randomness)
+    hidePos = pick(['top', 'bottomLeft', 'bottomRight'] as const);
   }
 
-  // Pick which position to hide
-  const positions: ('top' | 'bottomLeft' | 'bottomRight' | 'center')[] = ['top', 'bottomLeft', 'bottomRight', 'center'];
-  const hidePos = pick(positions);
   const values: Record<string, number> = { top, bottomLeft: bl, bottomRight: br, center };
-  const answer = values[hidePos as string];
+  const answer = values[hidePos];
 
   const display: Record<string, number | string> = {
     top: hidePos === 'top' ? '?' : top,
@@ -300,16 +319,38 @@ function genTriangle(d: Difficulty): NSGenResult {
 
   const { options, correctOption } = makeNumOptions(answer, [top, bl, br, center].filter(v => v !== answer));
 
-  const ruleExplain = ruleType === 'sum_center'
-    ? `הכלל: סכום שלושת הפינות = המספר במרכז.\n${top} + ${bl} + ${br} = ${center}.`
-    : `הכלל: ${top} × ${bl} = ${br}.`;
+  // Build explanation that puts the MISSING value at the end of the equation,
+  // not the known total. Previous version always wrote "top + bl + br = center",
+  // so when the kid hid e.g. `top`, the explanation's last `=` was the known
+  // center — kids would pick that as the answer and get marked wrong.
+  let ruleExplain: string;
+  if (ruleType === 'sum_center') {
+    if (hidePos === 'center') {
+      ruleExplain = `הכלל: סכום שלושת הפינות = המספר במרכז.\n${top} + ${bl} + ${br} = ${center}.`;
+    } else if (hidePos === 'top') {
+      ruleExplain = `הכלל: סכום שלושת הפינות = המספר במרכז (${center}).\nלמצוא את העליון: ${center} − ${bl} − ${br} = ${top}.`;
+    } else if (hidePos === 'bottomLeft') {
+      ruleExplain = `הכלל: סכום שלושת הפינות = המספר במרכז (${center}).\nלמצוא את שמאל-תחתון: ${center} − ${top} − ${br} = ${bl}.`;
+    } else {
+      ruleExplain = `הכלל: סכום שלושת הפינות = המספר במרכז (${center}).\nלמצוא את ימין-תחתון: ${center} − ${top} − ${bl} = ${br}.`;
+    }
+  } else {
+    // product: top × bl = br. Center isn't hidden in this branch (filtered above).
+    if (hidePos === 'top') {
+      ruleExplain = `הכלל: עליון × שמאל-תחתון = ימין-תחתון.\nלמצוא את העליון: ${br} ÷ ${bl} = ${top}.`;
+    } else if (hidePos === 'bottomLeft') {
+      ruleExplain = `הכלל: עליון × שמאל-תחתון = ימין-תחתון.\nלמצוא את שמאל-תחתון: ${br} ÷ ${top} = ${bl}.`;
+    } else {
+      ruleExplain = `הכלל: עליון × שמאל-תחתון = ימין-תחתון.\n${top} × ${bl} = ${br}.`;
+    }
+  }
 
   return {
     skill: 'number_pattern',
     stem: 'במשולש המספרים יש כלל מתמטי. מהו המספר החסר?',
     options,
     correctOption,
-    explanation: `${ruleExplain}\nהמספר החסר: ${answer}.`,
+    explanation: `${ruleExplain}\nהמספר החסר הוא ${answer}.`,
     visualConfig: {
       type: 'number_triangle',
       top: display.top as number | string,

@@ -51,6 +51,41 @@ function describeShape(shape: RenderShape): string {
   return `${scale}${shapeNameHe[shape.type] || shape.type} ${fillNameHe[shape.fill] || ''}`.trim();
 }
 
+/** Shuffle + dedup option list. If two shapes describe identically (e.g. same
+ *  type+fill but different scale below the "small" threshold), the duplicate
+ *  is replaced with a fresh distractor to keep all 4 visible options unique.
+ *  Returns { options, optionShapes } in matching order. */
+function dedupShapeOptions(options: RenderShape[]): RenderShape[] {
+  const seen = new Set<string>();
+  const out: RenderShape[] = [];
+  for (const opt of options) {
+    const key = describeShape(opt);
+    if (seen.has(key)) {
+      // try a tweak that always changes the description: swap fill
+      const altFills = FILL_TYPES.filter(f => f !== opt.fill);
+      let tweak: RenderShape = opt;
+      for (const f of altFills) {
+        const candidate = { ...opt, fill: f };
+        if (!seen.has(describeShape(candidate))) { tweak = candidate; break; }
+      }
+      // still a dup? swap type
+      if (seen.has(describeShape(tweak))) {
+        const altTypes = SHAPE_TYPES.filter(t => t !== tweak.type);
+        for (const t of altTypes) {
+          const candidate = { ...tweak, type: t };
+          if (!seen.has(describeShape(candidate))) { tweak = candidate; break; }
+        }
+      }
+      seen.add(describeShape(tweak));
+      out.push(tweak);
+    } else {
+      seen.add(key);
+      out.push(opt);
+    }
+  }
+  return out;
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // GENERATORS
 // ═══════════════════════════════════════════════════════════════════════
@@ -86,7 +121,7 @@ function genAnalogy(): ShapeGenResult {
     s(pick(SHAPE_TYPES.filter(t => t !== type2)), fill2), // Wrong type
   ];
 
-  const allOptions = shuffle([correct, ...wrongs]);
+  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]));
   const correctIdx = allOptions.indexOf(correct);
 
   return {
@@ -121,7 +156,7 @@ function genScaleAnalogy(): ShapeGenResult {
     s(type1, fill, { scale: 1.15 }), // Same as B
   ];
 
-  const allOptions = shuffle([correct, ...wrongs]);
+  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]));
 
   return {
     skill: 'shape_analogy',
@@ -186,7 +221,7 @@ function genSeries(): ShapeGenResult {
     sameTypeDiffFill(correct),
   ];
 
-  const allOptions = shuffle([correct, ...wrongs]);
+  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]));
 
   return {
     skill: 'shape_sequence',
@@ -216,7 +251,7 @@ function genFillSeries(): ShapeGenResult {
     s(pick(SHAPE_TYPES.filter(t => t !== type)), fills[2]),
   ];
 
-  const allOptions = shuffle([correct, ...wrongs]);
+  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]));
 
   return {
     skill: 'graphic_rule',
@@ -313,7 +348,7 @@ function genGridPattern(): ShapeGenResult {
     s(pick(SHAPE_TYPES.filter(t => t !== type1 && t !== type2)), fill2), // Random
   ];
 
-  const allOptions = shuffle([correct, ...wrongs]);
+  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]));
 
   return {
     skill: 'fill_frame',
@@ -329,6 +364,73 @@ function genGridPattern(): ShapeGenResult {
   };
 }
 
+// ── 3×3 multi-rule matrix ───────────────────────────────────────────────
+// Hard items on the real Stage B exam combine TWO rules across rows and
+// columns. We pick three types for rows + three fills for columns. Cell
+// (r,c) = (type[r], fill[c]). The bottom-right cell is hidden.
+//
+// Distractors are constructed to be plausible:
+//   • correct row but wrong column fill
+//   • correct column fill but wrong row type
+//   • a totally unrelated shape (rare-template trap)
+function genGrid3x3(): ShapeGenResult {
+  const types = shuffle([...SHAPE_TYPES]).slice(0, 3);
+  const fills = shuffle([...FILL_TYPES]).slice(0, 3);
+
+  const grid: (RenderShape | null)[][] = types.map((t, r) =>
+    fills.map((f, c) => (r === 2 && c === 2 ? null : s(t, f))),
+  );
+
+  const correct = s(types[2], fills[2]);
+  const distractors = [
+    s(types[2], fills[0]), // right row, wrong fill
+    s(types[0], fills[2]), // right fill, wrong row
+    s(pick(SHAPE_TYPES.filter(t => !types.includes(t))), fills[2]), // unrelated type
+  ];
+
+  const allOptions = dedupShapeOptions(shuffle([correct, ...distractors]));
+
+  return {
+    skill: 'graphic_pattern',
+    stem: 'מהי הצורה החסרה במשבצת הריקה?',
+    options: allOptions.map(describeShape),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `כל שורה היא צורה אחרת: ${shapeNameHe[types[0]]}, ${shapeNameHe[types[1]]}, ${shapeNameHe[types[2]]}.\nכל עמודה היא מילוי אחר: ${fillNameHe[fills[0]]}, ${fillNameHe[fills[1]]}, ${fillNameHe[fills[2]]}.\nהשורה האחרונה היא ${shapeNameHe[types[2]]}, העמודה האחרונה ${fillNameHe[fills[2]]}.\nלכן הצורה החסרה: ${shapeNameHe[types[2]]} ${fillNameHe[fills[2]]}.`,
+    visualConfig: {
+      stemLayout: 'grid',
+      gridCells: grid,
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
+// ── Mirror-symmetry odd-one-out ─────────────────────────────────────────
+// Three shapes are rotated identically; one is mirrored. Trains the
+// "rotation vs reflection" trap that's classic on Stage B figural items.
+function genMirrorOddOneOut(): ShapeGenResult {
+  // Use arrows (clearly directional) — mirrored arrow = pointing opposite side.
+  const baseRot = pick([0, 45, 90, 135]); // base direction
+  const same: RenderShape = s('arrow', 'solid', { rotation: baseRot });
+  const mirrored: RenderShape = s('arrow', 'solid', { rotation: (360 - baseRot) % 360 });
+  const oddIdx = Math.floor(Math.random() * 4);
+  const stemShapes: RenderShape[] = [];
+  for (let i = 0; i < 4; i++) stemShapes.push(i === oddIdx ? mirrored : same);
+  const labels = ['א', 'ב', 'ג', 'ד'];
+
+  return {
+    skill: 'odd_one_out',
+    stem: 'איזו צורה שונה מהאחרות?',
+    options: labels,
+    correctOption: oddIdx,
+    explanation: `שלושה חצים מצביעים לאותו כיוון. צורה ${labels[oddIdx]} משוקפת — היא מצביעה לכיוון הפוך. זהו השוני.`,
+    visualConfig: {
+      stemLayout: 'odd_one_out',
+      stemShapes,
+      optionShapes: undefined,
+    },
+  };
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // Public API
 // ═══════════════════════════════════════════════════════════════════════
@@ -338,6 +440,9 @@ type GenFn = () => ShapeGenResult;
 const generators: GenFn[] = [
   genAnalogy, genScaleAnalogy, genTransformation, genSeries,
   genFillSeries, genOddOneOut, genFillOddOneOut, genGridPattern,
+  // Hard generators (multi-rule + mirror) added to the rotation. Real Stage B
+  // routinely uses 3×3 multi-rule matrices; these were absent before.
+  genGrid3x3, genMirrorOddOneOut,
 ];
 
 export interface ShapeQuestionWithVisual {

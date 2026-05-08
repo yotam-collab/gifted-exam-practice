@@ -24,6 +24,27 @@ export interface RenderShape {
 }
 
 // ---------------------------------------------------------------------------
+// Theme — kept centralized so the diagrams have an authentic, exam-paper look
+// even when the surrounding app is on a dark theme.
+// ---------------------------------------------------------------------------
+
+export const DIAGRAM_THEME = {
+  paper: '#fbf8f1',          // warm off-white "paper"
+  paperBorder: '#d6c8a3',    // soft tan border around paper
+  ink: '#1f2937',            // shape ink (near-black)
+  inkSoft: '#475569',        // subtle ink for separators
+  rule: '#94a3b8',           // grid/rule lines
+  missing: '#d97706',        // orange accent for the "?" cell
+  missingBg: 'rgba(245, 158, 11, 0.12)',
+  hintEliminated: 'rgba(244, 63, 94, 0.55)',
+  optionDefault: '#ffffff',
+  optionBorder: '#e5e7eb',
+  optionLabel: '#9ca3af',
+  optionSelected: '#6366f1',
+  optionSelectedBg: '#eef2ff',
+} as const;
+
+// ---------------------------------------------------------------------------
 // Helpers – pattern definitions (stripes & dots)
 // ---------------------------------------------------------------------------
 
@@ -67,7 +88,6 @@ function patternDefs(
 // Helpers – shape path / element builders
 // ---------------------------------------------------------------------------
 
-/** Generate points for a regular polygon centered at (0,0) with given radius. */
 function regularPolygonPoints(sides: number, radius: number, startAngle = -Math.PI / 2): string {
   return Array.from({ length: sides })
     .map((_, i) => {
@@ -77,7 +97,6 @@ function regularPolygonPoints(sides: number, radius: number, startAngle = -Math.
     .join(' ');
 }
 
-/** Generate 5-pointed star centered at (0,0). */
 function starPoints(outerR: number, innerR: number): string {
   const pts: string[] = [];
   for (let i = 0; i < 10; i++) {
@@ -88,7 +107,6 @@ function starPoints(outerR: number, innerR: number): string {
   return pts.join(' ');
 }
 
-/** Build the core SVG element for a shape type (centered at 0,0). */
 function buildShapeElement(
   type: RenderShape['type'],
   size: number,
@@ -118,6 +136,7 @@ function buildShapeElement(
           y={-half * 0.8}
           width={half * 1.6}
           height={half * 1.6}
+          rx={2}
           {...common}
         />
       );
@@ -129,6 +148,7 @@ function buildShapeElement(
           y={-half * 0.55}
           width={half * 1.9}
           height={half * 1.1}
+          rx={2}
           {...common}
         />
       );
@@ -148,21 +168,22 @@ function buildShapeElement(
       return <polygon points={regularPolygonPoints(6, half * 0.85)} {...common} />;
 
     case 'star':
-      return (
-        <polygon points={starPoints(half * 0.9, half * 0.4)} {...common} />
-      );
+      return <polygon points={starPoints(half * 0.9, half * 0.4)} {...common} />;
 
     case 'arrow': {
+      // Arrow points UP at rotation=0 — clearer/simpler convention than the
+      // previous transform="rotate(180)" workaround (which made angles confusing
+      // for analogies and series, and broke directional explanations).
       const pts = [
-        `${half * 0.5},${-half * 0.85}`,  // tip
-        `${half * 0.9},0`,                  // right wing
-        `${half * 0.35},0`,                 // right notch
-        `${half * 0.35},${half * 0.85}`,    // right base
-        `${-half * 0.35},${half * 0.85}`,   // left base
-        `${-half * 0.35},0`,                // left notch
-        `${-half * 0.9},0`,                 // left wing
+        `0,${-half * 0.85}`,        // tip (up)
+        `${half * 0.55},${-half * 0.1}`,  // right wing
+        `${half * 0.22},${-half * 0.1}`,  // right notch
+        `${half * 0.22},${half * 0.85}`,  // right base
+        `${-half * 0.22},${half * 0.85}`, // left base
+        `${-half * 0.22},${-half * 0.1}`, // left notch
+        `${-half * 0.55},${-half * 0.1}`, // left wing
       ].join(' ');
-      return <polygon points={pts} {...common} transform="rotate(180)" />;
+      return <polygon points={pts} {...common} />;
     }
 
     case 'plus': {
@@ -201,11 +222,10 @@ function renderShape(
   cy: number,
   size: number,
 ): React.ReactElement {
-  const color = shape.color || '#333';
+  const color = shape.color || DIAGRAM_THEME.ink;
   const rotation = shape.rotation ?? 0;
   const scale = shape.scale ?? 1;
 
-  // Determine stroke properties based on border mode
   let strokeWidth: number;
   let strokeDash: string | undefined;
   switch (shape.border ?? 'thin') {
@@ -213,7 +233,7 @@ function renderShape(
       strokeWidth = 0;
       break;
     case 'thick':
-      strokeWidth = 3;
+      strokeWidth = 3.2;
       break;
     case 'dashed':
       strokeWidth = 1.8;
@@ -221,13 +241,12 @@ function renderShape(
       break;
     case 'thin':
     default:
-      strokeWidth = 1.5;
+      strokeWidth = 1.8;
       break;
   }
 
   const strokeColor = color;
 
-  // Determine fill value (and whether we need a <defs> block for patterns)
   let fillAttr: string;
   let defsElement: React.ReactElement | null = null;
   let clipElement: React.ReactElement | null = null;
@@ -250,7 +269,6 @@ function renderShape(
       break;
     }
     case 'half': {
-      // We render two copies: one with no fill for the outline, one clipped to bottom half
       fillAttr = 'none';
       clipElement = (
         <clipPath id={clipId}>
@@ -278,19 +296,51 @@ function renderShape(
       {defsElement && <defs>{defsElement}</defs>}
       {clipElement && <defs>{clipElement}</defs>}
 
-      {/* Main shape */}
       {buildShapeElement(shape.type, size, fillAttr, strokeColor, strokeWidth, strokeDash)}
 
-      {/* Half-fill: render a second filled copy clipped to the bottom half */}
       {shape.fill === 'half' && (
         <g clipPath={`url(#${clipId})`}>
           {buildShapeElement(shape.type, size, color, strokeColor, strokeWidth, strokeDash)}
         </g>
       )}
 
-      {/* Inner shape (rendered at ~40% of parent size) */}
       {shape.innerShape && renderShape(shape.innerShape, 0, 0, size * 0.4)}
     </g>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Component: DiagramPaper — wraps any diagram in a clean exam-paper card.
+// Authentic to the printed Stage B booklet look.
+// ---------------------------------------------------------------------------
+
+export function DiagramPaper({
+  children,
+  padding = 16,
+  inline = false,
+}: {
+  children: React.ReactNode;
+  padding?: number;
+  inline?: boolean;
+}): React.ReactElement {
+  return (
+    <div
+      className="diagram-pop"
+      style={{
+        background: DIAGRAM_THEME.paper,
+        border: `1.5px solid ${DIAGRAM_THEME.paperBorder}`,
+        borderRadius: 14,
+        padding,
+        display: inline ? 'inline-flex' : 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.5)',
+        maxWidth: '100%',
+        overflowX: 'auto',
+      }}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -301,11 +351,14 @@ function renderShape(
 export function ShapeBox({
   shape,
   size = 60,
+  bare = false,
 }: {
   shape: RenderShape;
   size?: number;
+  /** When true, omit the box frame (used inside DiagramPaper which already provides one). */
+  bare?: boolean;
 }): React.ReactElement {
-  const padding = 6;
+  const padding = bare ? 2 : 6;
   const totalSize = size + padding * 2;
 
   return (
@@ -314,10 +367,11 @@ export function ShapeBox({
       height={totalSize}
       viewBox={`0 0 ${totalSize} ${totalSize}`}
       style={{
-        borderRadius: 10,
-        background: '#fafafa',
-        border: '1.5px solid #e5e7eb',
+        borderRadius: bare ? 0 : 10,
+        background: bare ? 'transparent' : DIAGRAM_THEME.paper,
+        border: bare ? 'none' : `1.5px solid ${DIAGRAM_THEME.paperBorder}`,
         display: 'inline-block',
+        flexShrink: 0,
       }}
     >
       {renderShape(shape, totalSize / 2, totalSize / 2, size)}
@@ -336,13 +390,13 @@ export function ShapeAnalogy({
   shapes: RenderShape[];
   questionMark?: boolean;
 }): React.ReactElement {
-  // Expect at least 3 shapes (A, B, C) and optionally D
   const [shapeA, shapeB, shapeC, shapeD] = shapes;
+  const boxSize = 68;
 
   const separatorStyle: React.CSSProperties = {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: 700,
-    color: '#6b7280',
+    color: DIAGRAM_THEME.inkSoft,
     display: 'flex',
     alignItems: 'center',
     padding: '0 6px',
@@ -350,44 +404,47 @@ export function ShapeAnalogy({
   };
 
   const questionBoxStyle: React.CSSProperties = {
-    width: 72,
-    height: 72,
+    width: boxSize + 8,
+    height: boxSize + 8,
     borderRadius: 10,
-    background: '#fef3c7',
-    border: '2px dashed #f59e0b',
+    background: DIAGRAM_THEME.missingBg,
+    border: `2px dashed ${DIAGRAM_THEME.missing}`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: 700,
-    color: '#d97706',
+    color: DIAGRAM_THEME.missing,
+    flexShrink: 0,
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 4,
-        direction: 'ltr',
-        flexWrap: 'wrap',
-      }}
-    >
-      {shapeA && <ShapeBox shape={shapeA} />}
-      <span style={separatorStyle}>:</span>
-      {shapeB && <ShapeBox shape={shapeB} />}
-      <span style={separatorStyle}>=</span>
-      {shapeC && <ShapeBox shape={shapeC} />}
-      <span style={separatorStyle}>:</span>
+    <DiagramPaper inline>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          direction: 'ltr',
+          flexWrap: 'wrap',
+        }}
+      >
+        {shapeA && <ShapeBox shape={shapeA} size={boxSize} bare />}
+        <span style={separatorStyle}>:</span>
+        {shapeB && <ShapeBox shape={shapeB} size={boxSize} bare />}
+        <span style={separatorStyle}>=</span>
+        {shapeC && <ShapeBox shape={shapeC} size={boxSize} bare />}
+        <span style={separatorStyle}>:</span>
 
-      {shapeD && !questionMark ? (
-        <ShapeBox shape={shapeD} />
-      ) : (
-        <div style={questionBoxStyle}>?</div>
-      )}
-    </div>
+        {shapeD && !questionMark ? (
+          <ShapeBox shape={shapeD} size={boxSize} bare />
+        ) : (
+          <div style={questionBoxStyle}>?</div>
+        )}
+      </div>
+    </DiagramPaper>
   );
 }
 
@@ -400,60 +457,54 @@ export function ShapeSeries({
 }: {
   shapes: RenderShape[];
 }): React.ReactElement {
+  const boxSize = 60;
+
   const questionBoxStyle: React.CSSProperties = {
-    width: 72,
-    height: 72,
+    width: boxSize + 8,
+    height: boxSize + 8,
     borderRadius: 10,
-    background: '#fef3c7',
-    border: '2px dashed #f59e0b',
+    background: DIAGRAM_THEME.missingBg,
+    border: `2px dashed ${DIAGRAM_THEME.missing}`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: 28,
     fontWeight: 700,
-    color: '#d97706',
+    color: DIAGRAM_THEME.missing,
     flexShrink: 0,
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        direction: 'ltr',
-        flexWrap: 'wrap',
-      }}
-    >
-      {shapes.map((shape, i) => (
-        <React.Fragment key={i}>
-          <ShapeBox shape={shape} />
-          {i < shapes.length - 1 && (
-            <span
-              style={{
-                fontSize: 20,
-                color: '#d1d5db',
-                userSelect: 'none',
-              }}
-            >
-              {'\u279C'}
-            </span>
-          )}
-        </React.Fragment>
-      ))}
-      <span
+    <DiagramPaper inline>
+      <div
         style={{
-          fontSize: 20,
-          color: '#d1d5db',
-          userSelect: 'none',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          direction: 'ltr',
+          flexWrap: 'wrap',
         }}
       >
-        {'\u279C'}
-      </span>
-      <div style={questionBoxStyle}>?</div>
-    </div>
+        {shapes.map((shape, i) => (
+          <React.Fragment key={i}>
+            <ShapeBox shape={shape} size={boxSize} bare />
+            <span
+              style={{
+                fontSize: 18,
+                color: DIAGRAM_THEME.rule,
+                userSelect: 'none',
+                padding: '0 2px',
+              }}
+            >
+              {'➜'}
+            </span>
+          </React.Fragment>
+        ))}
+        <div style={questionBoxStyle}>?</div>
+      </div>
+    </DiagramPaper>
   );
 }
 
@@ -466,13 +517,16 @@ export function ShapeOptions({
   selected,
   onSelect,
   disabled = false,
+  eliminated = [],
 }: {
   options: RenderShape[][];
   selected?: number;
   onSelect: (index: number) => void;
   disabled?: boolean;
+  /** Indices the child has eliminated using the hint/strike-out feature. */
+  eliminated?: number[];
 }): React.ReactElement {
-  const labels = ['\u05D0', '\u05D1', '\u05D2', '\u05D3']; // Hebrew: aleph, bet, gimel, dalet
+  const labels = ['א', 'ב', 'ג', 'ד'];
 
   return (
     <div
@@ -480,36 +534,42 @@ export function ShapeOptions({
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         gap: 12,
-        maxWidth: 340,
+        maxWidth: 360,
         margin: '0 auto',
       }}
     >
       {options.map((optionShapes, idx) => {
         const isSelected = selected === idx;
+        const isEliminated = eliminated.includes(idx);
 
         return (
           <button
             key={idx}
-            onClick={() => !disabled && onSelect(idx)}
-            disabled={disabled}
+            onClick={() => !disabled && !isEliminated && onSelect(idx)}
+            disabled={disabled || isEliminated}
             style={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 4,
+              gap: 6,
               padding: 10,
               borderRadius: 14,
-              border: isSelected ? '2.5px solid #6366f1' : '2px solid #e5e7eb',
-              background: isSelected ? '#eef2ff' : '#ffffff',
+              border: isSelected
+                ? `2.5px solid ${DIAGRAM_THEME.optionSelected}`
+                : `2px solid ${DIAGRAM_THEME.optionBorder}`,
+              background: isSelected
+                ? DIAGRAM_THEME.optionSelectedBg
+                : DIAGRAM_THEME.optionDefault,
               boxShadow: isSelected
                 ? '0 0 0 3px rgba(99,102,241,0.18)'
                 : '0 1px 3px rgba(0,0,0,0.06)',
-              cursor: disabled ? 'default' : 'pointer',
-              opacity: disabled && !isSelected ? 0.55 : 1,
+              cursor: disabled || isEliminated ? 'default' : 'pointer',
+              opacity: isEliminated ? 0.35 : disabled && !isSelected ? 0.55 : 1,
               transition: 'all 0.15s ease',
               outline: 'none',
-              minHeight: 90,
+              minHeight: 96,
+              position: 'relative',
             }}
           >
             <div
@@ -522,19 +582,38 @@ export function ShapeOptions({
               }}
             >
               {optionShapes.map((s, sIdx) => (
-                <ShapeBox key={sIdx} shape={s} size={44} />
+                <ShapeBox key={sIdx} shape={s} size={46} />
               ))}
             </div>
             <span
               style={{
                 fontSize: 14,
-                fontWeight: 600,
-                color: isSelected ? '#4338ca' : '#9ca3af',
+                fontWeight: 700,
+                color: isSelected ? '#4338ca' : DIAGRAM_THEME.optionLabel,
                 marginTop: 2,
               }}
             >
               {labels[idx] ?? idx + 1}
             </span>
+            {isEliminated && (
+              <span
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 56,
+                  color: DIAGRAM_THEME.hintEliminated,
+                  fontWeight: 900,
+                  pointerEvents: 'none',
+                  lineHeight: 1,
+                }}
+              >
+                ✕
+              </span>
+            )}
           </button>
         );
       })}
@@ -552,42 +631,41 @@ export function ShapeGrid({
   cells: (RenderShape | null)[][];
 }): React.ReactElement {
   const cols = cells[0]?.length || 0;
+  const cellSize = cols >= 3 ? 52 : 60;
 
   const questionBoxStyle: React.CSSProperties = {
-    width: 60,
-    height: 60,
+    width: cellSize + 8,
+    height: cellSize + 8,
     borderRadius: 8,
-    background: '#fef3c7',
-    border: '2px dashed #f59e0b',
+    background: DIAGRAM_THEME.missingBg,
+    border: `2px dashed ${DIAGRAM_THEME.missing}`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: 24,
     fontWeight: 700,
-    color: '#d97706',
+    color: DIAGRAM_THEME.missing,
   };
 
   return (
-    <div
-      style={{
-        display: 'inline-grid',
-        gridTemplateColumns: `repeat(${cols}, auto)`,
-        gap: 6,
-        padding: 12,
-        background: '#f8fafc',
-        borderRadius: 14,
-        border: '2px solid #e2e8f0',
-        direction: 'ltr',
-      }}
-    >
-      {cells.flat().map((cell, i) =>
-        cell ? (
-          <ShapeBox key={i} shape={cell} size={52} />
-        ) : (
-          <div key={i} style={questionBoxStyle}>?</div>
-        )
-      )}
-    </div>
+    <DiagramPaper inline padding={12}>
+      <div
+        style={{
+          display: 'inline-grid',
+          gridTemplateColumns: `repeat(${cols}, auto)`,
+          gap: 8,
+          direction: 'ltr',
+        }}
+      >
+        {cells.flat().map((cell, i) =>
+          cell ? (
+            <ShapeBox key={i} shape={cell} size={cellSize} />
+          ) : (
+            <div key={i} style={questionBoxStyle}>?</div>
+          )
+        )}
+      </div>
+    </DiagramPaper>
   );
 }
 
@@ -597,34 +675,36 @@ export function ShapeGrid({
 
 export function ShapeRow({
   shapes,
-  separator = '\u2192',
+  separator = '→',
 }: {
   shapes: RenderShape[];
   separator?: string;
 }): React.ReactElement {
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        direction: 'ltr',
-        flexWrap: 'wrap',
-      }}
-    >
-      {shapes.map((shape, i) => (
-        <React.Fragment key={i}>
-          <ShapeBox shape={shape} />
-          {i < shapes.length - 1 && (
-            <span style={{ fontSize: 24, color: '#9ca3af', userSelect: 'none' }}>
-              {separator}
-            </span>
-          )}
-        </React.Fragment>
-      ))}
-    </div>
+    <DiagramPaper inline>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          direction: 'ltr',
+          flexWrap: 'wrap',
+        }}
+      >
+        {shapes.map((shape, i) => (
+          <React.Fragment key={i}>
+            <ShapeBox shape={shape} size={64} bare />
+            {i < shapes.length - 1 && (
+              <span style={{ fontSize: 26, color: DIAGRAM_THEME.inkSoft, userSelect: 'none' }}>
+                {separator}
+              </span>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    </DiagramPaper>
   );
 }
 
@@ -637,129 +717,132 @@ export function ShapeOddOneOut({
 }: {
   shapes: RenderShape[];
 }): React.ReactElement {
-  const labels = ['\u05D0', '\u05D1', '\u05D2', '\u05D3'];
+  const labels = ['א', 'ב', 'ג', 'ד'];
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-        direction: 'ltr',
-        flexWrap: 'wrap',
-      }}
-    >
-      {shapes.map((shape, i) => (
-        <div
-          key={i}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 4,
-          }}
-        >
-          <ShapeBox shape={shape} />
-          <span
+    <DiagramPaper inline>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 14,
+          direction: 'ltr',
+          flexWrap: 'wrap',
+        }}
+      >
+        {shapes.map((shape, i) => (
+          <div
+            key={i}
             style={{
-              fontSize: 16,
-              fontWeight: 700,
-              color: '#6b7280',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
             }}
           >
-            {labels[i]}
-          </span>
-        </div>
-      ))}
-    </div>
+            <ShapeBox shape={shape} size={62} bare />
+            <span
+              style={{
+                fontSize: 16,
+                fontWeight: 700,
+                color: DIAGRAM_THEME.inkSoft,
+              }}
+            >
+              {labels[i]}
+            </span>
+          </div>
+        ))}
+      </div>
+    </DiagramPaper>
   );
 }
 
 // ===========================================================================
 // NUMBERS IN SHAPES COMPONENTS
+// All on white "paper" with ink-black numbers and a clean Y-shape divider.
 // ===========================================================================
 
 // ---------------------------------------------------------------------------
 // Component: DividedCircle – circle divided into 3 or 4 segments with numbers
-// Like the real exam: top, bottom-left, bottom-right (or 4 quadrants)
 // ---------------------------------------------------------------------------
 
 export function DividedCircle({
   values,
   missingIndex,
-  size = 120,
+  size = 130,
 }: {
   values: (number | string)[];
   missingIndex?: number;
   size?: number;
 }): React.ReactElement {
-  const r = size / 2 - 4;
+  const r = size / 2 - 6;
   const cx = size / 2;
   const cy = size / 2;
+  const fontSize = size * 0.2;
+
+  const renderText = (val: number | string, x: number, y: number, i: number) => {
+    const isMissing = i === missingIndex;
+    return (
+      <text
+        key={i}
+        x={x}
+        y={y}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={fontSize}
+        fontWeight="bold"
+        fill={isMissing ? DIAGRAM_THEME.missing : DIAGRAM_THEME.ink}
+      >
+        {isMissing ? '?' : val}
+      </text>
+    );
+  };
 
   if (values.length === 3) {
-    // 3-part circle: top, bottom-left, bottom-right
-    const textPositions = [
-      { x: cx, y: cy - r * 0.35 },       // top
-      { x: cx - r * 0.4, y: cy + r * 0.35 }, // bottom-left
-      { x: cx + r * 0.4, y: cy + r * 0.35 }, // bottom-right
-    ];
+    // Y-shape divider with trunk going DOWN — produces three equal 120° wedges:
+    // a single TOP wedge (where "18"-style large value lives) and two BOTTOM
+    // wedges (left + right). Lines emanate from center at angles 30°, 150°, 270°.
+    // Each text position sits in the center of its 120° wedge so labels never
+    // overlap a divider line.
+    const cos30 = Math.cos(Math.PI / 6); // 0.866
+    const sin30 = Math.sin(Math.PI / 6); // 0.5
 
     return (
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#94a3b8" strokeWidth="2.5" />
-        {/* Dividing lines from center */}
-        <line x1={cx} y1={cy - r} x2={cx} y2={cy} stroke="#94a3b8" strokeWidth="1.5" />
-        <line x1={cx} y1={cy} x2={cx - r * 0.87} y2={cy + r * 0.5} stroke="#94a3b8" strokeWidth="1.5" />
-        <line x1={cx} y1={cy} x2={cx + r * 0.87} y2={cy + r * 0.5} stroke="#94a3b8" strokeWidth="1.5" />
-        {/* Numbers */}
-        {values.map((val, i) => (
-          <text
-            key={i}
-            x={textPositions[i].x}
-            y={textPositions[i].y}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={size * 0.18}
-            fontWeight="bold"
-            fill={i === missingIndex ? '#f59e0b' : '#e2e8f0'}
-          >
-            {i === missingIndex ? '?' : val}
-          </text>
-        ))}
+        <circle cx={cx} cy={cy} r={r} fill={DIAGRAM_THEME.paper} stroke={DIAGRAM_THEME.ink} strokeWidth="2.4" />
+        {/* Trunk — straight down */}
+        <line x1={cx} y1={cy} x2={cx} y2={cy + r} stroke={DIAGRAM_THEME.ink} strokeWidth="1.8" />
+        {/* Upper-right diagonal */}
+        <line x1={cx} y1={cy} x2={cx + r * cos30} y2={cy - r * sin30} stroke={DIAGRAM_THEME.ink} strokeWidth="1.8" />
+        {/* Upper-left diagonal */}
+        <line x1={cx} y1={cy} x2={cx - r * cos30} y2={cy - r * sin30} stroke={DIAGRAM_THEME.ink} strokeWidth="1.8" />
+        {/* Text positions, one per wedge — centred at radius 0.5r from center */}
+        {/* Top wedge center: straight up */}
+        {renderText(values[0], cx, cy - r * 0.5, 0)}
+        {/* Bottom-left wedge center: angle 210° → (cos210°, -sin210°) = (-0.866, +0.5) scaled by 0.5r */}
+        {renderText(values[1], cx - r * 0.43, cy + r * 0.25, 1)}
+        {/* Bottom-right wedge center: angle 330° → (cos330°, -sin330°) = (+0.866, +0.5) scaled by 0.5r */}
+        {renderText(values[2], cx + r * 0.43, cy + r * 0.25, 2)}
       </svg>
     );
   }
 
-  // 4-part circle: top, right, bottom, left
+  // 4-part: top, right, bottom, left (cross dividers)
   const textPositions4 = [
-    { x: cx, y: cy - r * 0.45 },       // top
-    { x: cx + r * 0.45, y: cy },       // right
-    { x: cx, y: cy + r * 0.45 },       // bottom
-    { x: cx - r * 0.45, y: cy },       // left
+    { x: cx, y: cy - r * 0.5 },
+    { x: cx + r * 0.5, y: cy },
+    { x: cx, y: cy + r * 0.5 },
+    { x: cx - r * 0.5, y: cy },
   ];
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#94a3b8" strokeWidth="2.5" />
-      <line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke="#94a3b8" strokeWidth="1.5" />
-      <line x1={cx} y1={cy - r} x2={cx} y2={cy + r} stroke="#94a3b8" strokeWidth="1.5" />
-      {values.map((val, i) => (
-        <text
-          key={i}
-          x={textPositions4[i].x}
-          y={textPositions4[i].y}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={size * 0.18}
-          fontWeight="bold"
-          fill={i === missingIndex ? '#f59e0b' : '#e2e8f0'}
-        >
-          {i === missingIndex ? '?' : val}
-        </text>
-      ))}
+      <circle cx={cx} cy={cy} r={r} fill={DIAGRAM_THEME.paper} stroke={DIAGRAM_THEME.ink} strokeWidth="2.4" />
+      <line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke={DIAGRAM_THEME.ink} strokeWidth="1.8" />
+      <line x1={cx} y1={cy - r} x2={cx} y2={cy + r} stroke={DIAGRAM_THEME.ink} strokeWidth="1.8" />
+      {values.map((val, i) => renderText(val, textPositions4[i].x, textPositions4[i].y, i))}
     </svg>
   );
 }
@@ -773,25 +856,29 @@ export function DividedCirclePair({
   circle2,
   missingCircle,
   missingIndex,
+  size = 130,
 }: {
   circle1: (number | string)[];
   circle2: (number | string)[];
   missingCircle: 1 | 2;
   missingIndex: number;
+  size?: number;
 }): React.ReactElement {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, direction: 'ltr' }}>
-      <DividedCircle
-        values={circle1}
-        missingIndex={missingCircle === 1 ? missingIndex : undefined}
-        size={130}
-      />
-      <DividedCircle
-        values={circle2}
-        missingIndex={missingCircle === 2 ? missingIndex : undefined}
-        size={130}
-      />
-    </div>
+    <DiagramPaper>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, direction: 'ltr', flexWrap: 'wrap' }}>
+        <DividedCircle
+          values={circle1}
+          missingIndex={missingCircle === 1 ? missingIndex : undefined}
+          size={size}
+        />
+        <DividedCircle
+          values={circle2}
+          missingIndex={missingCircle === 2 ? missingIndex : undefined}
+          size={size}
+        />
+      </div>
+    </DiagramPaper>
   );
 }
 
@@ -808,39 +895,43 @@ export function NumberPyramid({
   missingRow: number;
   missingCol: number;
 }): React.ReactElement {
-  const cellSize = 48;
+  const cellSize = 50;
   const gap = 6;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap, direction: 'ltr' }}>
-      {rows.map((row, ri) => (
-        <div key={ri} style={{ display: 'flex', gap, justifyContent: 'center' }}>
-          {row.map((val, ci) => {
-            const isMissing = ri === missingRow && ci === missingCol;
-            return (
-              <div
-                key={ci}
-                style={{
-                  width: cellSize,
-                  height: cellSize,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: isMissing ? '2px dashed #f59e0b' : '2px solid #94a3b8',
-                  borderRadius: 8,
-                  background: isMissing ? 'rgba(245, 158, 11, 0.1)' : 'rgba(148, 163, 184, 0.1)',
-                  fontSize: 18,
-                  fontWeight: 700,
-                  color: isMissing ? '#f59e0b' : '#e2e8f0',
-                }}
-              >
-                {isMissing ? '?' : val}
-              </div>
-            );
-          })}
-        </div>
-      ))}
-    </div>
+    <DiagramPaper>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap, direction: 'ltr' }}>
+        {rows.map((row, ri) => (
+          <div key={ri} style={{ display: 'flex', gap, justifyContent: 'center' }}>
+            {row.map((val, ci) => {
+              const isMissing = ri === missingRow && ci === missingCol;
+              return (
+                <div
+                  key={ci}
+                  style={{
+                    width: cellSize,
+                    height: cellSize,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: isMissing
+                      ? `2px dashed ${DIAGRAM_THEME.missing}`
+                      : `2px solid ${DIAGRAM_THEME.ink}`,
+                    borderRadius: 8,
+                    background: isMissing ? DIAGRAM_THEME.missingBg : '#ffffff',
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: isMissing ? DIAGRAM_THEME.missing : DIAGRAM_THEME.ink,
+                  }}
+                >
+                  {isMissing ? '?' : val}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </DiagramPaper>
   );
 }
 
@@ -857,45 +948,47 @@ export function NumberGrid({
   missingRow: number;
   missingCol: number;
 }): React.ReactElement {
-  const cellSize = 46;
+  const cellSize = 50;
 
   return (
-    <div
-      style={{
-        display: 'inline-grid',
-        gridTemplateColumns: `repeat(${rows[0]?.length || 0}, ${cellSize}px)`,
-        gap: 2,
-        padding: 4,
-        background: '#94a3b8',
-        borderRadius: 10,
-        direction: 'ltr',
-      }}
-    >
-      {rows.flatMap((row, ri) =>
-        row.map((val, ci) => {
-          const isMissing = ri === missingRow && ci === missingCol;
-          return (
-            <div
-              key={`${ri}-${ci}`}
-              style={{
-                width: cellSize,
-                height: cellSize,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: isMissing ? 'rgba(245, 158, 11, 0.15)' : '#3B2415',
-                fontSize: 17,
-                fontWeight: 700,
-                color: isMissing ? '#f59e0b' : '#e2e8f0',
-                borderRadius: 4,
-              }}
-            >
-              {isMissing ? '?' : val}
-            </div>
-          );
-        })
-      )}
-    </div>
+    <DiagramPaper padding={12}>
+      <div
+        style={{
+          display: 'inline-grid',
+          gridTemplateColumns: `repeat(${rows[0]?.length || 0}, ${cellSize}px)`,
+          gap: 4,
+          padding: 4,
+          background: DIAGRAM_THEME.ink,
+          borderRadius: 8,
+          direction: 'ltr',
+        }}
+      >
+        {rows.flatMap((row, ri) =>
+          row.map((val, ci) => {
+            const isMissing = ri === missingRow && ci === missingCol;
+            return (
+              <div
+                key={`${ri}-${ci}`}
+                style={{
+                  width: cellSize,
+                  height: cellSize,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: isMissing ? DIAGRAM_THEME.missingBg : '#ffffff',
+                  fontSize: 19,
+                  fontWeight: 700,
+                  color: isMissing ? DIAGRAM_THEME.missing : DIAGRAM_THEME.ink,
+                  borderRadius: 4,
+                }}
+              >
+                {isMissing ? '?' : val}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </DiagramPaper>
   );
 }
 
@@ -912,48 +1005,53 @@ export function NumberFlowChart({
   operations: string[];
   missingIndex: number;
 }): React.ReactElement {
-  const nodeSize = 48;
+  const nodeSize = 52;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, direction: 'ltr', flexWrap: 'wrap' }}>
-      {nodes.map((val, i) => (
-        <React.Fragment key={i}>
-          <div
-            style={{
-              width: nodeSize,
-              height: nodeSize,
-              borderRadius: '50%',
-              border: i === missingIndex ? '2px dashed #f59e0b' : '2px solid #94a3b8',
-              background: i === missingIndex ? 'rgba(245, 158, 11, 0.1)' : 'rgba(148, 163, 184, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 16,
-              fontWeight: 700,
-              color: i === missingIndex ? '#f59e0b' : '#e2e8f0',
-            }}
-          >
-            {i === missingIndex ? '?' : val}
-          </div>
-          {i < operations.length && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <span style={{ fontSize: 14, color: '#94a3b8' }}>\u2192</span>
-              <span style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: '#a78bfa',
-                background: 'rgba(167, 139, 250, 0.1)',
-                padding: '2px 6px',
-                borderRadius: 6,
-              }}>
-                {operations[i]}
-              </span>
-              <span style={{ fontSize: 14, color: '#94a3b8' }}>\u2192</span>
+    <DiagramPaper>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, direction: 'ltr', flexWrap: 'wrap' }}>
+        {nodes.map((val, i) => (
+          <React.Fragment key={i}>
+            <div
+              style={{
+                width: nodeSize,
+                height: nodeSize,
+                borderRadius: '50%',
+                border: i === missingIndex
+                  ? `2px dashed ${DIAGRAM_THEME.missing}`
+                  : `2px solid ${DIAGRAM_THEME.ink}`,
+                background: i === missingIndex ? DIAGRAM_THEME.missingBg : '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 18,
+                fontWeight: 700,
+                color: i === missingIndex ? DIAGRAM_THEME.missing : DIAGRAM_THEME.ink,
+              }}
+            >
+              {i === missingIndex ? '?' : val}
             </div>
-          )}
-        </React.Fragment>
-      ))}
-    </div>
+            {i < operations.length && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                <span style={{ fontSize: 18, color: DIAGRAM_THEME.inkSoft }}>{'→'}</span>
+                <span style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: '#7c3aed',
+                  background: 'rgba(167, 139, 250, 0.15)',
+                  padding: '2px 7px',
+                  borderRadius: 6,
+                  border: '1px solid rgba(124, 58, 237, 0.25)',
+                }}>
+                  {operations[i]}
+                </span>
+                <span style={{ fontSize: 18, color: DIAGRAM_THEME.inkSoft }}>{'→'}</span>
+              </div>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    </DiagramPaper>
   );
 }
 
@@ -967,51 +1065,63 @@ export function NumberTriangle({
   bottomRight,
   center,
   missingPosition,
+  hideCenter = false,
 }: {
   top: number | string;
   bottomLeft: number | string;
   bottomRight: number | string;
-  center: number | string;
+  center?: number | string;
   missingPosition: 'top' | 'bottomLeft' | 'bottomRight' | 'center';
+  /** When true, suppress the center label entirely (used for triangles where center is decorative). */
+  hideCenter?: boolean;
 }): React.ReactElement {
-  const w = 160;
-  const h = 140;
+  const w = 170;
+  const h = 150;
 
   const positions = {
-    top: { x: w / 2, y: 20 },
-    center: { x: w / 2, y: h * 0.45 },
-    bottomLeft: { x: 25, y: h - 15 },
-    bottomRight: { x: w - 25, y: h - 15 },
+    top: { x: w / 2, y: 22 },
+    center: { x: w / 2, y: h * 0.5 },
+    bottomLeft: { x: 28, y: h - 18 },
+    bottomRight: { x: w - 28, y: h - 18 },
   };
 
-  const vals: Record<string, number | string> = { top, bottomLeft, bottomRight, center };
+  const vals: Record<string, number | string | undefined> = { top, bottomLeft, bottomRight, center };
+
+  const positionsToRender = (Object.keys(positions) as Array<keyof typeof positions>).filter(
+    (k) => !(k === 'center' && hideCenter && missingPosition !== 'center'),
+  );
 
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
-      <polygon
-        points={`${w / 2},8 8,${h - 8} ${w - 8},${h - 8}`}
-        fill="none"
-        stroke="#94a3b8"
-        strokeWidth="2"
-      />
-      {Object.entries(positions).map(([key, pos]) => {
-        const isMissing = key === missingPosition;
-        return (
-          <text
-            key={key}
-            x={pos.x}
-            y={pos.y}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={18}
-            fontWeight="bold"
-            fontStyle={key === 'center' ? 'italic' : 'normal'}
-            fill={isMissing ? '#f59e0b' : '#e2e8f0'}
-          >
-            {isMissing ? '?' : vals[key]}
-          </text>
-        );
-      })}
-    </svg>
+    <DiagramPaper>
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <polygon
+          points={`${w / 2},10 10,${h - 10} ${w - 10},${h - 10}`}
+          fill={DIAGRAM_THEME.paper}
+          stroke={DIAGRAM_THEME.ink}
+          strokeWidth="2.4"
+        />
+        {positionsToRender.map((key) => {
+          const pos = positions[key];
+          const isMissing = key === missingPosition;
+          const value = vals[key];
+          if (value === undefined) return null;
+          return (
+            <text
+              key={key}
+              x={pos.x}
+              y={pos.y}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={20}
+              fontWeight="bold"
+              fontStyle={key === 'center' ? 'italic' : 'normal'}
+              fill={isMissing ? DIAGRAM_THEME.missing : DIAGRAM_THEME.ink}
+            >
+              {isMissing ? '?' : value}
+            </text>
+          );
+        })}
+      </svg>
+    </DiagramPaper>
   );
 }

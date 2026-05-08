@@ -94,21 +94,22 @@ type TemplateGen = (d: Difficulty) => GenResult;
 // ═══════════════════════════════════════════════════════════════════════
 
 const wp1: TemplateGen = (d) => {
-  // Pattern: N containers × M items each, person takes K, how many items does person have
+  // Pattern: N containers × M items each, distractor count of irrelevant containers.
   const { lo, hi } = diffRange(d);
   const name = boyName();
   const cont = pick(containers);
   const item = pick(countableItems);
+  const distractorCont = pick(containers.filter(c => c.p !== cont.p)); // cache once — reused in stem & explanation
   const nCont = rand(lo, Math.min(hi, 8));
   const perCont = rand(lo, hi);
   const total = nCont * perCont;
   const place = pick(places);
   const distractor = rand(2, 6); // irrelevant info
 
-  const stem = `${place} יש ${distractor} ${pick(containers).p}. ל${name} יש ${nCont} ${cont.p} ובכל ${cont.s} ${perCont} ${item.p}. כמה ${item.p} יש ל${name} סך הכול?`;
+  const stem = `${place} יש ${distractor} ${distractorCont.p}. ל${name} יש ${nCont} ${cont.p} ובכל ${cont.s} ${perCont} ${item.p}. כמה ${item.p} יש ל${name} סך הכול?`;
   const answer = total;
   const { options, correctOption } = makeOptions(answer, [nCont + perCont, distractor * nCont]);
-  const explanation = `ל${name} ${nCont} ${cont.p}, בכל אחת ${perCont} ${item.p}.\n${nCont} × ${perCont} = ${answer}.\nהמידע על ${distractor} ${pick(containers).p} הוא מסיח!`;
+  const explanation = `ל${name} ${nCont} ${cont.p}, בכל אחת ${perCont} ${item.p}.\n${nCont} × ${perCont} = ${answer}.\nהמידע על ${distractor} ${distractorCont.p} הוא מסיח!`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -176,31 +177,42 @@ const wp4: TemplateGen = (d) => {
 };
 
 const wp5: TemplateGen = (d) => {
-  // Pattern: Division into equal groups
+  // Pattern: Division with remainder. Bug fix: previous version constructed
+  // `had = total + leftover` where leftover could exceed groups, so the
+  // narrative claimed "had ÷ groups = perGroup ושארית leftover" but real
+  // long division would give a higher quotient. Now we re-derive perGroup
+  // and leftover from the chosen `had` so the math always matches.
   const { lo, hi } = diffRange(d);
   const name = pick([...boys, ...girls]);
   const item = pick(countableItems);
-  const groups = rand(lo, Math.min(hi, 6));
-  const perGroup = rand(lo, hi);
-  const total = groups * perGroup;
-  const leftover = rand(1, 5);
-  const had = total + leftover;
+  const groups = rand(Math.max(2, lo), Math.min(hi, 6));
+  // Pick `had` that gives a clean problem: perGroup ∈ [lo, hi], leftover ∈ [1, groups-1].
+  const seedPerGroup = rand(lo, hi);
+  const seedLeftover = rand(1, groups - 1);
+  const had = groups * seedPerGroup + seedLeftover;
+  const perGroup = Math.floor(had / groups);
+  const leftover = had % groups;
+  const total = had - leftover;
 
   const stem = `ל${name} היו ${had} ${item.p}. הוא חילק אותם שווה בשווה ל-${groups} חברים. כמה ${item.p} נשארו ל${name} אחרי החלוקה?`;
   const answer = leftover;
   const { options, correctOption } = makeOptions(answer, [perGroup, groups, total]);
-  const explanation = `כל חבר קיבל: ${had} ÷ ${groups} = ${perGroup} ושארית ${leftover}.\nנשארו ל${name}: ${leftover} ${item.p}.`;
+  // Hebrew gender: singular form for "1 of X", plural for the rest. Avoids "1 צבעים".
+  const itemSingularPhrase = leftover === 1 ? `${item.s} אחד` : `${leftover} ${item.p}`;
+  const explanation = `כל חבר קיבל ${perGroup} ${item.p} (כי ${groups} × ${perGroup} = ${total}).\nאחרי החלוקה השוויונית נשאר/ו ל${name}: ${had} − ${total} = ${itemSingularPhrase}.`;
   return { stem, options, correctOption, explanation };
 };
 
 const wp6: TemplateGen = (d) => {
-  // Pattern: Doubling each day
+  // Pattern: Doubling each day — kept ONLY at hard difficulty (3 days max).
+  // Real Stage B doesn't use geometric-doubling sums for 2nd grade; we cap depth
+  // so the answer stays mentally tractable.
   const { lo } = diffRange(d);
   const name = boyName();
   const item = pick(countableItems);
-  const start = rand(lo, 5);
-  const days = d === 'easy' ? 3 : d === 'hard' ? 5 : 4;
-  const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
+  const start = rand(lo, 4);
+  const days = d === 'hard' ? 3 : 2;
+  const dayNames = ['ראשון', 'שני', 'שלישי'];
   let current = start;
   let sum = start;
   const steps: string[] = [`יום ${dayNames[0]}: ${start}`];
@@ -214,7 +226,7 @@ const wp6: TemplateGen = (d) => {
   const stem = `${name} אסף ${item.p} במשך ${days} ימים. ביום הראשון אסף ${start}, ובכל יום אסף כפול מהיום הקודם. כמה ${item.p} אסף סך הכול?`;
   const answer = sum;
   const { options, correctOption } = makeOptions(answer, [current, sum - start, start * days]);
-  const explanation = steps.join('\n') + `\nסך הכול: ${steps.map((_, i) => { let v = start; for (let j = 0; j < i; j++) v *= 2; return v; }).join(' + ')} = ${answer}.`;
+  const explanation = steps.join('\n') + `\nסך הכול: ${answer}.`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -272,15 +284,16 @@ const seq1: TemplateGen = (d) => {
 };
 
 const seq2: TemplateGen = (d) => {
-  // Geometric sequence: ×r
-  const ratio = d === 'easy' ? 2 : d === 'hard' ? pick([3, 4]) : pick([2, 3]);
-  const start = d === 'hard' ? rand(1, 3) : rand(1, 5);
+  // Geometric sequence ×r — kept simple for grade 2: only ratio 2 or (rare) 3,
+  // and short sequences so the final number stays under 100.
+  const ratio = d === 'hard' ? pick([2, 3]) : 2;
+  const start = ratio === 3 ? rand(1, 2) : rand(1, 4);
   const len = d === 'easy' ? 3 : 4;
   const seq = Array.from({ length: len }, (_, i) => start * Math.pow(ratio, i));
   const answer = start * Math.pow(ratio, len);
 
   const stem = `מהו המספר הבא בסדרה? ${seq.join(', ')}, ?`;
-  const { options, correctOption } = makeOptions(answer, [answer + ratio, seq[len - 1] + ratio, answer / 2]);
+  const { options, correctOption } = makeOptions(answer, [answer + ratio, seq[len - 1] + ratio, Math.floor(answer / 2)]);
   const explanation = `כל מספר מוכפל ב-${ratio}.\n${seq[len - 1]} × ${ratio} = ${answer}.`;
   return { stem, options, correctOption, explanation };
 };
@@ -358,29 +371,15 @@ const ml1: TemplateGen = (d) => {
 };
 
 const ml2: TemplateGen = (d) => {
-  // Reverse operations: "I took a number, did X, got Y"
-  const answer = rand(3, d === 'hard' ? 15 : 10);
-  const mult = rand(2, d === 'hard' ? 5 : 3);
-  const add = rand(2, 10);
-  const div = d === 'hard' ? 2 : 0;
-  let result = answer * mult + add;
-  let ops = `הכפלתי אותו ב-${mult}, הוספתי ${add}`;
-  let steps = `לפני ההוספה של ${add}: ${result} - ${add} = ${result - add}.\nלפני ההכפלה ב-${mult}: ${result - add} ÷ ${mult} = ${answer}.`;
-
-  if (div > 0) {
-    result = Math.floor(result / div);
-    const preDiv = result * div;
-    ops += `, ואז חילקתי ב-${div}`;
-    steps = `לפני החלוקה ב-${div}: ${result} × ${div} = ${preDiv}.\n` +
-      `לפני ההוספה של ${add}: ${preDiv} - ${add} = ${preDiv - add}.\n` +
-      `לפני ההכפלה ב-${mult}: ${preDiv - add} ÷ ${mult} = ${answer}.`;
-    result = Math.floor((answer * mult + add) / div);
-  }
-
-  const finalResult = div > 0 ? Math.floor((answer * mult + add) / div) : result;
-  const stem = `יש לי מספר. ${ops}. קיבלתי ${finalResult}. מה המספר המקורי?`;
+  // Reverse operations: at most 2 ops for grade 2 (×then+, or +then×).
+  // The previous version chained 3 ops and re-overwrote `result` causing answer/explanation drift.
+  const answer = rand(3, d === 'hard' ? 12 : 8);
+  const mult = rand(2, d === 'hard' ? 4 : 3);
+  const add = rand(2, 8);
+  const result = answer * mult + add;
+  const stem = `יש לי מספר. הכפלתי אותו ב-${mult} ואז הוספתי ${add}. קיבלתי ${result}. מה המספר המקורי?`;
   const { options, correctOption } = makeOptions(answer, [answer + 1, answer - 1, mult + add]);
-  const explanation = `נעבוד אחורה:\n${steps}\nהמספר המקורי הוא ${answer}.`;
+  const explanation = `נעבוד אחורה:\nלפני ההוספה של ${add}: ${result} − ${add} = ${result - add}.\nלפני ההכפלה ב-${mult}: ${result - add} ÷ ${mult} = ${answer}.`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -596,34 +595,76 @@ interface SkillTemplates {
   templates: TemplateGen[];
 }
 
+// Templates marked "*" are reserved for hard difficulty only — they reach
+// pre-algebra / multi-step territory above grade-2 norm.
 const allTemplates: SkillTemplates[] = [
-  { skill: 'word_problems', templates: [wp1, wp2, wp3, wp4, wp5, wp6, wp7, wp8] },
-  { skill: 'number_sequences', templates: [seq1, seq2, seq3, seq4, seq5] },
-  { skill: 'math_logic', templates: [ml1, ml2, ml3, ml4] },
+  { skill: 'word_problems', templates: [wp1, wp2, wp3, wp4, wp5, wp7, wp8] },
+  { skill: 'number_sequences', templates: [seq1, seq2, seq4, seq5] },
+  { skill: 'math_logic', templates: [ml2, ml4] },
   { skill: 'time_clock', templates: [tc1, tc2, tc3] },
   { skill: 'money_change', templates: [mc1, mc2, mc3] },
 ];
 
+// Hard-only templates: pre-algebra patterns only surfaced when the adaptive
+// engine flags the child as ready for stretch material.
+const hardOnlyTemplates: SkillTemplates[] = [
+  { skill: 'word_problems', templates: [wp6] },
+  { skill: 'number_sequences', templates: [seq3] },
+  { skill: 'math_logic', templates: [ml1, ml3] },
+];
+
 // ── Public API ──────────────────────────────────────────────────────────
 
-export function generateMathQuestions(difficulty: Difficulty, count: number): Question[] {
+export function generateMathQuestions(
+  difficulty: Difficulty,
+  count: number,
+  options?: { skill?: MathSkill; recentTemplates?: Set<TemplateGen> },
+): Question[] {
   const result: Question[] = [];
   const effectiveDiff: Difficulty = difficulty === 'adaptive' ? pick(['easy', 'medium', 'hard']) : difficulty;
 
+  // Build the working template list: filter by skill if requested, and only
+  // surface hard-only templates when the difficulty is actually hard.
+  const baseTemplates = options?.skill
+    ? allTemplates.filter(t => t.skill === options.skill)
+    : allTemplates;
+  const hardExtras = effectiveDiff === 'hard'
+    ? (options?.skill
+        ? hardOnlyTemplates.filter(t => t.skill === options.skill)
+        : hardOnlyTemplates)
+    : [];
+  const workingSets: SkillTemplates[] = [...baseTemplates];
+  for (const extra of hardExtras) {
+    const existing = workingSets.find(s => s.skill === extra.skill);
+    if (existing) existing.templates = [...existing.templates, ...extra.templates];
+    else workingSets.push(extra);
+  }
+  if (workingSets.length === 0) workingSets.push(...allTemplates); // safety fallback
+
+  const recent = options?.recentTemplates ?? new Set<TemplateGen>();
+  const pickFresh = (templates: TemplateGen[]): TemplateGen => {
+    const fresh = templates.filter(t => !recent.has(t));
+    return pick(fresh.length > 0 ? fresh : templates);
+  };
+
   // Distribute evenly across skills, then fill randomly
-  const perSkill = Math.max(1, Math.floor(count / allTemplates.length));
+  const perSkill = Math.max(1, Math.floor(count / workingSets.length));
   const pool: Array<{ skill: MathSkill; gen: TemplateGen }> = [];
 
-  for (const { skill, templates } of allTemplates) {
+  for (const { skill, templates } of workingSets) {
     for (let i = 0; i < perSkill; i++) {
-      pool.push({ skill, gen: pick(templates) });
+      const gen = pickFresh(templates);
+      pool.push({ skill, gen });
+      recent.add(gen);
     }
   }
 
   // Fill remaining
   while (pool.length < count) {
-    const st = pick(allTemplates);
-    pool.push({ skill: st.skill, gen: pick(st.templates) });
+    const st = pick(workingSets);
+    const gen = pickFresh(st.templates);
+    pool.push({ skill: st.skill, gen });
+    recent.add(gen);
   }
 
   for (const { skill, gen } of shuffle(pool).slice(0, count)) {

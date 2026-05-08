@@ -96,11 +96,12 @@ export const questionVisuals: Record<string, VisualConfig> = {
   },
 
   // sh_005: arrow right → arrow left (text options about transformation)
+  // Arrow convention: rotation 0 = up, 90 = right, 180 = down, 270 = left.
   'sh_005': {
     stemLayout: 'row',
     stemShapes: [
-      s('arrow', 'solid', '#334155', { rotation: 270 }),
-      s('arrow', 'solid', '#334155', { rotation: 90 }),
+      s('arrow', 'solid', '#334155', { rotation: 90 }),  // right
+      s('arrow', 'solid', '#334155', { rotation: 270 }), // left
     ],
   },
 
@@ -254,7 +255,9 @@ export const questionVisuals: Record<string, VisualConfig> = {
     ],
   },
 
-  // sh_017: analogy — square(striped horizontal) : square(striped vertical) = circle(striped horizontal) : ?
+  // sh_017: analogy — striped square : dotted square = striped circle : ?
+  // Bank text + explanation now match this fill-pattern analogy (was previously
+  // describing a horizontal/vertical line transformation that the visual didn't show).
   'sh_017': {
     stemLayout: 'analogy',
     stemShapes: [s('square', 'striped'), s('square', 'dotted'), s('circle', 'striped')],
@@ -390,20 +393,21 @@ export const questionVisuals: Record<string, VisualConfig> = {
     ],
   },
 
-  // ss_007: arrows rotating — up, right, down, left, ?
+  // ss_007: arrows rotating clockwise — up, right, down, left → next is up.
+  // Convention: 0=up, 90=right, 180=down, 270=left.
   'ss_007': {
     stemLayout: 'series',
     stemShapes: [
-      s('arrow', 'solid', '#334155', { rotation: 180 }),   // up
-      s('arrow', 'solid', '#334155', { rotation: 270 }),   // right
-      s('arrow', 'solid', '#334155', { rotation: 0 }),     // down
-      s('arrow', 'solid', '#334155', { rotation: 90 }),    // left
+      s('arrow', 'solid', '#334155', { rotation: 0 }),     // up
+      s('arrow', 'solid', '#334155', { rotation: 90 }),    // right
+      s('arrow', 'solid', '#334155', { rotation: 180 }),   // down
+      s('arrow', 'solid', '#334155', { rotation: 270 }),   // left
     ],
     optionShapes: [
-      [s('arrow', 'solid', '#334155', { rotation: 180 })],  // up
-      [s('arrow', 'solid', '#334155', { rotation: 270 })],  // right
-      [s('arrow', 'solid', '#334155', { rotation: 0 })],    // down
-      [s('arrow', 'solid', '#334155', { rotation: 90 })],   // left
+      [s('arrow', 'solid', '#334155', { rotation: 0 })],     // up — correct
+      [s('arrow', 'solid', '#334155', { rotation: 90 })],    // right
+      [s('arrow', 'solid', '#334155', { rotation: 180 })],   // down
+      [s('arrow', 'solid', '#334155', { rotation: 270 })],   // left
     ],
   },
 
@@ -544,20 +548,21 @@ export const questionVisuals: Record<string, VisualConfig> = {
     ],
   },
 
-  // ss_018: arrow rotating 45° each step
+  // ss_018: arrow rotating 45° clockwise each step.
+  // Sequence: up (0) → up-right (45) → right (90) → down-right (135) → next: down (180).
   'ss_018': {
     stemLayout: 'series',
     stemShapes: [
-      s('arrow', 'solid', '#334155', { rotation: 180 }),   // up
-      s('arrow', 'solid', '#334155', { rotation: 225 }),   // up-right
-      s('arrow', 'solid', '#334155', { rotation: 270 }),   // right
-      s('arrow', 'solid', '#334155', { rotation: 315 }),   // down-right
+      s('arrow', 'solid', '#334155', { rotation: 0 }),    // up
+      s('arrow', 'solid', '#334155', { rotation: 45 }),   // up-right
+      s('arrow', 'solid', '#334155', { rotation: 90 }),   // right
+      s('arrow', 'solid', '#334155', { rotation: 135 }),  // down-right
     ],
     optionShapes: [
-      [s('arrow', 'solid', '#334155', { rotation: 0 })],    // down
-      [s('arrow', 'solid', '#334155', { rotation: 180 })],  // up
-      [s('arrow', 'solid', '#334155', { rotation: 90 })],   // left
-      [s('arrow', 'solid', '#334155', { rotation: 315 })],  // down-right
+      [s('arrow', 'solid', '#334155', { rotation: 180 })],  // down — correct
+      [s('arrow', 'solid', '#334155', { rotation: 0 })],    // up
+      [s('arrow', 'solid', '#334155', { rotation: 270 })],  // left
+      [s('arrow', 'solid', '#334155', { rotation: 225 })],  // down-left
     ],
   },
 
