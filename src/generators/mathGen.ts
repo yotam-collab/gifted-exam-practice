@@ -733,6 +733,102 @@ const gd1: TemplateGen = (d) => {
   return { stem, options, correctOption, explanation };
 };
 
+// ── Birth-year / current-year reasoning ────────────────────────────────
+// Real Stage B: "Born in 2008, what age in 2016?" or reverse.
+const by1: TemplateGen = (d) => {
+  const currentYear = 2026;
+  const ageNow = rand(d === 'easy' ? 5 : 6, d === 'hard' ? 12 : 10);
+  const birthYear = currentYear - ageNow;
+  const direction = pick(['forward', 'backward'] as const);
+  const names = pick([...girls, ...boys]);
+  if (direction === 'forward') {
+    const targetYear = currentYear + rand(2, 8);
+    const targetAge = targetYear - birthYear;
+    const stem = `${names} נולדה בשנת ${birthYear}. בת כמה תהיה בשנת ${targetYear}?`;
+    const { options, correctOption } = makeOptions(targetAge, [targetAge - 1, targetAge + 1, targetYear - currentYear]);
+    return {
+      stem,
+      options,
+      correctOption,
+      explanation: `מספר השנים בין ${birthYear} ל-${targetYear} = ${targetYear} − ${birthYear} = ${targetAge}.`,
+    };
+  }
+  const targetAge = rand(2, ageNow - 1);
+  const targetYear = birthYear + targetAge;
+  const stem = `${names} נולדה בשנת ${birthYear}. באיזו שנה הייתה בת ${targetAge}?`;
+  const correctStr = String(targetYear);
+  const allOpts = shuffle([targetYear, targetYear + 1, targetYear - 1, birthYear].filter((v, i, a) => a.indexOf(v) === i)).map(String).slice(0, 4);
+  while (allOpts.length < 4) allOpts.push(String(targetYear + rand(2, 5)));
+  return {
+    stem,
+    options: allOpts,
+    correctOption: allOpts.indexOf(correctStr),
+    explanation: `כדי להגיע לגיל ${targetAge}, צריך להוסיף ${targetAge} שנים לשנת הלידה.\n${birthYear} + ${targetAge} = ${targetYear}.`,
+  };
+};
+
+// ── Multi-step inventory: how many [items] are needed/missing ───────────
+// Real Stage B: "Mom prepared 22 surprises, needs to give 24 friends + 3 extra
+// each = 27 total. How many missing?" — multi-step counting under constraint.
+const inv1: TemplateGen = (d) => {
+  const friends = rand(d === 'easy' ? 8 : 12, d === 'hard' ? 30 : 22);
+  const extras = rand(d === 'easy' ? 1 : 2, d === 'hard' ? 5 : 3);
+  const totalNeeded = friends + extras;
+  const have = totalNeeded - rand(2, d === 'hard' ? 8 : 6);
+  const missing = totalNeeded - have;
+  const item = pick([
+    { p: 'הפתעות', sing: 'הפתעה' },
+    { p: 'בלונים', sing: 'בלון' },
+    { p: 'כובעי מסיבה', sing: 'כובע' },
+    { p: 'שקיות ממתקים', sing: 'שקית' },
+  ]);
+  const name = pick([...girls]);
+  const stem = `${name} הזמינה ${friends} חברים למסיבת יום ההולדת שלה, והכינה ${item.p} — אחת לכל חבר ועוד ${extras} ${item.p} ביתר לבטחון. הצליחה להכין רק ${have} ${item.p}. כמה ${item.p} נותרו לשני?`;
+  const { options, correctOption } = makeOptions(missing, [extras, friends - have, totalNeeded]);
+  const explanation = `סך ${item.p} שצריך: ${friends} חברים + ${extras} ביתר = ${totalNeeded}.\nהכינה: ${have} ${item.p}.\nחסרות: ${totalNeeded} − ${have} = ${missing} ${item.p}.`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── Stairs/floor compound counting ──────────────────────────────────────
+// Real Stage B: "12 stairs per floor, 4 floors, how many stairs total?"
+const sf1: TemplateGen = (d) => {
+  const stairsPerFloor = rand(d === 'easy' ? 6 : 10, d === 'hard' ? 18 : 14);
+  const floors = rand(d === 'easy' ? 2 : 3, d === 'hard' ? 6 : 5);
+  // Real exam quirk: floor count typically excludes ground floor in calculation.
+  // For grade 2 we keep it simple — N floors = N flights of stairs.
+  const total = stairsPerFloor * floors;
+  const stem = `בבניין יש ${floors} קומות. בין כל שתי קומות יש ${stairsPerFloor} מדרגות. כמה מדרגות יש בסך הכול בבניין מהקומה הראשונה לעליונה?`;
+  const answer = stairsPerFloor * (floors - 1);
+  const { options, correctOption } = makeOptions(answer, [total, stairsPerFloor + floors, stairsPerFloor * floors / 2]);
+  const explanation = `בין ${floors} קומות יש ${floors - 1} "מערכות מדרגות" (קומה 1 ל-2, 2 ל-3 וכו').\nכל מערכה: ${stairsPerFloor} מדרגות.\nסך הכול: ${floors - 1} × ${stairsPerFloor} = ${answer} מדרגות.`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── Bus arrival: start time + duration → arrival ────────────────────────
+const ba1: TemplateGen = (d) => {
+  const startH = rand(8, 17);
+  const startM = pick([0, 10, 15, 20, 30, 40, 45]);
+  const durationMin = rand(d === 'easy' ? 25 : 35, d === 'hard' ? 95 : 70);
+  const totalMin = startH * 60 + startM + durationMin;
+  const endH = Math.floor(totalMin / 60);
+  const endM = totalMin % 60;
+  const fmt = (h: number, m: number) => `${h}:${m.toString().padStart(2, '0')}`;
+  const correct = fmt(endH, endM);
+  const wrong1 = fmt(endH + 1, endM);
+  const wrong2 = fmt(endH, (endM + 30) % 60);
+  const wrong3 = fmt(endH, Math.max(0, endM - 10));
+  const allOpts = shuffle(Array.from(new Set([correct, wrong1, wrong2, wrong3])));
+  while (allOpts.length < 4) allOpts.push(fmt(endH + rand(1, 3), endM));
+  const name = pick([...girls, ...boys]);
+  const stem = `${name} עלה לאוטובוס בשעה ${fmt(startH, startM)}. הנסיעה אורכת ${durationMin} דקות. באיזו שעה יגיע ליעד?`;
+  return {
+    stem,
+    options: allOpts.slice(0, 4),
+    correctOption: allOpts.indexOf(correct),
+    explanation: `${fmt(startH, startM)} + ${durationMin} דקות = ${correct}.`,
+  };
+};
+
 // ═══════════════════════════════════════════════════════════════════════
 // Template Registry
 // ═══════════════════════════════════════════════════════════════════════
@@ -750,10 +846,10 @@ interface SkillTemplates {
 // digit puzzles, age-with-multiplier, items×rows layouts, multi-week shopping,
 // rate extrapolation, group division with leftover.
 const allTemplates: SkillTemplates[] = [
-  { skill: 'word_problems', templates: [wp1, wp2, wp3, wp4, wp5, wp7, wp8, ir1, mw1, gd1] },
+  { skill: 'word_problems', templates: [wp1, wp2, wp3, wp4, wp5, wp7, wp8, ir1, mw1, gd1, inv1, sf1] },
   { skill: 'number_sequences', templates: [seq1, seq2, seq4, seq5] },
-  { skill: 'math_logic', templates: [ml2, ml4, dp1, ag1] },
-  { skill: 'time_clock', templates: [tc1, tc2, tc3, sp1] },
+  { skill: 'math_logic', templates: [ml2, ml4, dp1, ag1, by1] },
+  { skill: 'time_clock', templates: [tc1, tc2, tc3, sp1, ba1] },
   { skill: 'money_change', templates: [mc1, mc2, mc3] },
 ];
 

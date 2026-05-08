@@ -56,21 +56,38 @@ function describeShape(shape: RenderShape): string {
 /** Shuffle + dedup option list. If two shapes describe identically (e.g. same
  *  type+fill but different scale below the "small" threshold), the duplicate
  *  is replaced with a fresh distractor to keep all 4 visible options unique.
- *  Returns { options, optionShapes } in matching order. */
-function dedupShapeOptions(options: RenderShape[]): RenderShape[] {
+ *
+ *  CRITICAL: when `protectedShape` is provided (the correct answer), we never
+ *  replace it — duplicates clash with the protected shape get replaced
+ *  themselves instead. This preserves reference equality so callers can use
+ *  `result.indexOf(correct)` to locate the answer. Without this, dedup could
+ *  silently swap out the correct option and produce correctOption: -1.
+ */
+function dedupShapeOptions(options: RenderShape[], protectedShape?: RenderShape): RenderShape[] {
   const seen = new Set<string>();
+  const protectedKey = protectedShape ? describeShape(protectedShape) : null;
+  // Pre-seed with the protected key so any other shape colliding with it is the
+  // one that gets tweaked.
+  if (protectedKey != null) seen.add(protectedKey);
+
   const out: RenderShape[] = [];
   for (const opt of options) {
     const key = describeShape(opt);
+
+    // Always keep the protected shape as-is.
+    if (protectedShape && opt === protectedShape) {
+      out.push(opt);
+      continue;
+    }
+
     if (seen.has(key)) {
-      // try a tweak that always changes the description: swap fill
-      const altFills = FILL_TYPES.filter(f => f !== opt.fill);
+      // Try a tweak that always changes the description: swap fill, then type.
       let tweak: RenderShape = opt;
+      const altFills = FILL_TYPES.filter(f => f !== opt.fill);
       for (const f of altFills) {
         const candidate = { ...opt, fill: f };
         if (!seen.has(describeShape(candidate))) { tweak = candidate; break; }
       }
-      // still a dup? swap type
       if (seen.has(describeShape(tweak))) {
         const altTypes = SHAPE_TYPES.filter(t => t !== tweak.type);
         for (const t of altTypes) {
@@ -123,7 +140,7 @@ function genAnalogy(): ShapeGenResult {
     s(pick(SHAPE_TYPES.filter(t => t !== type2)), fill2), // Wrong type
   ];
 
-  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]));
+  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]), correct);
   const correctIdx = allOptions.indexOf(correct);
 
   return {
@@ -158,7 +175,7 @@ function genScaleAnalogy(): ShapeGenResult {
     s(type1, fill, { scale: 1.15 }), // Same as B
   ];
 
-  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]));
+  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]), correct);
 
   return {
     skill: 'shape_analogy',
@@ -223,7 +240,7 @@ function genSeries(): ShapeGenResult {
     sameTypeDiffFill(correct),
   ];
 
-  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]));
+  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]), correct);
 
   return {
     skill: 'shape_sequence',
@@ -253,7 +270,7 @@ function genFillSeries(): ShapeGenResult {
     s(pick(SHAPE_TYPES.filter(t => t !== type)), fills[2]),
   ];
 
-  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]));
+  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]), correct);
 
   return {
     skill: 'graphic_rule',
@@ -350,7 +367,7 @@ function genGridPattern(): ShapeGenResult {
     s(pick(SHAPE_TYPES.filter(t => t !== type1 && t !== type2)), fill2), // Random
   ];
 
-  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]));
+  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]), correct);
 
   return {
     skill: 'fill_frame',
@@ -390,7 +407,7 @@ function genGrid3x3(): ShapeGenResult {
     s(pick(SHAPE_TYPES.filter(t => !types.includes(t))), fills[2]), // unrelated type
   ];
 
-  const allOptions = dedupShapeOptions(shuffle([correct, ...distractors]));
+  const allOptions = dedupShapeOptions(shuffle([correct, ...distractors]), correct);
 
   return {
     skill: 'graphic_pattern',
@@ -423,7 +440,7 @@ function genCutShapeAnalogy(): ShapeGenResult {
     s('circle', 'none'),       // no cut applied (same as C)
     s('triangle', 'none'),     // wrong base shape
   ];
-  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]));
+  const allOptions = dedupShapeOptions(shuffle([correct, ...wrongs]), correct);
   return {
     skill: 'transformation',
     stem: 'מהי הצורה החסרה?',
@@ -497,7 +514,7 @@ function genMultiRuleAnalogy(): ShapeGenResult {
     s(type1, fillEnd, { scale: 1.15 }),    // wrong shape (= B itself)
   ];
 
-  const allOptions = dedupShapeOptions(shuffle([correct, ...distractors]));
+  const allOptions = dedupShapeOptions(shuffle([correct, ...distractors]), correct);
   return {
     skill: 'multi_rule_jump',
     stem: 'מהי הצורה החסרה?',
@@ -534,7 +551,7 @@ function genMultiRuleSeries(): ShapeGenResult {
     s('arrow', fills[(correctIdx - 1) % 3], { rotation: (baseRot + 90 * (correctIdx + 1)) % 360 }), // both wrong
   ];
 
-  const allOptions = dedupShapeOptions(shuffle([correct, ...distractors]));
+  const allOptions = dedupShapeOptions(shuffle([correct, ...distractors]), correct);
   const rotName = (r: number) => ({ 0: 'למעלה', 90: 'ימינה', 180: 'למטה', 270: 'שמאלה' }[r % 360] || `${r}°`);
   return {
     skill: 'multi_rule_jump',
@@ -626,12 +643,230 @@ function genLongSeries(): ShapeGenResult {
   };
 }
 
+// ── Composite shape analogy (sim3 Q1 pattern) ──────────────────────────
+// Figure: a base shape with a smaller shape attached to one side. Real Stage
+// B uses these like "[small black circle + tiny circle on top] : [bigger
+// black circle + smaller circle on top] = [black square + small square on top] : ?"
+// The kid sees both the size growth AND the structure preservation.
+function genCompositeShapeAnalogy(): ShapeGenResult {
+  const types = shuffle([...SHAPE_TYPES]).slice(0, 2);
+  const fillType = pick(['solid', 'none'] as const);
+
+  const A: RenderShape = {
+    type: types[0],
+    fill: fillType,
+    color: '#1f2937',
+    scale: 0.55,
+    attachedShape: { shape: { type: types[0], fill: fillType, color: '#1f2937' }, side: 'top', relSize: 0.5 },
+  };
+  const B: RenderShape = {
+    type: types[0],
+    fill: fillType,
+    color: '#1f2937',
+    scale: 1.05,
+    attachedShape: { shape: { type: types[0], fill: fillType, color: '#1f2937' }, side: 'top', relSize: 0.5 },
+  };
+  const C: RenderShape = {
+    type: types[1],
+    fill: fillType,
+    color: '#1f2937',
+    scale: 0.55,
+    attachedShape: { shape: { type: types[1], fill: fillType, color: '#1f2937' }, side: 'top', relSize: 0.5 },
+  };
+  const correct: RenderShape = {
+    type: types[1],
+    fill: fillType,
+    color: '#1f2937',
+    scale: 1.05,
+    attachedShape: { shape: { type: types[1], fill: fillType, color: '#1f2937' }, side: 'top', relSize: 0.5 },
+  };
+
+  // Distractors test partial-rule traps
+  const distractors: RenderShape[] = [
+    // Big base BUT no attachment (lost the structure)
+    { type: types[1], fill: fillType, color: '#1f2937', scale: 1.05 },
+    // Same as C (didn't grow)
+    { ...C },
+    // Wrong shape entirely
+    {
+      type: pick(SHAPE_TYPES.filter(t => !types.includes(t))),
+      fill: fillType,
+      color: '#1f2937',
+      scale: 1.05,
+      attachedShape: { shape: { type: types[1], fill: fillType, color: '#1f2937' }, side: 'top', relSize: 0.5 },
+    },
+  ];
+
+  const allOptions = [correct, ...distractors];
+  shuffle(allOptions);
+  return {
+    skill: 'shape_analogy',
+    stem: 'מהי הצורה החסרה?',
+    options: allOptions.map((_, i) => `אפשרות ${'אבגד'[i]}`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `הכלל: הצורה גדלה, והקטנה הצמודה נשמרת על אותה צלע.\n${shapeNameHe[types[0]]} קטן עם ${shapeNameHe[types[0]]} זעיר ⟶ ${shapeNameHe[types[0]]} גדול עם ${shapeNameHe[types[0]]} זעיר.\nבאותו כלל: ${shapeNameHe[types[1]]} קטן עם ${shapeNameHe[types[1]]} זעיר ⟶ ${shapeNameHe[types[1]]} גדול עם ${shapeNameHe[types[1]]} זעיר.`,
+    visualConfig: {
+      stemLayout: 'analogy',
+      stemShapes: [A, B, C],
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
+// ── 3×3 grid-coloring matrix (sim3 Q10 pattern) ─────────────────────────
+// Each cell of the outer 3×3 is a small grid (3×2 or 2×2) with some cells
+// blackened. The pattern progresses by row (e.g., one more black cell per
+// step) and by column (cells shift position).
+function genGridColoringMatrix(): ShapeGenResult {
+  // Rule we'll use: each row's cells have N black cells (N = row index + 1).
+  // Each column's cells share the same black-cell column position.
+  // So a kid spots the rule and predicts the missing cell at (row 2, col 2).
+  const innerCols = 3;
+  const innerRows = 2;
+
+  // Build grid for cell at outer(r, c): blackCount = r+1, blackCol = c
+  const buildCellGrid = (r: number, c: number): boolean[][] => {
+    const grid: boolean[][] = Array.from({ length: innerRows }, () =>
+      Array.from({ length: innerCols }, () => false),
+    );
+    for (let i = 0; i <= r; i++) grid[i % innerRows][c] = true;
+    return grid;
+  };
+
+  const outerCells: (RenderShape | null)[][] = [];
+  for (let r = 0; r < 3; r++) {
+    const row: (RenderShape | null)[] = [];
+    for (let c = 0; c < 3; c++) {
+      if (r === 2 && c === 2) row.push(null);
+      else row.push({
+        type: 'square',
+        fill: 'none',
+        color: '#1f2937',
+        gridFill: { rows: innerRows, cols: innerCols, cells: buildCellGrid(r, c) },
+      });
+    }
+    outerCells.push(row);
+  }
+
+  const correct: RenderShape = {
+    type: 'square',
+    fill: 'none',
+    color: '#1f2937',
+    gridFill: { rows: innerRows, cols: innerCols, cells: buildCellGrid(2, 2) },
+  };
+  // Distractors: wrong column position, wrong count, or both
+  const distractors: RenderShape[] = [
+    { type: 'square', fill: 'none', color: '#1f2937', gridFill: { rows: innerRows, cols: innerCols, cells: buildCellGrid(2, 1) } },
+    { type: 'square', fill: 'none', color: '#1f2937', gridFill: { rows: innerRows, cols: innerCols, cells: buildCellGrid(1, 2) } },
+    { type: 'square', fill: 'none', color: '#1f2937', gridFill: { rows: innerRows, cols: innerCols, cells: buildCellGrid(0, 2) } },
+  ];
+  const allOptions = [correct, ...distractors];
+  shuffle(allOptions);
+
+  return {
+    skill: 'graphic_pattern',
+    stem: 'מהי המשבצת החסרה? שים לב: בכל משבצת יש רשת קטנה עם תאים שחורים.',
+    options: allOptions.map((_, i) => `משבצת ${'אבגד'[i]}`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: 'יש שני כללים:\n1) בכל שורה — מספר התאים השחורים גדל ב-1 (1, 2, 3 תאים).\n2) בכל עמודה — התאים השחורים נמצאים בעמודה המתאימה במשבצת.\nהשורה האחרונה צריכה 3 תאים שחורים, והעמודה האחרונה במשבצת השלישית.',
+    visualConfig: {
+      stemLayout: 'grid',
+      gridCells: outerCells,
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
+// ── Pattern-transfer analogy (sim3 Q2 pattern) ─────────────────────────
+// Striped square : single diagonal line = grid square : ?
+// The "fill pattern" of the first shape transfers to the analogous role of
+// the second. The kid sees how diagonals → single line, and grid → cross.
+function genPatternTransferAnalogy(): ShapeGenResult {
+  // Two parallel transformations:
+  //   striped (diagonal lines) → single diagonal line
+  //   grid pattern → single horizontal line
+  const A: RenderShape = { type: 'square', fill: 'striped', color: '#1f2937' };
+  const B: RenderShape = { type: 'square', fill: 'none', color: '#1f2937' }; // representing single line
+  const C: RenderShape = { type: 'square', fill: 'dotted', color: '#1f2937' };
+  const correct: RenderShape = { type: 'square', fill: 'none', color: '#1f2937', innerShape: { type: 'circle', fill: 'solid', color: '#1f2937', scale: 0.4 } };
+
+  const distractors: RenderShape[] = [
+    { type: 'square', fill: 'striped', color: '#1f2937' },  // applied wrong rule
+    { type: 'circle', fill: 'dotted', color: '#1f2937' },   // wrong base shape
+    { type: 'square', fill: 'solid', color: '#1f2937' },    // over-application
+  ];
+  const allOptions = [correct, ...distractors];
+  shuffle(allOptions);
+
+  return {
+    skill: 'transformation',
+    stem: 'מהי הצורה החסרה? שים לב לדפוס המילוי שמשתנה.',
+    options: allOptions.map((_, i) => `אפשרות ${'אבגד'[i]}`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: 'הכלל: הדפוס המורכב (פסים/נקודות) מצטמצם לסימן יחיד באמצע הצורה.\nריבוע מפוספס ⟶ ריבוע עם קו יחיד.\nריבוע מנוקד ⟶ ריבוע עם נקודה יחידה.',
+    visualConfig: {
+      stemLayout: 'analogy',
+      stemShapes: [A, B, C],
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
+// ── 3×3 dot-density matrix (sim3 Q7 pattern) ───────────────────────────
+// Each cell is a small frame containing N dots. Row / column rules govern
+// dot count. Real Stage B "3×3 dot patterns" matrix.
+function genDotMatrix3x3(): ShapeGenResult {
+  // Rule: dots[r][c] = (r + 1) * (c + 1). Missing cell is bottom-right (3*3=9).
+  const buildDotShape = (n: number): RenderShape => ({
+    type: 'square',
+    fill: 'none',
+    color: '#1f2937',
+    perimeterDots: n,
+  });
+
+  const cells: (RenderShape | null)[][] = [];
+  for (let r = 0; r < 3; r++) {
+    const row: (RenderShape | null)[] = [];
+    for (let c = 0; c < 3; c++) {
+      if (r === 2 && c === 2) row.push(null);
+      else row.push(buildDotShape((r + 1) * (c + 1)));
+    }
+    cells.push(row);
+  }
+  const correctCount = 9;
+  const correct = buildDotShape(correctCount);
+  const distractors: RenderShape[] = [
+    buildDotShape(correctCount - 1),
+    buildDotShape(correctCount + 1),
+    buildDotShape(correctCount - 3),
+  ];
+  const allOptions = [correct, ...distractors];
+  shuffle(allOptions);
+
+  return {
+    skill: 'graphic_pattern',
+    stem: 'כמה נקודות צריכות להיות במשבצת החסרה?',
+    options: allOptions.map(o => `${o.perimeterDots} נקודות`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `הכלל: מספר הנקודות במשבצת = (מספר השורה) × (מספר העמודה).\nשורה אחרונה (3) × עמודה אחרונה (3) = 9 נקודות.`,
+    visualConfig: {
+      stemLayout: 'grid',
+      gridCells: cells,
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
 // ── Mirror-symmetry odd-one-out ─────────────────────────────────────────
 // Three shapes are rotated identically; one is mirrored. Trains the
 // "rotation vs reflection" trap that's classic on Stage B figural items.
 function genMirrorOddOneOut(): ShapeGenResult {
-  // Use arrows (clearly directional) — mirrored arrow = pointing opposite side.
-  const baseRot = pick([0, 45, 90, 135]); // base direction
+  // Use arrows (clearly directional) — mirrored arrow points opposite side.
+  // CRITICAL: only use base angles where mirroring actually changes the visual.
+  // 0° (up) and 180° (down) are vertical-axis-symmetric — their mirror is
+  // identical to themselves, which produced 4-identical-arrows bug. We allow
+  // only diagonal angles where reflection clearly flips left↔right.
+  const baseRot = pick([45, 60, 120, 135]); // diagonal angles only
   const same: RenderShape = s('arrow', 'solid', { rotation: baseRot });
   const mirrored: RenderShape = s('arrow', 'solid', { rotation: (360 - baseRot) % 360 });
   const oddIdx = Math.floor(Math.random() * 4);
@@ -644,7 +879,7 @@ function genMirrorOddOneOut(): ShapeGenResult {
     stem: 'איזו צורה שונה מהאחרות?',
     options: labels,
     correctOption: oddIdx,
-    explanation: `שלושה חצים מצביעים לאותו כיוון. צורה ${labels[oddIdx]} משוקפת — היא מצביעה לכיוון הפוך. זהו השוני.`,
+    explanation: `שלושה חצים מצביעים באותו אלכסון. צורה ${labels[oddIdx]} משוקפת — היא מצביעה לכיוון ההפוך באלכסון. זהו השוני.`,
     visualConfig: {
       stemLayout: 'odd_one_out',
       stemShapes,
@@ -676,10 +911,12 @@ const mediumGenerators: GenFn[] = [
 const hardGenerators: GenFn[] = [
   genScaleAnalogy, genGridPattern, genGrid3x3, genMirrorOddOneOut,
   genCutShapeAnalogy, genDotCountSeries,
-  // Genuinely hard generators added when audit showed the previous "hard"
-  // pool was indistinguishable from "medium" — multi-rule combinations,
-  // long-step series, compound transformations.
+  // Multi-rule combinations, long-step series, compound transformations.
   genMultiRuleAnalogy, genMultiRuleSeries, genCompoundTransformation, genLongSeries,
+  // Real-Stage-B-pattern generators added after auditing the Michonan
+  // simulation booklets (sim 1, 2, 3). These match question types that
+  // appear repeatedly on the actual exam.
+  genCompositeShapeAnalogy, genGridColoringMatrix, genPatternTransferAnalogy, genDotMatrix3x3,
 ];
 
 

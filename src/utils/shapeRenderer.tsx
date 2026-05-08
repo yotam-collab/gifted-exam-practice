@@ -26,6 +26,13 @@ export interface RenderShape {
   innerShape?: RenderShape;
   /** Optional decorative dots placed on the perimeter (for "count-the-dots" hexagon questions). */
   perimeterDots?: number;
+  /** Optional smaller shape attached to a side of this shape — used for composite
+   *  "shape-with-bump" figures common on real Stage B (e.g. circle + smaller
+   *  circle attached at top). */
+  attachedShape?: { shape: RenderShape; side: 'top' | 'bottom' | 'left' | 'right'; relSize?: number };
+  /** Optional miniature grid drawn over the shape — used for grid-coloring 3×3
+   *  matrices on real Stage B. Cells marked true are filled black. */
+  gridFill?: { rows: number; cols: number; cells: boolean[][] };
 }
 
 // ---------------------------------------------------------------------------
@@ -368,6 +375,51 @@ function renderShape(
             />
           );
         });
+      })()}
+
+      {/* Attached smaller shape — used for composite figures like
+          "circle + smaller circle attached at top" (real Stage B). */}
+      {shape.attachedShape && (() => {
+        const att = shape.attachedShape;
+        const relSize = att.relSize ?? 0.45;
+        const offset = size * 0.55;
+        const offMap = {
+          top: { x: 0, y: -offset },
+          bottom: { x: 0, y: offset },
+          left: { x: -offset, y: 0 },
+          right: { x: offset, y: 0 },
+        };
+        const o = offMap[att.side];
+        return renderShape(att.shape, o.x, o.y, size * relSize);
+      })()}
+
+      {/* Grid fill — small NxM grid superimposed on the shape, with
+          some cells filled. Used for grid-coloring matrix questions. */}
+      {shape.gridFill && (() => {
+        const g = shape.gridFill;
+        const cellSize = size * 0.7 / Math.max(g.rows, g.cols);
+        const gridW = cellSize * g.cols;
+        const gridH = cellSize * g.rows;
+        const startX = -gridW / 2;
+        const startY = -gridH / 2;
+        return (
+          <g>
+            {Array.from({ length: g.rows }).map((_, r) =>
+              Array.from({ length: g.cols }).map((_, c) => (
+                <rect
+                  key={`${r}-${c}`}
+                  x={startX + c * cellSize}
+                  y={startY + r * cellSize}
+                  width={cellSize}
+                  height={cellSize}
+                  fill={g.cells[r]?.[c] ? color : 'none'}
+                  stroke={color}
+                  strokeWidth={0.7}
+                />
+              ))
+            )}
+          </g>
+        );
       })()}
     </g>
   );
