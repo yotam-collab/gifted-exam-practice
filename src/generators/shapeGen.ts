@@ -1024,6 +1024,137 @@ function genStateChangeAnalogy(): ShapeGenResult {
   };
 }
 
+// ── HARD: Triple-rule analogy — shape + fill + scale change at once ────
+// Real Stage B's hardest analogies vary three independent dimensions.
+// Distractors test "got 2 of 3 rules right" — kid who ignores any one
+// dimension still fails.
+function genTripleRuleAnalogy(): ShapeGenResult {
+  const types = shuffle([...SHAPE_TYPES]).slice(0, 2);
+  const fills = shuffle([...FILL_TYPES]).slice(0, 2);
+
+  // A: type[0] / fills[0] / small
+  // B: type[0] / fills[1] / big
+  // C: type[1] / fills[0] / small
+  // ?: type[1] / fills[1] / big   (same 3 transformations applied)
+  const A = s(types[0], fills[0], { scale: 0.55 });
+  const B = s(types[0], fills[1], { scale: 1.15 });
+  const C = s(types[1], fills[0], { scale: 0.55 });
+  const correct = s(types[1], fills[1], { scale: 1.15 });
+
+  // Distractors each match exactly 2 of 3 rules:
+  const distractors = [
+    s(types[1], fills[0], { scale: 1.15 }),  // wrong fill (kept fills[0])
+    s(types[1], fills[1], { scale: 0.55 }),  // wrong size (stayed small)
+    s(types[0], fills[1], { scale: 1.15 }),  // wrong shape (= B)
+  ];
+
+  const allOptions = dedupShapeOptions(shuffle([correct, ...distractors]), correct);
+  return {
+    skill: 'multi_rule_jump',
+    stem: 'מהי הצורה החסרה?',
+    options: allOptions.map(describeShape),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `שלושה כללים פועלים בו-זמנית:\n1) הצורה התחלפה (${shapeNameHe[types[0]]} → ${shapeNameHe[types[1]]}).\n2) המילוי השתנה (${fillNameHe[fills[0]]} → ${fillNameHe[fills[1]]}).\n3) הגודל גדל (קטן → גדול).\nכל הכללים פועלים יחד על הצורה הימנית.`,
+    visualConfig: {
+      stemLayout: 'analogy',
+      stemShapes: [A, B, C],
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
+// ── HARD: Compound odd-one-out — 3 share TWO features, 1 breaks ONE ────
+// 4 shapes; three of them share both shape AND fill (or shape AND scale).
+// One breaks ONE of those features. Kid can't just spot a single visual
+// difference — they must check multiple dimensions.
+function genCompoundOddOneOut(): ShapeGenResult {
+  const sharedType = pick(SHAPE_TYPES);
+  const sharedFill = pick(FILL_TYPES);
+  const sharedScale = pick([0.7, 1.0]);
+  const oddDimension = pick(['type', 'fill', 'scale'] as const);
+
+  const sameShape: RenderShape = s(sharedType, sharedFill, { scale: sharedScale });
+  let oddShape: RenderShape;
+  if (oddDimension === 'type') {
+    const altType = pick(SHAPE_TYPES.filter(t => t !== sharedType));
+    oddShape = s(altType, sharedFill, { scale: sharedScale });
+  } else if (oddDimension === 'fill') {
+    const altFill = pick(FILL_TYPES.filter(f => f !== sharedFill));
+    oddShape = s(sharedType, altFill, { scale: sharedScale });
+  } else {
+    const altScale = sharedScale === 0.7 ? 1.15 : 0.55;
+    oddShape = s(sharedType, sharedFill, { scale: altScale });
+  }
+
+  const oddIdx = Math.floor(Math.random() * 4);
+  const stemShapes: RenderShape[] = [];
+  for (let i = 0; i < 4; i++) stemShapes.push(i === oddIdx ? oddShape : { ...sameShape });
+  const labels = ['א', 'ב', 'ג', 'ד'];
+
+  const dimensionHe = oddDimension === 'type' ? 'בצורה' : oddDimension === 'fill' ? 'במילוי' : 'בגודל';
+  return {
+    skill: 'odd_one_out',
+    stem: 'איזו צורה שונה מהאחרות? שים לב — שלוש מהן זהות בכל המאפיינים, ואחת שונה רק במאפיין אחד.',
+    options: labels,
+    correctOption: oddIdx,
+    explanation: `שלוש מהצורות חולקות שלושה מאפיינים: צורה (${shapeNameHe[sharedType]}), מילוי (${fillNameHe[sharedFill]}), וגודל. צורה ${labels[oddIdx]} שונה ${dimensionHe} בלבד.`,
+    visualConfig: {
+      stemLayout: 'odd_one_out',
+      stemShapes,
+      optionShapes: undefined,
+    },
+  };
+}
+
+// ── HARD: Hidden-rule 6-step series ────────────────────────────────────
+// Series of 6 visible shapes with the rule rotation +60° per step AND
+// scale alternates small/big. Kid must spot both patterns simultaneously
+// over a long sequence — much harder than 3-step series.
+function genHiddenRuleLongSeries(): ShapeGenResult {
+  const baseType = pick(['arrow', 'triangle', 'diamond'] as const);
+  const fills: RenderShape['fill'][] = ['none', 'solid'];
+  const series: RenderShape[] = [];
+  for (let i = 0; i < 6; i++) {
+    series.push({
+      type: baseType,
+      fill: fills[i % 2],
+      color: '#1f2937',
+      rotation: (i * 60) % 360,
+      scale: i % 2 === 0 ? 0.7 : 1.0,
+    });
+  }
+  const correctIdx = 6;
+  const correct: RenderShape = {
+    type: baseType,
+    fill: fills[correctIdx % 2],
+    color: '#1f2937',
+    rotation: (correctIdx * 60) % 360,
+    scale: correctIdx % 2 === 0 ? 0.7 : 1.0,
+  };
+  const distractors: RenderShape[] = [
+    // wrong rotation (didn't advance)
+    { ...correct, rotation: (5 * 60) % 360 },
+    // wrong fill (kept previous)
+    { ...correct, fill: fills[(correctIdx - 1) % 2] },
+    // wrong scale (didn't alternate)
+    { ...correct, scale: correctIdx % 2 === 0 ? 1.0 : 0.7 },
+  ];
+
+  const allOptions = dedupShapeOptions(shuffle([correct, ...distractors]), correct);
+  return {
+    skill: 'multi_rule_jump',
+    stem: 'מהי הצורה הבאה בסדרה?',
+    options: allOptions.map((_, i) => `אפשרות ${'אבגד'[i]}`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `שני כללים פועלים בו-זמנית לאורך 6 שלבים:\n1) הצורה מסתובבת ב-60° בכל שלב.\n2) הגודל מתחלף (קטן → גדול → קטן → גדול).\nהשלב הבא: סיבוב 360° (= 0°), גודל קטן.`,
+    visualConfig: {
+      stemLayout: 'series',
+      stemShapes: series,
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
 // ── Mirror-symmetry odd-one-out ─────────────────────────────────────────
 // Three shapes are rotated identically; one is mirrored. Trains the
 // "rotation vs reflection" trap that's classic on Stage B figural items.
@@ -1074,18 +1205,28 @@ const mediumGenerators: GenFn[] = [
   genAnalogy, genScaleAnalogy, genTransformation, genSeries,
   genFillSeries, genGridPattern, genCutShapeAnalogy, genDotCountSeries,
   genMirrorOddOneOut,
+  // Single-rule generators that match real exam types but are too simple
+  // for the hard pool — sit at medium so they still get rotation but kids
+  // at hard difficulty don't get stuck on them.
+  genPatternTransferAnalogy, genProgressiveLinesSeries, genStateChangeAnalogy,
 ];
+// Hard pool — STRICTLY multi-rule and matrix questions. After user feedback
+// that "hard" felt easy: the previous hard pool included single-rule items
+// (cut-shape, dot-count, state-change, progressive-lines) that match real
+// exam TYPES but are individually too simple. Those are now medium-only.
+// Hard pool is reserved for items where the kid must reason about ≥2
+// dimensions simultaneously OR navigate a 3×3 matrix with two-axis rules.
 const hardGenerators: GenFn[] = [
-  genScaleAnalogy, genGridPattern, genGrid3x3, genMirrorOddOneOut,
-  genCutShapeAnalogy, genDotCountSeries,
+  genGrid3x3, genMirrorOddOneOut,
   // Multi-rule combinations, long-step series, compound transformations.
   genMultiRuleAnalogy, genMultiRuleSeries, genCompoundTransformation, genLongSeries,
-  // Real-Stage-B-pattern generators added after auditing the Michonan
-  // simulation booklets (sim 1, 2, 3).
-  genCompositeShapeAnalogy, genGridColoringMatrix, genPatternTransferAnalogy, genDotMatrix3x3,
-  // Sim-3-specific patterns: progressive lines, alternating pairs, rotation
-  // matrix, state-change analogy.
-  genProgressiveLinesSeries, genBlackWhitePairSeries, genRotationMatrix3x3, genStateChangeAnalogy,
+  // Composite, grid-coloring, dot-matrix — all are 3×3 or compound figures.
+  genCompositeShapeAnalogy, genGridColoringMatrix, genDotMatrix3x3,
+  // Pair series and rotation matrix — both require tracking two attributes.
+  genBlackWhitePairSeries, genRotationMatrix3x3,
+  // 3-rule and compound generators added after user feedback that hard
+  // wasn't hard enough — these vary 3 independent dimensions.
+  genTripleRuleAnalogy, genCompoundOddOneOut, genHiddenRuleLongSeries,
 ];
 
 
