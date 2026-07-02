@@ -59,6 +59,13 @@ export const SECTION_CONFIGS: SectionConfig[] = [
       { tag: 'tool_domain', nameHe: 'כלי מדידה-תחום' },
       { tag: 'work_part', nameHe: 'יצירה-חלק' },
       { tag: 'intensity', nameHe: 'דרגות עוצמה' },
+      { tag: 'unit_of_measure', nameHe: 'יחידות מידה' },
+      { tag: 'size_same_kind', nameHe: 'קטן-גדול מאותו סוג' },
+      { tag: 'emitter_emission', nameHe: 'דבר ומה שיוצא ממנו' },
+      { tag: 'protection_threat', nameHe: 'הגנה-איום' },
+      { tag: 'care_product_target', nameHe: 'חפץ טיפוח-מטרה' },
+      { tag: 'profession_tool', nameHe: 'בעל מקצוע-כלי' },
+      { tag: 'generation', nameHe: 'דורות במשפחה' },
     ],
   },
   {
@@ -96,6 +103,9 @@ export const SECTION_CONFIGS: SectionConfig[] = [
       { tag: 'number_grid', nameHe: 'טבלת מספרים' },
       { tag: 'number_pattern', nameHe: 'חוקיות מספרית' },
       { tag: 'wheel_sums', nameHe: 'גלגל סכומים' },
+      { tag: 'butterfly', nameHe: 'פרפר מספרים' },
+      { tag: 'star_series', nameHe: 'כוכב מספרים' },
+      { tag: 'multi_arrow_machine', nameHe: 'מכונת חצים' },
     ],
   },
 ];

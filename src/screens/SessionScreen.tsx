@@ -5,7 +5,7 @@ import { storage } from '../services/storage';
 import { updateMastery, selectAdaptiveQuestions } from '../services/adaptive';
 import { useTimer } from '../hooks/useTimer';
 import { selectForSection, getVisualConfig, getNSVisualConfig } from '../services/questionPool';
-import { ShapeAnalogy, ShapeSeries, ShapeGrid, ShapeRow, ShapeOddOneOut, ShapeOptions, DividedCirclePair, NumberPyramid, NumberGrid, NumberFlowChart, NumberTriangle, ArrowChain, BidirectionalFlow, NumberWheel } from '../utils/shapeRenderer';
+import { ShapeAnalogy, ShapeSeries, ShapeGrid, ShapeRow, ShapeOddOneOut, ShapeOptions, DividedCirclePair, NumberPyramid, NumberGrid, NumberFlowChart, NumberTriangle, ArrowChain, BidirectionalFlow, NumberWheel, NumberButterflyPair, NumberStar, MultiArrowMachine } from '../utils/shapeRenderer';
 import { sounds } from '../services/sounds';
 
 interface Props {
@@ -480,7 +480,16 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
               <BidirectionalFlow rows={nsVisual.rows} missing={nsVisual.missing} />
             )}
             {nsVisual.type === 'number_wheel' && (
-              <NumberWheel inner={nsVisual.inner} outer={nsVisual.outer} missingOuterIndex={nsVisual.missingOuterIndex} />
+              <NumberWheel inner={nsVisual.inner} outer={nsVisual.outer} missingOuterIndex={nsVisual.missingOuterIndex} missingInnerIndex={nsVisual.missingInnerIndex} />
+            )}
+            {nsVisual.type === 'butterfly_pair' && (
+              <NumberButterflyPair butterfly1={nsVisual.butterfly1} butterfly2={nsVisual.butterfly2} />
+            )}
+            {nsVisual.type === 'star_points' && (
+              <NumberStar points={nsVisual.points} missingIndex={nsVisual.missingIndex} />
+            )}
+            {nsVisual.type === 'multi_arrow_machine' && (
+              <MultiArrowMachine pairs={nsVisual.pairs} missing={nsVisual.missing} />
             )}
           </div>
         )}

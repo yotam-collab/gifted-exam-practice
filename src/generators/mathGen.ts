@@ -498,7 +498,11 @@ const tc2: TemplateGen = (d) => {
   const wrong2 = fmtTime(...addMin(h, m, totalAdd + 10));
   const wrong3 = fmtTime(...addMin(h, m, totalAdd - 10 > 0 ? totalAdd - 10 : totalAdd + 20));
   const allOpts = shuffle(Array.from(new Set([correctStr, wrong1, wrong2, wrong3])).slice(0, 4));
-  while (allOpts.length < 4) allOpts.push(fmtTime(...addMin(h, m, totalAdd + rand(15, 30))));
+  // Deduped top-up — the naive random push used to emit duplicate options.
+  for (let extra = 15; allOpts.length < 4; extra += 5) {
+    const cand = fmtTime(...addMin(h, m, totalAdd + extra));
+    if (!allOpts.includes(cand)) allOpts.push(cand);
+  }
 
   const explanation = wait > 0
     ? `🔍 השיטה: קודם מחברים את כל הדקות של הדרך, ורק אז מוסיפים לשעון.\nשלב 1 — סך הדקות: ${walk} + ${wait} = ${totalAdd}. מצאנו כמה זמן לקחה כל הדרך!\nשלב 2 — ${fmtTime(h, m)} + ${totalAdd} דקות = ${correctStr}.\nשימו לב: כשעוברים 60 דקות — מתחלפת השעה.\n⚠️ המלכודת: מי ששוכח את ${wait} דקות ההמתנה מקבל ${wrong1} — תוצאת ביניים שמופיעה בתשובות!\nלכן התשובה: ${correctStr} ✔`
@@ -531,7 +535,11 @@ const tc3: TemplateGen = (d) => {
   const wrong2 = fmtTime(...addMin(h, m, totalMin - 10));
   const wrong3 = fmtTime(...addMin(h, m, durations[0]));
   const allOpts = shuffle(Array.from(new Set([correctStr, wrong1, wrong2, wrong3])));
-  while (allOpts.length < 4) allOpts.push(fmtTime(...addMin(h, m, totalMin + rand(5, 25))));
+  // Deduped top-up — the naive random push used to emit duplicate options.
+  for (let extra = 5; allOpts.length < 4; extra += 5) {
+    const cand = fmtTime(...addMin(h, m, totalMin + extra));
+    if (!allOpts.includes(cand)) allOpts.push(cand);
+  }
 
   return {
     stem,
@@ -846,8 +854,13 @@ const ba1: TemplateGen = (d) => {
   const wrong1 = fmt(endH + 1, endM);
   const wrong2 = fmt(endH, (endM + 30) % 60);
   const wrong3 = fmt(endH, Math.max(0, endM - 10));
+  // Dedup: wrong3 (endM−10 clamped to 0) can collide with the correct answer,
+  // and the naive top-up used to push duplicates like a second "17:00".
   const allOpts = shuffle(Array.from(new Set([correct, wrong1, wrong2, wrong3])));
-  while (allOpts.length < 4) allOpts.push(fmt(endH + rand(1, 3), endM));
+  for (let extra = 1; allOpts.length < 4; extra++) {
+    const cand = fmt(endH + extra, (endM + 20 * extra) % 60);
+    if (!allOpts.includes(cand)) allOpts.push(cand);
+  }
   const name = pick([...girls, ...boys]);
   const stem = `${name} עלה לאוטובוס בשעה ${fmt(startH, startM)}. הנסיעה אורכת ${durationMin} דקות. באיזו שעה יגיע ליעד?`;
   const toHour = (60 - startM) % 60;
@@ -999,6 +1012,226 @@ const dp2: TemplateGen = (d) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════
+// ARCHETYPE-GAP TEMPLATES (added after auditing against the reference
+// archetype list of top-tier prep materials). Each covers a pattern the
+// bank lacked: union-then-multiply, fraction-of-quantity, ratio in both
+// directions, symbolic missing-number equations, m/cm conversion with
+// borrowing, savings-over-a-year, chain division, round-DOWN remainder,
+// place value (digit vs count), transitive age differences, state-tracking
+// transfers, and price proportion. Difficulty stays structural-logical —
+// numbers are always "friendly" and results always whole.
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── #1 Union then multiply: (a+b) × N ───────────────────────────────────
+const um1: TemplateGen = (d) => {
+  const a = rand(2, d === 'hard' ? 7 : 5);
+  const b = rand(2, d === 'hard' ? 7 : 5);
+  const boxes = rand(3, d === 'hard' ? 6 : 5);
+  const perBox = a + b;
+  const answer = perBox * boxes;
+  const name = girlName();
+  const stem = `בכל קופסת צבעים יש ${a} עפרונות אדומים ו-${b} עפרונות כחולים. ${name} קנתה ${boxes} קופסאות. כמה עפרונות יש לה בסך הכול?`;
+  const { options, correctOption } = makeOptions(answer, [a * boxes, perBox, a + b + boxes]);
+  const explanation = `🔍 השיטה: קודם מאחדים כמה יש בקופסה אחת, ורק אז כופלים במספר הקופסאות.\nשלב 1 — בקופסה אחת: ${a} + ${b} = ${perBox} עפרונות. מצאנו כמה יש בכל קופסה!\nשלב 2 — ${boxes} קופסאות: ${perBox} × ${boxes} = ${answer}.\n💡 טיפ: אפשר גם לחשב כל צבע בנפרד — ${a} × ${boxes} ועוד ${b} × ${boxes} — ולקבל בדיוק אותו דבר.\n⚠️ המלכודת: ${a * boxes} מופיע בתשובות — מי שסופר רק את האדומים שוכח חצי מהקופסה!\nלכן התשובה: ${answer} ✔`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── #2 Fraction of a quantity: half / third / quarter of N ──────────────
+const fr1: TemplateGen = (d) => {
+  const fracs = [
+    { k: 2, w: 'מחצית' },
+    { k: 3, w: 'שליש' },
+    { k: 4, w: 'רבע' },
+  ];
+  const f = d === 'easy' ? fracs[0] : pick(fracs);
+  const part = rand(3, d === 'hard' ? 9 : 7);
+  const total = f.k * part;
+  const rest = total - part;
+  const askRest = d === 'hard' && rand(0, 1) === 1; // hard may ask the complement
+  const answer = askRest ? rest : part;
+  const stem = askRest
+    ? `בכיתה ${total} תלמידים. ${f.w} מהם הגיעו היום עם כובע. כמה תלמידים הגיעו בלי כובע?`
+    : `בכיתה ${total} תלמידים. ${f.w} מהם הגיעו היום עם כובע. כמה תלמידים הגיעו עם כובע?`;
+  const { options, correctOption } = makeOptions(answer, [askRest ? part : rest, f.k, total]);
+  const explanation = askRest
+    ? `🔍 השיטה: קודם מוצאים כמה זה ${f.w}, ורק אז מחסירים מהכיתה כולה.\nשלב 1 — ${f.w} מ-${total}: ${total} ÷ ${f.k} = ${part}. מצאנו כמה הגיעו עם כובע!\nשלב 2 — בלי כובע: ${total} − ${part} = ${answer}.\n⚠️ המלכודת: ${part} מופיע בתשובות — אלו דווקא התלמידים עם הכובע, שאלו על ההפך!\nלכן התשובה: ${answer} ✔`
+    : `🔍 השיטה: "${f.w}" פירושו לחלק ל-${f.k} חלקים שווים.\nשלב 1 — ${total} ÷ ${f.k} = ${answer}. מצאנו כמה זה ${f.w} מהכיתה!\n✓ בדיקה: ${answer} × ${f.k} = ${total} — בדיוק כל הכיתה.\n⚠️ המלכודת: ${rest} מופיע בתשובות — זה כל השאר, מי שמחסיר במקום לחלק טועה בכיוון!\nלכן התשובה: ${answer} ✔`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── #3 Ratio in BOTH directions: פי 2 / חצי מ- ──────────────────────────
+const rb1: TemplateGen = (d) => {
+  const factor = pick(d === 'easy' ? [2] : [2, 3]);
+  const small = factor * rand(2, d === 'hard' ? 5 : 4); // divisible → inverse-op trap stays whole
+  const big = small * factor;
+  const item = pick(countableItems);
+  const [nA, nB] = shuffle([...girls]).slice(0, 2);
+  const lessWord = factor === 2 ? 'חצי' : 'שליש';
+  const direction = pick(['more', 'less'] as const);
+  if (direction === 'more') {
+    const answer = big;
+    const stem = `ל${nA} יש ${small} ${item.p}. ל${nB} יש פי ${factor === 2 ? 'שניים' : 'שלושה'} ממה שיש ל${nA}. כמה ${item.p} יש ל${nB}?`;
+    const { options, correctOption } = makeOptions(answer, [small / factor, small, small + factor]);
+    const explanation = `🔍 השיטה: "פי ${factor}" אומר להכפיל ב-${factor} — קוראים למי יש יותר לפני שמחשבים.\nשלב 1 — ל${nB} יש יותר: ${small} × ${factor} = ${answer}.\n✓ בדיקה: ${answer} זה באמת פי ${factor} מ-${small} — מסתדר.\n⚠️ המלכודת: ${small / factor} מופיע בתשובות — מי שמחלק במקום להכפיל הופך את הכיוון!\nלכן התשובה: ${answer} ✔`;
+    return { stem, options, correctOption, explanation };
+  }
+  const answer = small;
+  const stem = `ל${nA} יש ${big} ${item.p}. ל${nB} יש ${lessWord} ממה שיש ל${nA}. כמה ${item.p} יש ל${nB}?`;
+  const { options, correctOption } = makeOptions(answer, [big * factor, big, big - factor]);
+  const explanation = `🔍 השיטה: "${lessWord} מ..." אומר לחלק ב-${factor} — קוראים למי יש פחות לפני שמחשבים.\nשלב 1 — ל${nB} יש פחות: ${big} ÷ ${factor} = ${answer}.\n✓ בדיקה: ${answer} × ${factor} = ${big} — מסתדר בדיוק.\n⚠️ המלכודת: ${big * factor} מופיע בתשובות — מי שמכפיל במקום לחלק הופך את הכיוון!\nלכן התשובה: ${answer} ✔`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── #5 Missing number in equation with order of operations ──────────────
+const eq1: TemplateGen = (d) => {
+  const b = pick(d === 'hard' ? [2, 3, 4] : [2, 3]);
+  const c = rand(3, d === 'hard' ? 9 : 7);
+  const a = rand(2, 8);
+  const plus = rand(0, 1) === 1;
+  const inner = c * b; // value inside the parentheses
+  const answer = plus ? inner - a : inner + a;
+  if (answer < 1) return eq1(d); // re-roll degenerate case
+  const sign = plus ? '+' : '−';
+  const stem = `בתרגיל שלפניכם: (☐ ${sign} ${a}) : ${b} = ${c}. איזה מספר מסתתר בריבוע?`;
+  const inverseTrap = plus ? inner + a : inner - a;
+  const { options, correctOption } = makeOptions(answer, [inner, inverseTrap, c]);
+  const undoLine = plus
+    ? `שלב 2 — מבטלים את ה"${sign} ${a}": ☐ = ${inner} − ${a} = ${answer}.`
+    : `שלב 2 — מבטלים את ה"${sign} ${a}": ☐ = ${inner} + ${a} = ${answer}.`;
+  const explanation = `🔍 השיטה: עובדים אחורה מהתוצאה — קודם מבטלים את החילוק, ואז את מה שבסוגריים.\nשלב 1 — משהו : ${b} = ${c}, לכן בתוך הסוגריים יש ${c} × ${b} = ${inner}. מצאנו את מה שבסוגריים!\n${undoLine}\n✓ בדיקה: (${answer} ${sign} ${a}) : ${b} = ${inner} : ${b} = ${c} — בדיוק כמו בתרגיל.\n⚠️ המלכודת: ${inner} מופיע בתשובות — זו רק תוצאת ביניים, לפני שביטלנו את הסוגריים!\nלכן התשובה: ${answer} ✔`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── #7 Unit conversion m/cm + subtraction with borrowing ────────────────
+const uc1: TemplateGen = (d) => {
+  const m = rand(2, d === 'hard' ? 5 : 4);
+  const cm = pick([15, 20, 25, 30, 35, 40, 45]);
+  // cut > cm forces borrowing; delta ≠ cm so the no-borrow distractor never
+  // collides with the original length shown in the stem.
+  const delta = pick((d === 'hard' ? [25, 35, 45, 50] : [15, 20, 30]).filter(x => x !== cm));
+  const cut = cm + delta;
+  const rm = m - 1;
+  const rc = cm + 100 - cut;
+  const fmtLen = (M: number, C: number) => C === 0 ? `${M} מטר` : `${M} מטר ו-${C} ס"מ`;
+  const correctStr = fmtLen(rm, rc);
+  const wrongs = [
+    fmtLen(m, cut - cm),       // no-borrow trap: subtracted the smaller from the larger
+    fmtLen(rm, rc + 10),
+    fmtLen(rm, Math.max(5, rc - 10)),
+  ];
+  const allOpts = shuffle(Array.from(new Set([correctStr, ...wrongs])));
+  while (allOpts.length < 4) allOpts.push(fmtLen(rm, rc + allOpts.length * 5 + 5));
+  const stem = `לחוט אורך ${m} מטר ו-${cm} ס"מ. גזרו ממנו חתיכה באורך ${cut} ס"מ. מה אורך החוט שנשאר?`;
+  const explanation = `🔍 השיטה: כשאין מספיק ס"מ להחסיר — פורטים מטר אחד ל-100 ס"מ.\nשימו לב: מטר = 100 ס"מ.\nשלב 1 — יש רק ${cm} ס"מ וצריך להחסיר ${cut}. פורטים מטר: ${cm} + 100 = ${cm + 100} ס"מ, ונשארים ${rm} מטרים.\nשלב 2 — ${cm + 100} − ${cut} = ${rc} ס"מ.\n⚠️ המלכודת: "${fmtLen(m, cut - cm)}" מופיע בתשובות — מי שמחסיר הפוך (${cut} − ${cm}) בלי לפרוט מטר מקבל אותו!\nלכן התשובה: ${correctStr} ✔`;
+  return {
+    stem,
+    options: allOpts.slice(0, 4),
+    correctOption: allOpts.indexOf(correctStr),
+    explanation,
+  };
+};
+
+// ── #8 Savings over time (hidden knowledge: year = 12 months) ───────────
+const sv1: TemplateGen = (d) => {
+  const perMonth = pick(d === 'hard' ? [4, 6, 7, 8] : [3, 5, 10]);
+  const initial = d === 'easy' ? 0 : pick([10, 15, 20, 25, 30]);
+  const saved = 12 * perMonth;
+  const answer = initial + saved;
+  const name = boyName();
+  const stem = initial > 0
+    ? `בקופת החיסכון של ${name} יש ${initial} שקלים. בכל חודש הוא מכניס לקופה עוד ${perMonth} שקלים. כמה כסף יהיה בקופה בעוד שנה בדיוק?`
+    : `${name} חוסך ${perMonth} שקלים בכל חודש. כמה שקלים יחסוך בשנה שלמה?`;
+  const { options, correctOption } = makeOptions(answer, [initial + 10 * perMonth, saved, initial + perMonth]);
+  const explanation = initial > 0
+    ? `🔍 השיטה: קודם מגלים כמה חודשים יש בשנה, ואז כופלים ומוסיפים למה שכבר יש.\nשימו לב: שנה = 12 חודשים.\nשלב 1 — חיסכון של שנה: ${perMonth} × 12 = ${saved} ₪. מצאנו כמה יתווסף!\nשלב 2 — יחד עם מה שכבר בקופה: ${initial} + ${saved} = ${answer} ₪.\n⚠️ המלכודת: ${initial + 10 * perMonth} מופיע בתשובות — מי שסופר 10 חודשים בשנה נופל שם. וגם ${saved} בלי ה-${initial} שכבר בקופה!\nלכן התשובה: ${answer} ₪ ✔`
+    : `🔍 השיטה: "שנה" היא מילה מסתירה — קודם הופכים אותה למספר חודשים.\nשימו לב: שנה = 12 חודשים.\nשלב 1 — ${perMonth} × 12 = ${answer} ₪.\n⚠️ המלכודת: ${10 * perMonth} מופיע בתשובות — מי שסופר 10 חודשים בשנה נופל שם!\nלכן התשובה: ${answer} ₪ ✔`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── #9 Chain divisions: loaf → slices → sandwiches ──────────────────────
+const cd1: TemplateGen = (d) => {
+  const slicesPerLoaf = pick([10, 12, 16, 20]);
+  const loaves = d === 'easy' ? 2 : rand(2, d === 'hard' ? 4 : 3);
+  const perLoaf = slicesPerLoaf / 2; // sandwiches from one loaf (2 slices each)
+  const answer = perLoaf * loaves;
+  const stem = `בכיכר לחם יש ${slicesPerLoaf} פרוסות, ולכל כריך צריך 2 פרוסות. כמה כריכים אפשר להכין מ-${loaves} כיכרות?`;
+  const { options, correctOption } = makeOptions(answer, [perLoaf, slicesPerLoaf * loaves, answer + loaves]);
+  const explanation = `🔍 השיטה: הולכים בשרשרת — קודם כמה כריכים מכיכר אחת, ואז כופלים במספר הכיכרות.\nשלב 1 — מכיכר אחת: ${slicesPerLoaf} ÷ 2 = ${perLoaf} כריכים. מצאנו כמה נותנת כיכר אחת!\nשלב 2 — מ-${loaves} כיכרות: ${perLoaf} × ${loaves} = ${answer}.\n⚠️ המלכודת: ${perLoaf} מופיע בתשובות — זו רק כיכר אחת! וגם ${slicesPerLoaf * loaves} — זה מספר הפרוסות, שכחו לחלק לכריכים.\nלכן התשובה: ${answer} כריכים ✔`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── #10 Division with remainder — round DOWN (full bottles only) ────────
+// The round-UP twin (boxes needed → add the partial group) is covered by gd1.
+const rd1: TemplateGen = (d) => {
+  const bottle = pick(d === 'hard' ? [3, 4] : [2, 3]);
+  const q = rand(4, d === 'hard' ? 9 : 7);
+  const r = rand(1, bottle - 1);
+  const total = bottle * q + r;
+  const answer = q;
+  const stem = `במיכל יש ${total} ליטר מיץ. ממלאים ממנו בקבוקים, ובכל בקבוק נכנסים בדיוק ${bottle} ליטר. כמה בקבוקים מלאים אפשר למלא?`;
+  const { options, correctOption } = makeOptions(answer, [q + 1, r, total - bottle]);
+  const explanation = `🔍 השיטה: מחלקים — ואז עוצרים לחשוב מה עושים עם השארית.\nשלב 1 — ${total} ÷ ${bottle} = ${q} ושארית ${r}, כי ${bottle} × ${q} = ${bottle * q}. מצאנו ${q} בקבוקים מלאים!\nשלב 2 — ${r === 1 ? 'נשאר ליטר אחד' : `נשארו ${r} ליטר`} — פחות מבקבוק שלם, אז זה לא נספר.\n⚠️ המלכודת: ${q + 1} מפתה — אבל הבקבוק האחרון לא מלא! שאלו על בקבוקים מלאים, אז מעגלים למטה. (בשאלות "כמה קופסאות צריך" דווקא מעגלים למעלה — קוראים בדיוק מה שאלו!)\nלכן התשובה: ${answer} בקבוקים ✔`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── #12 Place value: digit vs count ("כמה מאות במספר") ──────────────────
+const pv1: TemplateGen = (d) => {
+  const a = rand(1, d === 'hard' ? 9 : 5); // thousands
+  const b = rand(1, 9);                    // hundreds digit
+  const num = a * 1000 + b * 100;
+  const display = `${a},${b}00`;
+  const answer = a * 10 + b; // total hundreds in the number
+  const stem = `כמה מאות יש במספר ${display}?`;
+  const { options, correctOption } = makeOptions(answer, [b, a, a * 10]);
+  const explanation = `🔍 השיטה: מפרקים את המספר — כמה מאות מסתתרות בכל חלק שלו.\nשימו לב: באלף אחד יש 10 מאות.\nשלב 1 — ${a === 1 ? 'אלף אחד' : `${a} אלפים`}: ${a} × 10 = ${a * 10} מאות. מצאנו את המאות שבאלפים!\nשלב 2 — ועוד ${b === 1 ? 'מאה אחת גלויה' : `${b} מאות גלויות`}: ${a * 10} + ${b} = ${answer}.\n✓ בדיקה: ${answer} × 100 = ${num.toLocaleString('en-US')} — בדיוק המספר שלנו.\n⚠️ המלכודת: ${b} מופיע בתשובות — זו רק ספרת המאות, אבל שאלו כמה מאות יש בכל המספר!\nלכן התשובה: ${answer} ✔`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── #14 Transitive age logic: difference of differences ─────────────────
+const tr1: TemplateGen = (d) => {
+  const d1 = rand(4, d === 'hard' ? 9 : 7);
+  const d2 = rand(1, d1 - 2);
+  const answer = d1 - d2;
+  const [nA, nB, nC] = shuffle([...boys]).slice(0, 3);
+  const stem = `${nA} גדול מ${nB} ב-${d1} שנים. ${nC} גדול מ${nB} ב-${d2} שנים. בכמה שנים ${nA} גדול מ${nC}?`;
+  const { options, correctOption } = makeOptions(answer, [d1 + d2, d1, d2]);
+  const baseAge = 10;
+  const explanation = `🔍 השיטה: כששני הפרשים נמדדים מאותו ילד — נותנים לו גיל לדוגמה ובודקים.\nשלב 1 — נגיד ש${nB} בן ${baseAge}: אז ${nA} בן ${baseAge} + ${d1} = ${baseAge + d1}, ו${nC} בן ${baseAge} + ${d2} = ${baseAge + d2}.\nשלב 2 — ההפרש ביניהם: ${baseAge + d1} − ${baseAge + d2} = ${answer}.\n⚠️ המלכודת: ${d1 + d2} מופיע בתשובות — מי שמחבר את ההפרשים טועה: שניהם גדולים מ${nB}, אז מחסירים, לא מחברים!\nלכן התשובה: ${answer} שנים ✔`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── #16 State tracking with transfers (solved with a state table) ───────
+const st1: TemplateGen = (d) => {
+  const g = rand(2, d === 'hard' ? 6 : 4);          // first gift A → B
+  const h = rand(3, d === 'hard' ? 9 : 7);          // half B returns
+  const b1 = 2 * h;                                  // B after receiving (even by construction)
+  const b0 = b1 - g;
+  if (b0 < 2) return st1(d);                         // re-roll degenerate case
+  const a0 = rand(g + 4, g + (d === 'hard' ? 14 : 10));
+  const a1 = a0 - g;
+  const a2 = a1 + h;
+  const [nA, nB] = shuffle([...boys]).slice(0, 2);
+  const stem = `ל${nA} יש ${a0} גולות ול${nB} יש ${b0} גולות. ${nA} נתן ל${nB} ${g} גולות, ואז ${nB} החזיר ל${nA} חצי מהגולות שהיו לו באותו רגע. כמה גולות יש ל${nA} עכשיו?`;
+  const halfOfOriginal = a1 + Math.floor(b0 / 2); // the "half of what he HAD" trap
+  const { options, correctOption } = makeOptions(a2, [a1, halfOfOriginal, h]);
+  const explanation = `🔍 השיטה: כשגולות עוברות הלוך ושוב — עוקבים אחרי המצב של שניהם אחרי כל צעד.\nבהתחלה: ${nA}=${a0}, ${nB}=${b0} → אחרי המתנה: ${nA}=${a1}, ${nB}=${b1} → ${nB} מחזיר חצי (${b1} ÷ 2 = ${h}): ${nA}=${a2}, ${nB}=${h}.\n✓ בדיקה: ${a2} + ${h} = ${a2 + h} — בדיוק כמו בהתחלה (${a0} + ${b0}), אף גולה לא נעלמה!\n⚠️ המלכודת: "חצי ממה שהיה לו באותו רגע" — כלומר חצי מ-${b1}, לא חצי מ-${b0} שהיו לו בהתחלה!\nלכן התשובה: ${a2} ✔`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── #17 Price proportion: 100g costs P → how much for k×100g ────────────
+const pp1: TemplateGen = (d) => {
+  const price = rand(2, d === 'hard' ? 9 : 6);
+  const factor = d === 'easy' ? 2 : pick([2, 3, 4]);
+  const grams = 100 * factor;
+  const answer = price * factor;
+  const item = pick(['גבינה צהובה', 'זיתים', 'חמוציות', 'שקדים', 'בוטנים']);
+  const stem = `בחנות, 100 גרם ${item} עולים ${price} שקלים. כמה יעלו ${grams} גרם?`;
+  const { options, correctOption } = makeOptions(answer, [price + factor, price * (factor + 1), price]);
+  const explanation = `🔍 השיטה: בודקים פי כמה גדלה הכמות — המחיר גדל בדיוק באותו יחס.\nשלב 1 — ${grams} ÷ 100 = ${factor}, כלומר פי ${factor} יותר ${item}. מצאנו את היחס!\nשלב 2 — גם המחיר פי ${factor}: ${price} × ${factor} = ${answer} ₪.\n⚠️ המלכודת: ${price + factor} מופיע בתשובות — מי שמוסיף ${factor} במקום להכפיל פי ${factor} נופל שם!\nלכן התשובה: ${answer} ₪ ✔`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ═══════════════════════════════════════════════════════════════════════
 // Template Registry
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -1014,12 +1247,15 @@ interface SkillTemplates {
 // the Michonan booklet. They cover patterns the previous bank lacked:
 // digit puzzles, age-with-multiplier, items×rows layouts, multi-week shopping,
 // rate extrapolation, group division with leftover.
+// Archetype-gap templates (um1, fr1, rb1, eq1, uc1, sv1, cd1, rd1, pv1,
+// tr1, st1, pp1) added after auditing against the reference archetype list —
+// see the section header above their definitions.
 const allTemplates: SkillTemplates[] = [
-  { skill: 'word_problems', templates: [wp1, wp2, wp3, wp4, wp5, wp7, wp8, ir1, mw1, gd1, inv1, sf1, rs1, wt1, sl1] },
+  { skill: 'word_problems', templates: [wp1, wp2, wp3, wp4, wp5, wp7, wp8, ir1, mw1, gd1, inv1, sf1, rs1, wt1, sl1, um1, fr1, cd1, rd1, uc1, st1] },
   { skill: 'number_sequences', templates: [seq1, seq2, seq4, seq5] },
-  { skill: 'math_logic', templates: [ml2, ml4, dp1, ag1, by1, re1, tw1, dp2] },
+  { skill: 'math_logic', templates: [ml2, ml4, dp1, ag1, by1, re1, tw1, dp2, eq1, pv1, tr1, rb1] },
   { skill: 'time_clock', templates: [tc1, tc2, tc3, sp1, ba1] },
-  { skill: 'money_change', templates: [mc1, mc2, mc3, hw1] },
+  { skill: 'money_change', templates: [mc1, mc2, mc3, hw1, sv1, pp1] },
 ];
 
 // Hard-only templates: pre-algebra patterns only surfaced when the adaptive
@@ -1029,6 +1265,12 @@ const hardOnlyTemplates: SkillTemplates[] = [
   { skill: 'number_sequences', templates: [seq3] },
   { skill: 'math_logic', templates: [ml1, ml3] },
 ];
+
+// Test-only export: lets the smoke script drive each archetype-gap template
+// directly and re-verify its arithmetic independently. Not used by app code.
+export const __archetypeTemplatesForTest: Record<string, TemplateGen> = {
+  um1, fr1, rb1, eq1, uc1, sv1, cd1, rd1, pv1, tr1, st1, pp1,
+};
 
 // ── Public API ──────────────────────────────────────────────────────────
 

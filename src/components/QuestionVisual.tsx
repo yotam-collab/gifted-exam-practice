@@ -2,6 +2,7 @@ import {
   ShapeAnalogy, ShapeSeries, ShapeGrid, ShapeRow, ShapeOddOneOut,
   DividedCirclePair, NumberPyramid, NumberGrid, NumberFlowChart, NumberTriangle,
   ArrowChain, BidirectionalFlow, NumberWheel,
+  NumberButterflyPair, NumberStar, MultiArrowMachine,
 } from '../utils/shapeRenderer';
 import type { VisualConfig } from '../data/shapeVisuals';
 import type { NSVisualConfig } from '../data/numberShapeVisuals';
@@ -43,7 +44,13 @@ export function QuestionVisual({
       case 'bidirectional_flow':
         return <BidirectionalFlow rows={nsVisual.rows} missing={nsVisual.missing} />;
       case 'number_wheel':
-        return <NumberWheel inner={nsVisual.inner} outer={nsVisual.outer} missingOuterIndex={nsVisual.missingOuterIndex} />;
+        return <NumberWheel inner={nsVisual.inner} outer={nsVisual.outer} missingOuterIndex={nsVisual.missingOuterIndex} missingInnerIndex={nsVisual.missingInnerIndex} />;
+      case 'butterfly_pair':
+        return <NumberButterflyPair butterfly1={nsVisual.butterfly1} butterfly2={nsVisual.butterfly2} />;
+      case 'star_points':
+        return <NumberStar points={nsVisual.points} missingIndex={nsVisual.missingIndex} />;
+      case 'multi_arrow_machine':
+        return <MultiArrowMachine pairs={nsVisual.pairs} missing={nsVisual.missing} />;
     }
   }
   return null;

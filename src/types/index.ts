@@ -46,7 +46,14 @@ export type WordRelationSkill =
   | 'liquid_container'     // liquid and its typical container (water : cup, wine : bottle)
   | 'tool_domain'          // measurement tool and its domain (watch : time, ruler : length)
   | 'work_part'            // creative work and its named part (book : chapter, song : stanza)
-  | 'intensity';           // weak↔strong degrees of the same phenomenon (drizzle : downpour)
+  | 'intensity'            // weak↔strong degrees of the same phenomenon (drizzle : downpour)
+  | 'unit_of_measure'      // big unit : the small unit it contains (meter : centimeter, hour : minute)
+  | 'size_same_kind'       // small object : big object of the same kind (hill : mountain, boat : ship)
+  | 'emitter_emission'     // thing : what it gives off (lamp : light, flower : scent)
+  | 'protection_threat'    // protective item : what it protects from (umbrella : rain, helmet : blow)
+  | 'care_product_target'  // grooming item : what it treats (toothbrush : teeth, comb : hair)
+  | 'profession_tool'      // professional : signature tool (carpenter : saw, painter : brush)
+  | 'generation';          // family generation step, child→parent (girl : mom, mom : grandma)
 
 export type ShapeSkill =
   | 'shape_analogy'
@@ -67,7 +74,10 @@ export type NumbersInShapesSkill =
   | 'number_flow'
   | 'number_grid'
   | 'number_pattern'
-  | 'wheel_sums';          // sector wheel: each outer number = sum of the two adjacent inner sectors
+  | 'wheel_sums'           // sector wheel: each outer number = sum of the two adjacent inner sectors
+  | 'butterfly'            // butterfly: body relates to each wing pair (sum / diff), complete+incomplete pair
+  | 'star_series'          // 5-point star: number sequence around the points in a fixed direction
+  | 'multi_arrow_machine'; // box pairs with 1-4 stacked arrows: arrow COUNT scales the base operation
 
 export type SkillTag = MathSkill | SentenceSkill | WordRelationSkill | ShapeSkill | NumbersInShapesSkill;
 

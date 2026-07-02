@@ -28,8 +28,15 @@ interface RelationBank {
   bridge: string;
   /** Short relation name used when naming a trap's REAL relation. */
   relShort: string;
+  /** Minimum difficulty this bank surfaces at. Undefined = all difficulties.
+   *  Used for relations that need more abstraction (units, generations). */
+  minDiff?: 'medium' | 'hard';
   pairs: Pair[];
 }
+
+const DIFF_RANK: Record<string, number> = { easy: 0, medium: 1, hard: 2 };
+const bankAllowedAt = (bank: RelationBank, diff: Difficulty): boolean =>
+  !bank.minDiff || (DIFF_RANK[diff] ?? 1) >= DIFF_RANK[bank.minDiff];
 
 // ── Relation banks ──────────────────────────────────────────────────────
 
@@ -113,7 +120,9 @@ const banks: RelationBank[] = [
       ['קֹר', 'רְעִידָה'], ['חֹם', 'זֵעָה'], ['רַעַשׁ', 'הֵד'],
       ['לִמּוּד', 'יֶדַע'], ['אִמּוּן', 'כֹּשֶׁר'], ['שִׂמְחָה', 'חִיּוּךְ'],
       ['עֲצַבְנוּת', 'כַּעַס'], ['בְּדִידוּת', 'עֶצֶב'], ['הַצְלָחָה', 'גַּאֲוָה'],
-      ['עֲיֵפוּת', 'שֵׁנָה'], ['רָעָב', 'אֲכִילָה'], ['צָמָא', 'שְׁתִיָּה'],
+      // NOTE: עייפות–שינה וצמא–שתייה live in disease_cure (a cluster sibling)
+      // — keeping them here too would make cross-cluster distractors valid.
+      ['רָעָב', 'אֲכִילָה'],
       ['פַּחַד', 'בְּרִיחָה'], ['חֹסֶר שֵׁנָה', 'עֲיֵפוּת'],
     ],
   },
@@ -132,25 +141,19 @@ const banks: RelationBank[] = [
       ['שׁוֹפֵט', 'בֵּית מִשְׁפָּט'], ['שָׂחְקָן', 'בָּמָה'], ['פַּסְיוֹן', 'גַּן יְלָדִים'],
     ],
   },
-  {
-    skill: 'verbal_analogy',
-    label: 'אנלוגיה: בעל חיים וצאצא',
-    bridge: 'התינוק של {a} נקרא {b}',
-    relShort: 'בעל חיים והתינוק שלו',
-    pairs: [
-      ['פָּרָה', 'עֵגֶל'], ['כֶּלֶב', 'גּוּר'], ['תַּרְנְגֹלֶת', 'אֶפְרוֹחַ'],
-      ['חֲתוּלָה', 'גּוֹרָה'], ['כִּבְשָׂה', 'טָלֶה'], ['חֲזִירָה', 'חֲזַרְזִיר'],
-      ['סוּסָה', 'סְיָח'], ['ארנבת', 'שָׁפָן'],
-    ],
-  },
+  // NOTE: the former "בעל חיים וצאצא" verbal_analogy sub-bank was removed —
+  // it duplicated animal_baby pair-for-pair with the same bridge, so its pairs
+  // could appear as VALID distractors for animal_baby stems (and vice versa).
+  // animal_baby fully covers that relation.
   {
     skill: 'verbal_analogy',
     label: 'אנלוגיה: בעל חיים ומקום מחיה',
     bridge: '{a} גר ב{b}',
     relShort: 'בעל חיים והמקום שבו הוא גר',
     pairs: [
-      ['דָּג', 'מַיִם'], ['צִפּוֹר', 'קֵן'], ['דֹּב', 'מְעָרָה'],
-      ['דְּבוֹרָה', 'כַּוֶּרֶת'], ['נְמָלָה', 'קֵן נְמָלִים'], ['חַפַרְפֶּרֶת', 'מַחִלָּה'],
+      // דבורה–כוורת וצפור–קן moved out: they already live in animal_habitat.
+      ['דָּג', 'מַיִם'], ['דֹּב', 'מְעָרָה'],
+      ['נְמָלָה', 'קֵן נְמָלִים'], ['חַפַרְפֶּרֶת', 'מַחִלָּה'],
       ['גָּמָל', 'מִדְבָּר'], ['דֻּבּוֹן', 'יַעַר'],
     ],
   },
@@ -296,10 +299,130 @@ const banks: RelationBank[] = [
     bridge: '{b} הוא כמו {a}, רק הרבה יותר חזק',
     relShort: 'אותו דבר — מהחלש אל החזק',
     pairs: [
+      // NOTE: גבעה–הר ושלולית–אגם moved to size_same_kind (they are objects,
+      // not degrees of the same phenomenon) so no pair lives in two banks.
       ['טִפְטוּף', 'מַבּוּל'], ['מַשָּׁב', 'סְעָרָה'], ['לְחִישָׁה', 'צְעָקָה'],
-      ['חִיּוּךְ', 'צְחוֹק'], ['הֲלִיכָה', 'רִיצָה'], ['גִּבְעָה', 'הַר'],
-      ['שְׁלוּלִית', 'אֲגַם'], ['חֲשָׁשׁ', 'אֵימָה'], ['טְעִימָה', 'זְלִילָה'],
+      ['חִיּוּךְ', 'צְחוֹק'], ['הֲלִיכָה', 'רִיצָה'],
+      ['חֲשָׁשׁ', 'אֵימָה'], ['טְעִימָה', 'זְלִילָה'],
       ['עֲיֵפוּת', 'תְּשִׁישׁוּת'], ['נִצְנוּץ', 'זֹהַר'], ['רוּחַ', 'סוּפָה'],
+    ],
+  },
+
+  // ── Batch 3: relation types still missing after the Stage B audit ────
+  // Every pair below is original (invented for this project, never copied).
+  // Bridges are phrased gender-neutrally (plural "we" forms / nominal
+  // sentences) so they read naturally for every pair in the bank.
+
+  {
+    skill: 'unit_of_measure',
+    label: 'יחידת מידה גדולה והיחידה הקטנה שבתוכה',
+    // Neutral phrasing: "אוספים X ועוד X" sidesteps gender agreement
+    // (שעה מורכבת / מטר מורכב) and works for every unit pair.
+    bridge: 'אוספים {b} ועוד {b} — עד שיש {a}',
+    relShort: 'יחידה גדולה והיחידה הקטנה שבתוכה',
+    minDiff: 'medium',
+    pairs: [
+      ['מֶטֶר', 'סֶנְטִימֶטֶר'], ['קִילוֹמֶטֶר', 'מֶטֶר'], ['קִילוֹגְרָם', 'גְּרָם'],
+      ['לִיטֶר', 'מִילִילִיטֶר'], ['שָׁעָה', 'דַּקָּה'], ['דַּקָּה', 'שְׁנִיָּה'],
+      ['שָׁבוּעַ', 'יוֹם'], ['חֹדֶשׁ', 'שָׁבוּעַ'], ['שָׁנָה', 'חֹדֶשׁ'],
+      ['שֶׁקֶל', 'אֲגוֹרָה'],
+    ],
+  },
+
+  {
+    skill: 'size_same_kind',
+    label: 'גרסה קטנה וגרסה גדולה של אותו הדבר',
+    // Nominal sentence — no verb, so no gender agreement to break.
+    bridge: '{a} — בדיוק כמו {b}, רק בקטן',
+    relShort: 'אותו סוג של דבר — הקטן מול הגדול',
+    minDiff: 'medium',
+    pairs: [
+      ['גִּבְעָה', 'הַר'], ['שְׁלוּלִית', 'אֲגַם'], ['שְׁבִיל', 'כְּבִישׁ'],
+      ['סִירָה', 'אֳנִיָּה'], ['נַחַל', 'נָהָר'], ['כְּפָר', 'עִיר'],
+      ['חֶדֶר', 'אוּלָם'], ['שַׂקִּית', 'שַׂק'], ['סִמְטָה', 'רְחוֹב'],
+      ['בַּיִת', 'אַרְמוֹן'],
+    ],
+  },
+
+  {
+    skill: 'emitter_emission',
+    label: 'דבר ומה שיוצא ממנו',
+    // All second words are masculine, so "מגיע" agrees everywhere.
+    bridge: 'מ{a} מגיע {b}',
+    relShort: 'דבר ומה שהוא מפיץ',
+    pairs: [
+      ['מְנוֹרָה', 'אוֹר'], ['פָּנָס', 'אוֹר'], ['רַמְקוֹל', 'צְלִיל'],
+      ['רַדְיוֹ', 'קוֹל'], ['תַּנּוּר', 'חֹם'], ['מַזְגָן', 'קֹר'],
+      ['פֶּרַח', 'רֵיחַ'], ['בֹּשֶׂם', 'רֵיחַ'], ['פַּעֲמוֹן', 'צִלְצוּל'],
+      ['כּוֹכָב', 'נִצְנוּץ'],
+    ],
+  },
+
+  {
+    skill: 'protection_threat',
+    label: 'דבר שמגן ומפני מה הוא מגן',
+    // "מוגנים" (plural we) keeps the sentence gender-neutral for every item.
+    bridge: 'עם {a} מוגנים מפני {b}',
+    relShort: 'דבר שמגן ומפני מה הוא מגן',
+    pairs: [
+      ['מִטְרִיָּה', 'גֶּשֶׁם'], ['קַסְדָּה', 'מַכָּה'], ['כְּפָפוֹת', 'קֹר'],
+      ['קְרֶם הֲגַנָּה', 'שֶׁמֶשׁ'], ['כּוֹבַע', 'שֶׁמֶשׁ'], ['מָגֵן', 'חֵץ'],
+      ['שִׁרְיוֹן', 'חֶרֶב'], ['חוֹמָה', 'אוֹיֵב'], ['אַטְמֵי אָזְנַיִם', 'רַעַשׁ'],
+    ],
+  },
+
+  {
+    skill: 'care_product_target',
+    label: 'חפץ טיפוח ומה שמטפלים בו',
+    bridge: 'עם {a} מטפלים ב{b}',
+    relShort: 'חפץ טיפוח ומה שמטפלים בו',
+    pairs: [
+      ['מִבְרֶשֶׁת שִׁנַּיִם', 'שִׁנַּיִם'], ['מִשְׁחַת שִׁנַּיִם', 'שִׁנַּיִם'],
+      ['מַסְרֵק', 'שֵׂעָר'], ['שַׁמְפּוֹ', 'שֵׂעָר'], ['סַבּוֹן', 'יָדַיִם'],
+      ['קְרֶם', 'עוֹר'], ['פְּלַסְטֶר', 'פֶּצַע'], ['מִשְׁחָה', 'פֶּצַע'],
+    ],
+  },
+
+  {
+    skill: 'profession_tool',
+    label: 'בעל מקצוע והכלי המיוחד שלו',
+    // "הכלי של X הוא Y" — copula agrees with הכלי, so profession gender
+    // never breaks the sentence (רופאה/רופא both read fine).
+    bridge: 'הכלי המיוחד של {a} הוא {b}',
+    relShort: 'בעל מקצוע והכלי המיוחד שלו',
+    pairs: [
+      ['נַגָּר', 'מַסּוֹר'], ['צַיָּר', 'מִכְחוֹל'], ['גַּנָּן', 'מַגְרֵפָה'],
+      ['רוֹפֵא', 'סְטֵטוֹסְקוֹפּ'], ['טַבָּח', 'סִיר'], ['סַפָּר', 'מִסְפָּרַיִם'],
+      ['צַלָּם', 'מַצְלֵמָה'], ['חַיָּט', 'מַחַט'], ['דַּיָּג', 'חַכָּה'],
+      ['מְנַצֵּחַ', 'שַׁרְבִיט'],
+    ],
+  },
+
+  // Generation steps run child→parent ("האמא של אמא היא סבתא") ON PURPOSE:
+  // in the parent→child direction an animal_baby pair like פרה–עגל would
+  // ALSO satisfy the bridge ("פרה היא האמא של עגל") and create ambiguous
+  // options. Child→parent keeps the family relation unambiguous.
+  // Split into בנות/בנים sub-banks so היא/הוא always agrees.
+  {
+    skill: 'generation',
+    label: 'דורות במשפחה (בנות)',
+    bridge: 'האמא של {a} היא {b}',
+    relShort: 'דור במשפחה — מי האמא של מי',
+    minDiff: 'medium',
+    pairs: [
+      ['יַלְדָּה', 'אִמָּא'], ['תִּינֹקֶת', 'אִמָּא'], ['אִמָּא', 'סָבְתָא'],
+      ['סָבְתָא', 'סָבְתָא רַבְּתָא'], ['נְסִיכָה', 'מַלְכָּה'],
+    ],
+  },
+  {
+    skill: 'generation',
+    label: 'דורות במשפחה (בנים)',
+    bridge: 'האבא של {a} הוא {b}',
+    relShort: 'דור במשפחה — מי האבא של מי',
+    minDiff: 'medium',
+    pairs: [
+      ['יֶלֶד', 'אַבָּא'], ['תִּינוֹק', 'אַבָּא'], ['אַבָּא', 'סַבָּא'],
+      ['סַבָּא', 'סַבָּא רַבָּא'], ['נָסִיךְ', 'מֶלֶךְ'],
     ],
   },
 ];
@@ -324,13 +447,26 @@ function reversedPairDistractor(bank: RelationBank, stemPair: Pair): Pair | null
 // not just "this pair feels unrelated". This is what separates exam-level
 // items from warm-ups.
 const CONFUSABLE_CLUSTERS: WordRelationSkill[][] = [
-  ['tool_use', 'action_object', 'tool_domain', 'material_product'],
+  ['tool_use', 'action_object', 'tool_domain', 'material_product',
+    'care_product_target', 'profession_tool', 'emitter_emission'],
   ['part_whole', 'work_part', 'category_item', 'liquid_container'],
+  // Units and size-pairs run in the OPPOSITE direction from part-whole
+  // (big→small vs part→whole), so cross-cluster distractors become pure
+  // direction traps — never valid answers. unit_of_measure is deliberately
+  // NOT clustered with work_part: "חודש הוא חלק משנה" would read as a
+  // valid work_part sentence and make the item ambiguous.
+  ['part_whole', 'unit_of_measure', 'size_same_kind'],
   // intensity pairs feel like synonyms ("both mean rain") — the kid must spot
   // that the relation is weak→strong of the SAME thing, not sameness.
+  // size_same_kind is NOT here: "לחישה — כמו צעקה, רק בקטן" reads valid,
+  // so intensity pairs would be arguable answers for size stems.
   ['synonyms', 'synonyms_antonyms', 'intensity'],
-  ['animal_baby', 'animal_habitat', 'animal_trait'],
-  ['cause_effect', 'disease_cure'],
+  // generation is safe here because its pairs run child→parent — an
+  // animal_baby pair never satisfies "האמא של {a} היא {b}" in that order.
+  ['animal_baby', 'animal_habitat', 'animal_trait', 'generation'],
+  // protection is the mirror of problem-solution (item→threat vs
+  // problem→item), so cross distractors are direction traps, not answers.
+  ['cause_effect', 'disease_cure', 'protection_threat'],
   ['verbal_analogy', 'category_item', 'animal_habitat'],
 ];
 
@@ -404,12 +540,19 @@ function generateOneRelation(
   difficulty: Difficulty,
   recentStems?: Set<string>,
 ): Question | null {
+  // Difficulty first — bank eligibility and distractor strategy depend on it.
+  // Adaptive (default practice) stretches toward exam level: no pure-easy.
+  const effectiveDiff = difficulty === 'adaptive' ? pick(['medium', 'medium', 'hard', 'hard'] as Difficulty[]) : difficulty;
+
   // Pick a SUB-bank that matches the skill — there may be more than one
-  // (verbal_analogy now has 4 sub-banks). The chosen sub-bank defines BOTH
-  // stem and correct answer, so they always share the precise relation.
+  // (verbal_analogy has 4 sub-banks, generation has 2). The chosen sub-bank
+  // defines BOTH stem and correct answer, so they always share the precise
+  // relation. Banks gated by minDiff only surface at medium/hard — unless the
+  // caller explicitly requested this skill and no ungated bank exists.
   const matchingBanks = banks.filter(b => b.skill === skill);
   if (matchingBanks.length === 0) return null;
-  const bank = pick(matchingBanks);
+  const eligibleBanks = matchingBanks.filter(b => bankAllowedAt(b, effectiveDiff));
+  const bank = pick(eligibleBanks.length > 0 ? eligibleBanks : matchingBanks);
   if (bank.pairs.length < 4) return null;
 
   // Shuffle pairs and pick stem + correct option from same sub-bank
@@ -421,10 +564,6 @@ function generateOneRelation(
     if (fresh) stemPair = fresh;
   }
   const correctPair = shuffledPairs.find(p => p !== stemPair) ?? shuffledPairs[1];
-
-  // Difficulty first — the distractor strategy depends on it.
-  // Adaptive (default practice) stretches toward exam level: no pure-easy.
-  const effectiveDiff = difficulty === 'adaptive' ? pick(['medium', 'medium', 'hard', 'hard'] as Difficulty[]) : difficulty;
 
   // Distractor strategy:
   //   • slot 1: a REVERSED pair from the same bank — same words, wrong direction.
@@ -513,7 +652,13 @@ export function generateWordRelQuestions(
 ): Question[] {
   const result: Question[] = [];
   const recentStems = new Set<string>();
-  const uniqueSkills = Array.from(new Set(banks.map(b => b.skill)));
+  // At easy, skip skills whose banks are all gated to medium/hard
+  // (adaptive resolves to medium/hard per question, so it sees every bank).
+  const uniqueSkills = Array.from(new Set(
+    banks
+      .filter(b => difficulty !== 'easy' || bankAllowedAt(b, 'easy'))
+      .map(b => b.skill),
+  ));
   const skills = options?.skill ? [options.skill] : uniqueSkills;
 
   // Distribute evenly across skills

@@ -1293,10 +1293,14 @@ export function NumberWheel({
   inner,
   outer,
   missingOuterIndex,
+  missingInnerIndex,
 }: {
-  inner: number[];
+  inner: (number | string)[];
   outer: (number | string)[];
-  missingOuterIndex: number;
+  /** Classic variant: one outer (boundary) number hidden. */
+  missingOuterIndex?: number;
+  /** Missing-center variant: one INNER sector hidden — solved by consistency. */
+  missingInnerIndex?: number;
 }): React.ReactElement {
   const n = inner.length;
   const size = 230;
@@ -1330,9 +1334,11 @@ export function NumberWheel({
             />
           );
         })}
-        {/* Inner sector numbers */}
+        {/* Inner sector numbers (one may be the hidden "?" in the
+            missing-center variant) */}
         {inner.map((v, i) => {
           const a = sectorAngle(i);
+          const isMissing = i === missingInnerIndex;
           return (
             <text
               key={`in-${i}`}
@@ -1340,11 +1346,11 @@ export function NumberWheel({
               y={cy + Math.sin(a) * innerTextR}
               textAnchor="middle"
               dominantBaseline="central"
-              fontSize={16}
+              fontSize={isMissing ? 18 : 16}
               fontWeight="bold"
-              fill={DIAGRAM_THEME.ink}
+              fill={isMissing ? DIAGRAM_THEME.missing : DIAGRAM_THEME.ink}
             >
-              {v}
+              {isMissing ? '?' : v}
             </text>
           );
         })}
@@ -1368,6 +1374,296 @@ export function NumberWheel({
           );
         })}
       </svg>
+    </DiagramPaper>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Component: NumberButterfly – a butterfly drawing: 4 wings (upper+lower per
+// side) each holding a number, and a number on the body. The rule ties the
+// body to EACH wing pair (body = upper+lower or body = upper−lower).
+// Rendered as a PAIR (complete + incomplete) by NumberButterflyPair below.
+// ---------------------------------------------------------------------------
+
+function SingleButterfly({
+  values,
+  size = 168,
+}: {
+  values: {
+    upperLeft: number | string;
+    lowerLeft: number | string;
+    upperRight: number | string;
+    lowerRight: number | string;
+    body: number | string;
+  };
+  size?: number;
+}): React.ReactElement {
+  const w = size;
+  const h = size * 0.92;
+  const cx = w / 2;
+  const cy = h * 0.54;
+
+  const wing = (
+    x: number,
+    y: number,
+    rx: number,
+    ry: number,
+    rot: number,
+    key: string,
+  ) => (
+    <ellipse
+      key={key}
+      cx={x}
+      cy={y}
+      rx={rx}
+      ry={ry}
+      transform={`rotate(${rot} ${x} ${y})`}
+      fill="#ffffff"
+      stroke={DIAGRAM_THEME.ink}
+      strokeWidth="2"
+    />
+  );
+
+  const label = (val: number | string, x: number, y: number, key: string, fs = 17) => {
+    const isMissing = val === '?';
+    return (
+      <text
+        key={key}
+        x={x}
+        y={y}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={isMissing ? fs + 2 : fs}
+        fontWeight="bold"
+        fill={isMissing ? DIAGRAM_THEME.missing : DIAGRAM_THEME.ink}
+      >
+        {val}
+      </text>
+    );
+  };
+
+  // Wing geometry — symmetric: two big upper wings, two smaller lower wings.
+  const uwx = w * 0.27; // upper wing center x-offset from left edge
+  const uwy = cy - h * 0.2;
+  const lwx = w * 0.3;
+  const lwy = cy + h * 0.22;
+
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+      {/* Wings first, body drawn on top so it overlaps their inner edges */}
+      {wing(uwx, uwy, w * 0.21, h * 0.19, -18, 'ul')}
+      {wing(w - uwx, uwy, w * 0.21, h * 0.19, 18, 'ur')}
+      {wing(lwx, lwy, w * 0.17, h * 0.15, 14, 'll')}
+      {wing(w - lwx, lwy, w * 0.17, h * 0.15, -14, 'lr')}
+      {/* Antennae */}
+      <path
+        d={`M ${cx - 3} ${cy - h * 0.31} Q ${cx - 14} ${cy - h * 0.44} ${cx - 18} ${cy - h * 0.46}`}
+        fill="none"
+        stroke={DIAGRAM_THEME.ink}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path
+        d={`M ${cx + 3} ${cy - h * 0.31} Q ${cx + 14} ${cy - h * 0.44} ${cx + 18} ${cy - h * 0.46}`}
+        fill="none"
+        stroke={DIAGRAM_THEME.ink}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      {/* Head */}
+      <circle
+        cx={cx}
+        cy={cy - h * 0.28}
+        r={w * 0.05}
+        fill="#ffffff"
+        stroke={DIAGRAM_THEME.ink}
+        strokeWidth="2"
+      />
+      {/* Body */}
+      <ellipse
+        cx={cx}
+        cy={cy + h * 0.04}
+        rx={w * 0.085}
+        ry={h * 0.27}
+        fill={values.body === '?' ? DIAGRAM_THEME.missingBg : '#ffffff'}
+        stroke={values.body === '?' ? DIAGRAM_THEME.missing : DIAGRAM_THEME.ink}
+        strokeWidth="2.2"
+        strokeDasharray={values.body === '?' ? '5 3' : undefined}
+      />
+      {/* Numbers */}
+      {label(values.upperLeft, uwx, uwy, 'tul')}
+      {label(values.upperRight, w - uwx, uwy, 'tur')}
+      {label(values.lowerLeft, lwx, lwy, 'tll', 16)}
+      {label(values.lowerRight, w - lwx, lwy, 'tlr', 16)}
+      {label(values.body, cx, cy + h * 0.04, 'tb')}
+    </svg>
+  );
+}
+
+export function NumberButterflyPair({
+  butterfly1,
+  butterfly2,
+}: {
+  butterfly1: React.ComponentProps<typeof SingleButterfly>['values'];
+  butterfly2: React.ComponentProps<typeof SingleButterfly>['values'];
+}): React.ReactElement {
+  return (
+    <DiagramPaper>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, direction: 'ltr', flexWrap: 'wrap' }}>
+        <SingleButterfly values={butterfly1} />
+        <SingleButterfly values={butterfly2} />
+      </div>
+    </DiagramPaper>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Component: NumberStar – standard 5-point star with a number just beyond
+// each point. The numbers form a sequence in a fixed direction around the
+// star; the hidden point is the orange "?". Points are indexed 0..4
+// CLOCKWISE starting from the top tip (matching the generator's convention).
+// ---------------------------------------------------------------------------
+
+export function NumberStar({
+  points,
+  missingIndex,
+}: {
+  points: (number | string)[];
+  missingIndex: number;
+}): React.ReactElement {
+  const size = 216;
+  const cx = size / 2;
+  const cy = size / 2 + 6;
+  const outerR = 60;
+  const innerR = 24;
+  const labelR = 86;
+
+  // SVG y grows downward, so angle -90° + i·72° walks the tips CLOCKWISE
+  // on screen starting from the top — matching the generator's indexing.
+  const tipAngle = (i: number) => -Math.PI / 2 + (2 * Math.PI * i) / 5;
+
+  const starPath = Array.from({ length: 10 })
+    .map((_, k) => {
+      const a = -Math.PI / 2 + (Math.PI * k) / 5;
+      const r = k % 2 === 0 ? outerR : innerR;
+      return `${(cx + Math.cos(a) * r).toFixed(2)},${(cy + Math.sin(a) * r).toFixed(2)}`;
+    })
+    .join(' ');
+
+  return (
+    <DiagramPaper>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <polygon
+          points={starPath}
+          fill={DIAGRAM_THEME.paper}
+          stroke={DIAGRAM_THEME.ink}
+          strokeWidth="2.4"
+          strokeLinejoin="round"
+        />
+        {points.map((v, i) => {
+          const a = tipAngle(i);
+          const isMissing = i === missingIndex;
+          const x = cx + Math.cos(a) * labelR;
+          const y = cy + Math.sin(a) * labelR;
+          return (
+            <g key={i}>
+              {isMissing && (
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={15}
+                  fill={DIAGRAM_THEME.missingBg}
+                  stroke={DIAGRAM_THEME.missing}
+                  strokeWidth="1.8"
+                  strokeDasharray="4 3"
+                />
+              )}
+              <text
+                x={x}
+                y={y}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={isMissing ? 18 : 17}
+                fontWeight="bold"
+                fill={isMissing ? DIAGRAM_THEME.missing : DIAGRAM_THEME.ink}
+              >
+                {isMissing ? '?' : v}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </DiagramPaper>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Component: MultiArrowMachine – rows of box pairs connected by 1-4 stacked
+// bold arrows. The arrow COUNT is the graphic feature that carries the rule:
+// each arrow applies the base operation once (or m arrows = ×m).
+// ---------------------------------------------------------------------------
+
+export function MultiArrowMachine({
+  pairs,
+  missing,
+}: {
+  pairs: { from: number | string; to: number | string; arrows: number }[];
+  missing: { pair: number; side: 'from' | 'to' };
+}): React.ReactElement {
+  const boxW = 58;
+  const boxH = 54;
+
+  const renderBox = (val: number | string, isMissing: boolean, key: string) => (
+    <div
+      key={key}
+      style={{
+        width: boxW,
+        height: boxH,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: isMissing ? `2px dashed ${DIAGRAM_THEME.missing}` : `2px solid ${DIAGRAM_THEME.ink}`,
+        background: isMissing ? DIAGRAM_THEME.missingBg : '#ffffff',
+        borderRadius: 6,
+        fontSize: 20,
+        fontWeight: 700,
+        color: isMissing ? DIAGRAM_THEME.missing : DIAGRAM_THEME.ink,
+      }}
+    >
+      {isMissing ? '?' : val}
+    </div>
+  );
+
+  return (
+    <DiagramPaper>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, direction: 'ltr' }}>
+        {pairs.map((p, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+            {renderBox(p.from, missing.pair === i && missing.side === 'from', `f-${i}`)}
+            {/* The stacked arrows — the meta-rule's graphic carrier */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 0,
+                minWidth: 34,
+              }}
+            >
+              {Array.from({ length: p.arrows }).map((_, k) => (
+                <span
+                  key={k}
+                  style={{ fontSize: 21, color: DIAGRAM_THEME.ink, lineHeight: 0.9, fontWeight: 700 }}
+                >
+                  {'➜'}
+                </span>
+              ))}
+            </div>
+            {renderBox(p.to, missing.pair === i && missing.side === 'to', `t-${i}`)}
+          </div>
+        ))}
+      </div>
     </DiagramPaper>
   );
 }

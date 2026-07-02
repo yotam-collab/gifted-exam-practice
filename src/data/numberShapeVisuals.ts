@@ -1,6 +1,16 @@
 // Visual configurations for numbers-in-shapes questions (ns_001 - ns_020)
 // Maps each question to its SVG component type and props
 
+/** One butterfly: 4 wing values (upper/lower × left/right) + body value.
+ *  A '?' string marks the missing cell — the renderer highlights it. */
+export interface ButterflyValues {
+  upperLeft: number | string;
+  lowerLeft: number | string;
+  upperRight: number | string;
+  lowerRight: number | string;
+  body: number | string;
+}
+
 export type NSVisualConfig =
   | {
       type: 'divided_circle_pair';
@@ -54,11 +64,38 @@ export type NSVisualConfig =
   | {
       // Sector wheel: a circle divided into N sectors with inner numbers;
       // each OUTER number sits on a boundary spoke and equals the sum of the
-      // two inner sectors flanking that boundary. One outer number is hidden.
+      // two inner sectors flanking that boundary. Either one outer number is
+      // hidden (classic), or one INNER sector is hidden (missing-center
+      // variant — solved by substitution/consistency across both spokes).
       type: 'number_wheel';
-      inner: number[];
+      inner: (number | string)[];
       outer: (number | string)[];
-      missingOuterIndex: number;
+      missingOuterIndex?: number;
+      missingInnerIndex?: number;
+    }
+  | {
+      // Butterfly pair: a COMPLETE butterfly (discover + verify the rule on
+      // both wing pairs) next to an INCOMPLETE one. Rule families:
+      // body = upper + lower, or body = upper − lower — same rule on both sides.
+      type: 'butterfly_pair';
+      butterfly1: ButterflyValues;
+      butterfly2: ButterflyValues;
+    }
+  | {
+      // 5-point star: one number at each point, forming a sequence in a fixed
+      // direction (clockwise / counter-clockwise) starting at some point.
+      // Points are indexed 0..4 CLOCKWISE from the top tip.
+      type: 'star_points';
+      points: (number | string)[];
+      missingIndex: number;
+    }
+  | {
+      // Meta-rule figure: pairs of boxes connected by 1-4 stacked arrows.
+      // Each arrow applies the base operation once (arrow = +k → m arrows =
+      // +m·k), or m arrows = ×m. The missing box is in one pair.
+      type: 'multi_arrow_machine';
+      pairs: { from: number | string; to: number | string; arrows: number }[];
+      missing: { pair: number; side: 'from' | 'to' };
     };
 
 export const numberShapeVisuals: Record<string, NSVisualConfig> = {

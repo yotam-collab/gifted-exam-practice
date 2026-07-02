@@ -637,6 +637,297 @@ function genWheelSums(d: Difficulty): NSGenResult {
   };
 }
 
+// ── Wheel, missing-center variant: one INNER sector hidden ──────────────
+// The hidden sector touches TWO spokes, so the kid extracts it from one
+// spoke and VERIFIES by substitution on the other (הצבה ובדיקה).
+function genWheelMissingCenter(d: Difficulty): NSGenResult {
+  // The missing-center wheel is the HARD face of the wheel skill — on easy
+  // sessions we fall back to the classic missing-outer variant.
+  if (d === 'easy') return genWheelSums(d);
+
+  const n = 6;
+  const lo = d === 'hard' ? 4 : 2;
+  const hi = d === 'hard' ? 15 : 12;
+  const inner = Array.from({ length: n }, () => rand(lo, hi));
+  const outerFull = Array.from({ length: n }, (_, i) => inner[(i - 1 + n) % n] + inner[i]);
+
+  const hideIdx = rand(0, n - 1);
+  const answer = inner[hideIdx];
+  const prevInner = inner[(hideIdx - 1 + n) % n]; // shares spoke hideIdx
+  const nextInner = inner[(hideIdx + 1) % n];     // shares spoke hideIdx+1
+  const outerA = outerFull[hideIdx];              // = prevInner + answer
+  const outerB = outerFull[(hideIdx + 1) % n];    // = answer + nextInner
+
+  // The classic wrong-pairing candidate: subtracting the WRONG neighbour.
+  let wrongCand = outerA - nextInner;
+  if (wrongCand <= 0 || wrongCand === answer) wrongCand = answer + 2;
+
+  const displayInner: (number | string)[] = inner.map((v, i) => (i === hideIdx ? '?' : v));
+  const { options, correctOption } = makeNumOptions(answer, [
+    wrongCand,
+    answer + 1,
+    outerB - prevInner > 0 && outerB - prevInner !== answer ? outerB - prevInner : answer - 1,
+  ]);
+
+  return {
+    skill: 'wheel_sums',
+    stem: 'בגלגל: כל מספר חיצוני שווה לסכום שני החלקים הפנימיים שנוגעים בקו שלו. הפעם חסר דווקא מספר פנימי. מהו המספר החסר?',
+    options,
+    correctOption,
+    explanation: `🔍 השיטה: כשחסר חלק פנימי — מחלצים אותו מקו אחד, ואז מציבים ובודקים בקו השני.\nהחלק החסר נוגע בשני קווים: הקו של ${outerA} והקו של ${outerB}.\nמהקו הראשון: ${prevInner} + ? = ${outerA} ⇐ ? = ${outerA} − ${prevInner} = ${answer}.\n✓ הצבה ובדיקה: בקו השני ${answer} + ${nextInner} = ${outerB} ✓ — התשובה מסתדרת בשני הקווים!\n⚠️ המלכודת: מועמד כמו ${wrongCand} נראה סביר, אבל בהצבה: ${wrongCand} + ${nextInner} = ${wrongCand + nextInner} ✗ — לא שווה ל-${outerB}. תשובה נכונה חייבת לעבוד בכל הקווים.\nלכן התשובה: ${answer} ✔`,
+    visualConfig: {
+      type: 'number_wheel',
+      inner: displayInner,
+      outer: outerFull,
+      missingInnerIndex: hideIdx,
+    },
+  };
+}
+
+// ── Butterfly: body relates to EACH wing pair (both sides agree) ────────
+// Shown as a PAIR: a complete butterfly (discover + verify the rule across
+// both wing pairs) next to an incomplete one. Hard: the unknown is in a
+// WING, not the body — forcing the inverse operation.
+function genButterfly(d: Difficulty): NSGenResult {
+  const rule = d === 'easy' ? 'sum' : pick(['sum', 'diff'] as const);
+  const hideWing = d === 'hard';
+
+  // Butterfly 1 — complete. Both wing pairs obey the same rule.
+  let ul1: number, ll1: number, ur1: number, lr1: number, body1: number;
+  let ul2: number, ll2: number, ur2: number, lr2: number, body2: number;
+
+  if (rule === 'sum') {
+    body1 = rand(8, d === 'easy' ? 12 : 16);
+    ul1 = rand(2, body1 - 2);
+    ll1 = body1 - ul1;
+    ur1 = rand(2, body1 - 2);
+    lr1 = body1 - ur1;
+    body2 = rand(8, d === 'easy' ? 12 : 16);
+    if (body2 === body1) body2 = body1 + (body1 > 9 ? -1 : 1);
+    ul2 = rand(2, body2 - 2);
+    ll2 = body2 - ul2;
+    ur2 = rand(2, body2 - 2);
+    lr2 = body2 - ur2;
+  } else {
+    // body = upper − lower on each side
+    body1 = rand(2, 6);
+    ll1 = rand(3, 9);
+    ul1 = ll1 + body1;
+    lr1 = rand(3, 9);
+    ur1 = lr1 + body1;
+    body2 = rand(2, 7);
+    if (body2 === body1) body2 = body1 + (body1 > 4 ? -1 : 1);
+    ll2 = rand(3, 9);
+    ul2 = ll2 + body2;
+    lr2 = rand(3, 9);
+    ur2 = lr2 + body2;
+  }
+
+  let answer: number;
+  let explanation: string;
+  const b2: { upperLeft: number | string; lowerLeft: number | string; upperRight: number | string; lowerRight: number | string; body: number | string } =
+    { upperLeft: ul2, lowerLeft: ll2, upperRight: ur2, lowerRight: lr2, body: body2 };
+  let partials: number[];
+
+  const opWord = rule === 'sum' ? 'עליונה + תחתונה' : 'עליונה − תחתונה';
+  const disc = rule === 'sum'
+    ? `בפרפר השלם, בצד שמאל: ${ul1} + ${ll1} = ${body1} — בדיוק המספר שבגוף!\n✓ בדיקה בצד ימין: ${ur1} + ${lr1} = ${body1} — שני הצדדים מסכימים. הכלל: ${opWord} = גוף.`
+    : `בפרפר השלם, בצד שמאל: ${ul1} − ${ll1} = ${body1} — בדיוק המספר שבגוף!\n✓ בדיקה בצד ימין: ${ur1} − ${lr1} = ${body1} — שני הצדדים מסכימים. הכלל: ${opWord} = גוף.`;
+
+  if (!hideWing) {
+    // Missing BODY of butterfly 2 — apply the rule directly.
+    answer = body2;
+    b2.body = '?';
+    if (rule === 'sum') {
+      const wrongOp = Math.abs(ul2 - ll2);
+      partials = [wrongOp, ul2, ur2];
+      explanation = `🔍 השיטה: בפרפר בודקים איך זוג כנפיים (עליונה ותחתונה) מתחבר לגוף — ומאמתים שהכלל עובד בשני הצדדים.\n${disc}\nבפרפר השני: ${ul2} + ${ll2} = ${answer}, וגם ${ur2} + ${lr2} = ${answer} — אותה תוצאה משני הצדדים!\n⚠️ המלכודת: מי שמחסיר במקום לחבר מקבל ${wrongOp} — פעולה הפוכה.\nלכן התשובה: ${answer} ✔`;
+    } else {
+      const wrongOp = ul2 + ll2;
+      partials = [wrongOp, ll2, ur2];
+      explanation = `🔍 השיטה: בפרפר בודקים איך זוג כנפיים (עליונה ותחתונה) מתחבר לגוף — ומאמתים שהכלל עובד בשני הצדדים.\n${disc}\nבפרפר השני: ${ul2} − ${ll2} = ${answer}, וגם ${ur2} − ${lr2} = ${answer} — אותה תוצאה משני הצדדים!\n⚠️ המלכודת: מי שמחבר במקום להחסיר מקבל ${wrongOp} — פעולה הפוכה.\nלכן התשובה: ${answer} ✔`;
+    }
+  } else {
+    // HARD: the unknown is in a WING (lower-right) — inverse operation.
+    if (rule === 'sum') {
+      answer = lr2; // ur2 + ? = body2
+      b2.lowerRight = '?';
+      const wrongDir = body2 + ur2;
+      const wrongPair = body2 - ul2 > 0 ? body2 - ul2 : answer + 3;
+      partials = [wrongDir, wrongPair, ur2];
+      explanation = `🔍 השיטה: מגלים את הכלל בפרפר השלם — ואז הופכים לתרגיל חסר.\n${disc}\nבפרפר השני חסרה כנף, לא הגוף! ${ur2} + ? = ${body2} ⇐ ? = ${body2} − ${ur2} = ${answer}.\n✓ בדיקה: ${ur2} + ${answer} = ${body2}, בדיוק כמו בצד שמאל: ${ul2} + ${ll2} = ${body2}.\n⚠️ המלכודת: ${wrongDir} יוצא למי שמחבר את הגוף במקום להחסיר ממנו — כיוון הפוך.\nלכן התשובה: ${answer} ✔`;
+    } else {
+      answer = lr2; // ur2 − ? = body2
+      b2.lowerRight = '?';
+      const wrongDir = ur2 + body2;
+      partials = [wrongDir, ll2, body2];
+      explanation = `🔍 השיטה: מגלים את הכלל בפרפר השלם — ואז הופכים לתרגיל חסר.\n${disc}\nבפרפר השני חסרה כנף, לא הגוף! ${ur2} − ? = ${body2} ⇐ ? = ${ur2} − ${body2} = ${answer}.\n✓ בדיקה: ${ur2} − ${answer} = ${body2}, בדיוק כמו בצד שמאל: ${ul2} − ${ll2} = ${body2}.\n⚠️ המלכודת: ${wrongDir} יוצא למי שמחבר במקום להחסיר — כיוון הפוך.\nלכן התשובה: ${answer} ✔`;
+    }
+  }
+
+  const { options, correctOption } = makeNumOptions(answer, partials.filter(v => v !== answer));
+
+  return {
+    skill: 'butterfly',
+    stem: 'בשני הפרפרים פועל אותו כלל, הקושר כל זוג כנפיים (עליונה ותחתונה) לגוף. מהו המספר החסר?',
+    options,
+    correctOption,
+    explanation,
+    visualConfig: {
+      type: 'butterfly_pair',
+      butterfly1: { upperLeft: ul1, lowerLeft: ll1, upperRight: ur1, lowerRight: lr1, body: body1 },
+      butterfly2: b2,
+    },
+  };
+}
+
+// ── Star series: 5-point star, sequence around the points ───────────────
+// The child must find the START, the DIRECTION, and the rule. Points are
+// indexed 0..4 clockwise from the top tip (renderer uses the same order).
+function genStarSeries(d: Difficulty): NSGenResult {
+  const kind = d === 'hard' ? pick(['geo', 'arith'] as const) : 'arith';
+  const dir = d === 'easy' ? 1 : pick([1, -1]);
+  const dirName = dir === 1 ? 'עם כיוון השעון' : 'נגד כיוון השעון';
+
+  let seq: number[];
+  let k = 0;
+  if (kind === 'arith') {
+    k = d === 'easy' ? rand(2, 5) : rand(3, 9);
+    const start = rand(2, d === 'easy' ? 9 : 15);
+    seq = Array.from({ length: 5 }, (_, j) => start + j * k);
+  } else {
+    const start = pick([2, 3]);
+    seq = Array.from({ length: 5 }, (_, j) => start * 2 ** j);
+  }
+
+  const startIdx = rand(0, 4);
+  const jHide = rand(2, 4); // never hide the first two — the discovery pair stays visible
+  const answer = seq[jHide];
+  const prev = seq[jHide - 1];
+
+  // Map sequence order → star point index.
+  const pointOf = (j: number) => (((startIdx + dir * j) % 5) + 5) % 5;
+  const points: (number | string)[] = Array(5).fill(0);
+  for (let j = 0; j < 5; j++) points[pointOf(j)] = j === jHide ? '?' : seq[j];
+  const missingIndex = pointOf(jHide);
+
+  // A verify pair (m, m+1) that is fully visible and different from (0,1).
+  const m = jHide === 2 ? 3 : jHide === 3 ? 1 : pick([1, 2]);
+
+  let explanation: string;
+  let partials: number[];
+  if (kind === 'arith') {
+    const wrongDir = prev - k;
+    partials = [prev, wrongDir, answer + k];
+    const trapLine = wrongDir > 0
+      ? `⚠️ המלכודת: ${wrongDir} יוצא למי שהולך נגד הכיוון ומחסיר במקום להוסיף — כיוון הפוך.`
+      : `⚠️ המלכודת: ${prev} כבר רשום על הכוכב — שכן מפתה, אבל לא המספר החסר.`;
+    explanation = `🔍 השיטה: בכוכב מחפשים שני שכנים שקל לראות מה קרה ביניהם — כך מגלים גם את הכיוון וגם את הכלל.\nמ-${seq[0]} ל-${seq[1]} (${dirName}): הוספנו ${k}. מצאנו כיוון וכלל!\n✓ בדיקה בהמשך המסלול: ${seq[m]} + ${k} = ${seq[m + 1]} — הכלל ממשיך באותו כיוון.\nלפני סימן השאלה נמצא ${prev}: ${prev} + ${k} = ${answer}.\n${trapLine}\nלכן התשובה: ${answer} ✔`;
+  } else {
+    const addTrap = prev + 2;
+    partials = [prev, addTrap, answer + 2];
+    explanation = `🔍 השיטה: בכוכב מחפשים שני שכנים שקל לראות מה קרה ביניהם — כך מגלים גם את הכיוון וגם את הכלל.\nמ-${seq[0]} ל-${seq[1]} (${dirName}): אולי ועוד ${seq[1] - seq[0]}? נבדוק: ${seq[1]} + ${seq[1] - seq[0]} = ${seq[1] + seq[1] - seq[0]}, אבל אחרי ${seq[1]} בא ${seq[2]} ✗.\nננסה כפל: ${seq[0]} × 2 = ${seq[1]} וגם ${seq[m]} × 2 = ${seq[m + 1]} ✓ — הכלל: כל צעד מכפילים ב-2!\nלפני סימן השאלה נמצא ${prev}: ${prev} × 2 = ${answer}.\n⚠️ המלכודת: ${addTrap} יוצא למי שמוסיף 2 במקום להכפיל ב-2 — פעולה שגויה.\nלכן התשובה: ${answer} ✔`;
+  }
+
+  const { options, correctOption } = makeNumOptions(answer, partials.filter(v => v > 0 && v !== answer));
+
+  return {
+    skill: 'star_series',
+    stem: 'בכל קודקוד של הכוכב רשום מספר. המספרים מסתדרים לפי חוקיות, בכיוון קבוע סביב הכוכב. מהו המספר החסר?',
+    options,
+    correctOption,
+    explanation,
+    visualConfig: {
+      type: 'star_points',
+      points,
+      missingIndex,
+    },
+  };
+}
+
+// ── Multi-arrow machine: arrow COUNT scales the base operation ──────────
+// META-RULE figure: each arrow = one application of a base operation
+// (arrow = +k → m arrows = +m·k), or m arrows = ×m (hard). The rule lives
+// in a GRAPHIC feature — the most sophisticated figure in the section.
+function genMultiArrowMachine(d: Difficulty): NSGenResult {
+  const flavor = d === 'easy' ? 'add' : d === 'medium' ? pick(['add', 'sub'] as const) : 'mult';
+
+  let pairs: { from: number; to: number; arrows: number }[];
+  let answer: number;
+  let missing: { pair: number; side: 'from' | 'to' };
+  let explanation: string;
+  let partials: number[];
+
+  if (flavor === 'add' || flavor === 'sub') {
+    const k = flavor === 'add' ? rand(2, 5) : rand(2, 4);
+    const counts = shuffle(d === 'easy' ? [1, 2, 3] : pick([[1, 2, 3], [1, 2, 4], [1, 3, 4]]));
+    // The single-arrow pair anchors discovery — keep it visible (not last).
+    if (counts[2] === 1) [counts[0], counts[2]] = [counts[2], counts[0]];
+    const mkFrom = () => (flavor === 'add' ? rand(3, 12) : rand(18, 30));
+    pairs = counts.map(c => {
+      const from = mkFrom();
+      return { from, to: flavor === 'add' ? from + c * k : from - c * k, arrows: c };
+    });
+    const one = pairs.find(p => p.arrows === 1)!;
+    const verify = pairs.find(p => p.arrows !== 1 && p !== pairs[2])!;
+    const last = pairs[2];
+    answer = last.to;
+    missing = { pair: 2, side: 'to' };
+    const sign = flavor === 'add' ? '+' : '−';
+    const singleApply = flavor === 'add' ? last.from + k : last.from - k;
+    partials = [singleApply, flavor === 'add' ? answer - k : answer + k, last.from];
+    explanation = `🔍 השיטה: כשמספר החצים משתנה בין השורות — החצים הם הרמז: כל חץ = פעולה אחת.\nבשורה עם חץ אחד: ${one.from} הפך ל-${one.to}, כלומר חץ אחד = ${sign}${k}.\n✓ בדיקה בשורה עם ${verify.arrows} חצים: ${verify.from} ${sign} ${verify.arrows * k} = ${verify.to} — ${verify.arrows} חצים הם ${verify.arrows} פעמים ${sign}${k}. מסתדר!\nבשורה של סימן השאלה יש ${last.arrows} חצים: ${last.from} ${sign} ${last.arrows * k} = ${answer}.\n⚠️ המלכודת: ${singleApply} יוצא למי שמפעיל את הפעולה פעם אחת בלבד ומתעלם ממספר החצים.\nלכן התשובה: ${answer} ✔`;
+  } else {
+    // HARD meta-rule: m arrows = ×m. Discovered by hypothesis testing.
+    const counts = shuffle([2, 3, 4]);
+    pairs = counts.map(c => {
+      const from = rand(2, 6);
+      return { from, to: from * c, arrows: c };
+    });
+    // The +diff hypothesis must FAIL on the second pair — nudge if it happens
+    // to hold by coincidence.
+    const diffA = pairs[0].to - pairs[0].from;
+    if (pairs[1].from + diffA === pairs[1].to) {
+      pairs[1].from += 1;
+      pairs[1].to = pairs[1].from * pairs[1].arrows;
+    }
+    const [A, B, C] = pairs;
+    const side: 'from' | 'to' = pick(['to', 'to', 'from']);
+    missing = { pair: 2, side };
+    if (side === 'to') {
+      answer = C.to;
+      const wrongCount = C.from * (C.arrows - 1);
+      partials = [C.from + C.arrows, wrongCount, C.from];
+      explanation = `🔍 השיטה: כשמספר החצים משתנה — בודקים אם החצים עצמם חלק מהכלל, ומנסים כלל אחד בכל פעם.\nננסה חיבור קבוע: ${A.from} + ${diffA} = ${A.to}, אבל בשורה השנייה ${B.from} + ${diffA} = ${B.from + diffA} ולא ${B.to} ✗ — נפסל.\nננסה כפל במספר החצים: ${A.from} × ${A.arrows} = ${A.to} ✓ וגם ${B.from} × ${B.arrows} = ${B.to} ✓ — הכלל: מכפילים במספר החצים!\nבשורה של סימן השאלה יש ${C.arrows} חצים: ${C.from} × ${C.arrows} = ${answer}.\n⚠️ המלכודת: ${wrongCount} יוצא למי שסופר חץ אחד פחות — סופרים חצים בזהירות!\nלכן התשובה: ${answer} ✔`;
+    } else {
+      answer = C.from;
+      partials = [C.to - C.arrows, answer + 1, C.to];
+      explanation = `🔍 השיטה: כשמספר החצים משתנה — בודקים אם החצים עצמם חלק מהכלל, ומנסים כלל אחד בכל פעם.\nננסה חיבור קבוע: ${A.from} + ${diffA} = ${A.to}, אבל בשורה השנייה ${B.from} + ${diffA} = ${B.from + diffA} ולא ${B.to} ✗ — נפסל.\nננסה כפל במספר החצים: ${A.from} × ${A.arrows} = ${A.to} ✓ וגם ${B.from} × ${B.arrows} = ${B.to} ✓ — הכלל: מכפילים במספר החצים!\nהפעם חסר המספר שנכנס: ? × ${C.arrows} = ${C.to} ⇐ ? = ${C.to} ÷ ${C.arrows} = ${answer}.\n⚠️ המלכודת: ${C.to - C.arrows} יוצא למי שמחסיר את מספר החצים במקום לחלק בו — פעולה שגויה.\nלכן התשובה: ${answer} ✔`;
+    }
+  }
+
+  const { options, correctOption } = makeNumOptions(answer, partials.filter(v => v > 0 && v !== answer));
+
+  const displayPairs = pairs.map((p, i) => ({
+    from: missing.pair === i && missing.side === 'from' ? ('?' as const) : p.from,
+    to: missing.pair === i && missing.side === 'to' ? ('?' as const) : p.to,
+    arrows: p.arrows,
+  }));
+
+  return {
+    skill: 'multi_arrow_machine',
+    stem: 'בכל שורה, החצים שבין הקופסאות מבצעים את אותה פעולה — וכל חץ נחשב פעם אחת. מהו המספר החסר?',
+    options,
+    correctOption,
+    explanation,
+    visualConfig: {
+      type: 'multi_arrow_machine',
+      pairs: displayPairs,
+      missing,
+    },
+  };
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // Public API
 // ═══════════════════════════════════════════════════════════════════════
@@ -662,6 +953,15 @@ const allGenerators: Array<{ skill: NumbersInShapesSkill; gen: NSGenFn }> = [
   { skill: 'number_flow', gen: genFunctionMachine },
   // Sector wheel: spatial-adjacency sum rule (hard exam figure).
   { skill: 'wheel_sums', gen: genWheelSums },
+  // Missing-center wheel: hard variant of the wheel skill — the hidden value
+  // is an INNER sector, solved by substitution/consistency (הצבה ובדיקה).
+  { skill: 'wheel_sums', gen: genWheelMissingCenter },
+  // Reference-level figures: butterfly (rule agrees across both wing pairs),
+  // star series (find start + direction + rule), multi-arrow machine
+  // (meta-rule: the arrow COUNT scales the base operation).
+  { skill: 'butterfly', gen: genButterfly },
+  { skill: 'star_series', gen: genStarSeries },
+  { skill: 'multi_arrow_machine', gen: genMultiArrowMachine },
 ];
 
 export function generateNSQuestions(
