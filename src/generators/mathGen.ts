@@ -118,7 +118,7 @@ const wp1: TemplateGen = (d) => {
   const stem = `${place} יש ${distractor} ${distractorCont.p}. ל${name} יש ${nCont} ${cont.p} ובכל ${cont.s} ${perCont} ${item.p}. כמה ${item.p} יש ל${name} סך הכול?`;
   const answer = total;
   const { options, correctOption } = makeOptions(answer, [nCont + perCont, distractor * nCont]);
-  const explanation = `ל${name} ${nCont} ${cont.p}, בכל אחת ${perCont} ${item.p}.\n${nCont} × ${perCont} = ${answer}.\nהמידע על ${distractor} ${distractorCont.p} הוא מסיח!`;
+  const explanation = `🔍 השיטה: קודם מסמנים מה באמת שואלים — כמה ${item.p}, לא כמה ${distractorCont.p}.\nשלב 1 — ל${name} ${nCont} ${cont.p} ובכל אחת ${perCont} ${item.p}: ${nCont} × ${perCont} = ${answer}. מצאנו את סך ה${item.p}!\n⚠️ המלכודת: המידע על ${distractor} ${distractorCont.p} הוא מידע שלא קשור לשאלה. וגם ${nCont} + ${perCont} = ${nCont + perCont} מפתה — חיבור במקום כפל.\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -135,7 +135,7 @@ const wp2: TemplateGen = (d) => {
 
   const stem = `ל${name} יש ${bags} ${pick(containers).p} של ${item.p}. בכל אחת ${perBag} ${item.p}. היא נתנה ${gave} ${item.p} לחברותיה. כמה ${item.p} נשארו ל${name}?`;
   const { options, correctOption } = makeOptions(answer, [total, gave, bags * perBag + gave]);
-  const explanation = `סך ${item.p}: ${bags} × ${perBag} = ${total}.\nנתנה ${gave}, לכן ${total} - ${gave} = ${answer}.`;
+  const explanation = `🔍 השיטה: קודם מוצאים כמה היו בהתחלה, ורק אז מחסירים מה שניתן.\nשלב 1 — ${bags} × ${perBag} = ${total}. מצאנו שבהתחלה היו ${total} ${item.p}.\nשלב 2 — נתנה ${gave}: ${total} − ${gave} = ${answer}.\n⚠️ המלכודת: ${total} מופיע בתשובות — זו רק תוצאת ביניים, לפני שנתנה לחברות!\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -159,7 +159,7 @@ const wp3: TemplateGen = (d) => {
 
   const stem = `באוטובוס היו ${start} נוסעים. ${events.join('. ')}. כמה נוסעים באוטובוס עכשיו?`;
   const { options, correctOption } = makeOptions(current, [start, current + 2, current - 2]);
-  const explanation = steps.join('\n') + `\nהתשובה היא ${current}.`;
+  const explanation = `🔍 השיטה: מתקדמים תחנה-תחנה — בכל תחנה מחסירים את היורדים ומוסיפים את העולים.\n` + steps.join('\n') + `\nלכן התשובה: ${current} ✔ (ולא ${start} — זה רק מספר ההתחלה, מסיח!)`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -181,7 +181,7 @@ const wp4: TemplateGen = (d) => {
 
   const stem = `${place} יש ${n1} ${cont1} של ${type1}. בכל אחד ${per1} ${type1}. יש גם ${n2} ${cont2} של ${type2} ובכל אחת ${per2}. כמה חיות יש סך הכול?`;
   const { options, correctOption } = makeOptions(answer, [total1, total2, n1 * per2]);
-  const explanation = `${type1}: ${n1} × ${per1} = ${total1}.\n${type2}: ${n2} × ${per2} = ${total2}.\nסך הכול: ${total1} + ${total2} = ${answer}.`;
+  const explanation = `🔍 השיטה: כשיש שתי קבוצות — מחשבים כל קבוצה בנפרד, ובסוף מחברים.\nשלב 1 — ${type1}: ${n1} × ${per1} = ${total1}.\nשלב 2 — ${type2}: ${n2} × ${per2} = ${total2}.\nשלב 3 — יחד: ${total1} + ${total2} = ${answer}.\n⚠️ המלכודת: ${total1} ו-${total2} מופיעים בתשובות — אלו תוצאות ביניים של קבוצה אחת בלבד!\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -208,7 +208,7 @@ const wp5: TemplateGen = (d) => {
   const { options, correctOption } = makeOptions(answer, [perGroup, groups, total]);
   // Hebrew gender: singular form for "1 of X", plural for the rest. Avoids "1 צבעים".
   const itemSingularPhrase = leftover === 1 ? `${item.s} אחד` : `${leftover} ${item.p}`;
-  const explanation = `כל חבר קיבל ${perGroup} ${item.p} (כי ${groups} × ${perGroup} = ${total}).\nאחרי החלוקה השוויונית נשאר/ו ל${name}: ${had} − ${total} = ${itemSingularPhrase}.`;
+  const explanation = `🔍 השיטה: בחלוקה עם שארית בודקים כמה קיבל כל חבר, וכמה נשאר "בחוץ".\nשלב 1 — כל חבר קיבל ${perGroup} ${item.p}, כי ${groups} × ${perGroup} = ${total}. מצאנו כמה חולק בסך הכול!\nשלב 2 — נשאר ל${name}: ${had} − ${total} = ${itemSingularPhrase}.\n⚠️ המלכודת: ${perGroup} (כמה קיבל כל חבר) מופיע בתשובות — אבל שאלו כמה נשאר ל${name}!\nלכן התשובה: ${leftover} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -235,7 +235,7 @@ const wp6: TemplateGen = (d) => {
   const stem = `${name} אסף ${item.p} במשך ${days} ימים. ביום הראשון אסף ${start}, ובכל יום אסף כפול מהיום הקודם. כמה ${item.p} אסף סך הכול?`;
   const answer = sum;
   const { options, correctOption } = makeOptions(answer, [current, sum - start, start * days]);
-  const explanation = steps.join('\n') + `\nסך הכול: ${answer}.`;
+  const explanation = `🔍 השיטה: "כפול מהיום הקודם" — מחשבים יום-יום, ובסוף מחברים את כל הימים.\n` + steps.join('\n') + `\nמחברים את כל הימים: ${answer}.\n⚠️ המלכודת: ${current} (היום האחרון בלבד) מופיע בתשובות — אבל שאלו כמה אסף בכל הימים יחד!\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -253,7 +253,7 @@ const wp7: TemplateGen = (d) => {
 
   const stem = `${place} יש ${shelves} ${pick(containers).p}. בכל אחד ${perShelf} ${item.p}. לקחו ${removed} ${item.p}, ואז הוסיפו ${added} ${item.p} חדשים. כמה ${item.p} יש עכשיו?`;
   const { options, correctOption } = makeOptions(answer, [startAmount, startAmount + added, startAmount - removed]);
-  const explanation = `בהתחלה: ${shelves} × ${perShelf} = ${startAmount} ${item.p}.\nאחרי הוצאה: ${startAmount} - ${removed} = ${startAmount - removed}.\nאחרי הוספה: ${startAmount - removed} + ${added} = ${answer}.`;
+  const explanation = `🔍 השיטה: הולכים לפי סדר האירועים — קודם כמה היו, ואז כל שינוי בתורו.\nשלב 1 — בהתחלה: ${shelves} × ${perShelf} = ${startAmount} ${item.p}.\nשלב 2 — לקחו ${removed}: ${startAmount} − ${removed} = ${startAmount - removed}.\nשלב 3 — הוסיפו ${added}: ${startAmount - removed} + ${added} = ${answer}.\n⚠️ המלכודת: ${startAmount - removed} היא רק תוצאת ביניים — לפני שהוסיפו את החדשים!\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -269,7 +269,7 @@ const wp8: TemplateGen = (d) => {
 
   const stem = `${parent} חילק/ה ${item.p} ל-${children} ילדים. כל ילד קיבל ${perChild} ${item.p}. אחרי החלוקה נשארו ${leftover} ${item.p}. כמה ${item.p} היו בהתחלה?`;
   const { options, correctOption } = makeOptions(answer, [children * perChild, leftover * children, children + perChild + leftover]);
-  const explanation = `חולקו: ${children} × ${perChild} = ${children * perChild} ${item.p}.\nבהתחלה: ${children * perChild} + ${leftover} = ${answer} ${item.p}.`;
+  const explanation = `🔍 השיטה: כדי לדעת כמה היו בהתחלה — מחברים את מה שחולק עם מה שנשאר.\nשלב 1 — חולקו: ${children} × ${perChild} = ${children * perChild} ${item.p}. מצאנו כמה הילדים קיבלו!\nשלב 2 — מוסיפים את מה שנשאר: ${children * perChild} + ${leftover} = ${answer}.\n⚠️ המלכודת: ${children * perChild} מופיע בתשובות — מי ששוכח את ${leftover} שנשארו עוצר בתוצאת ביניים!\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -288,7 +288,7 @@ const seq1: TemplateGen = (d) => {
 
   const stem = `מהו המספר הבא בסדרה? ${seq.join(', ')}, ?`;
   const { options, correctOption } = makeOptions(answer, [answer + diff, answer - diff, seq[len - 1] * 2]);
-  const explanation = `ההפרש בין כל שני מספרים: ${diff}.\n${seq[len - 1]} + ${diff} = ${answer}.`;
+  const explanation = `🔍 השיטה: בסדרה בודקים קודם מה קורה בין כל שני שכנים.\nשלב 1 — ${seq[0]}→${seq[1]}: +${diff}. ${seq[1]}→${seq[2]}: שוב +${diff}. מצאנו שהכלל קבוע — כל פעם מוסיפים ${diff}!\n✓ בדיקה: ${seq[2]} + ${diff} = ${seq[3]}, מתאים בדיוק להמשך הסדרה.\nשלב 2 — ${seq[len - 1]} + ${diff} = ${answer}.\n⚠️ המלכודת: ${seq[len - 1]} מופיע בתשובות — אבל הוא כבר כתוב בסדרה! וגם ${answer + diff} מדלג צעד אחד יותר מדי.\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -303,7 +303,7 @@ const seq2: TemplateGen = (d) => {
 
   const stem = `מהו המספר הבא בסדרה? ${seq.join(', ')}, ?`;
   const { options, correctOption } = makeOptions(answer, [answer + ratio, seq[len - 1] + ratio, Math.floor(answer / 2)]);
-  const explanation = `כל מספר מוכפל ב-${ratio}.\n${seq[len - 1]} × ${ratio} = ${answer}.`;
+  const explanation = `🔍 השיטה: אם ההפרש בין השכנים לא קבוע — בודקים כפל!\nשלב 1 — ${seq[0]}→${seq[1]}: ×${ratio}. ${seq[1]}→${seq[2]}: שוב ×${ratio}. מצאנו את הכלל — כל מספר מוכפל ב-${ratio}!\nשלב 2 — ${seq[len - 1]} × ${ratio} = ${answer}.\n⚠️ המלכודת: ${seq[len - 1] + ratio} מופיע בתשובות — חיבור של ${ratio} במקום כפל ב-${ratio}.\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -325,7 +325,7 @@ const seq3: TemplateGen = (d) => {
 
   const stem = `מהו המספר הבא בסדרה? ${seq.join(', ')}, ?`;
   const { options, correctOption } = makeOptions(answer, [answer + 1, answer - 1, seq[len - 1] + diffs[diffs.length - 1]]);
-  const explanation = `ההפרשים: ${diffs.join(', ')}.\nההפרשים גדלים ב-${inc} כל פעם. ההפרש הבא: ${diff}.\n${seq[len - 1]} + ${diff} = ${answer}.`;
+  const explanation = `🔍 השיטה: בודקים את ההפרשים בין כל שני שכנים — ואם הם לא קבועים, בודקים איך הם משתנים.\nשלב 1 — ההפרשים: ${diffs.join(', ')}. מצאנו שההפרשים עצמם גדלים ב-${inc} כל פעם!\nשלב 2 — ההפרש הבא: ${diffs[diffs.length - 1]} + ${inc} = ${diff}.\nשלב 3 — ${seq[len - 1]} + ${diff} = ${answer}.\n⚠️ המלכודת: ${seq[len - 1] + diffs[diffs.length - 1]} מפתה — הוא חוזר על ההפרש הקודם במקום להגדיל אותו.\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -340,7 +340,7 @@ const seq4: TemplateGen = (d) => {
 
   const stem = `מהו המספר הבא בסדרה? ${seq.join(', ')}, ?`;
   const { options, correctOption } = makeOptions(answer, [answer + 1, seq[len - 1] * 2, answer - seq[0]]);
-  const explanation = `כל מספר הוא סכום שני המספרים שלפניו.\n${seq[len - 2]} + ${seq[len - 1]} = ${answer}.`;
+  const explanation = `🔍 השיטה: כשההפרשים לא קבועים — בודקים אם כל מספר קשור לשני הקודמים לו.\nשלב 1 — ${seq[0]} + ${seq[1]} = ${seq[2]}. ${seq[1]} + ${seq[2]} = ${seq[3]}. מצאנו את הכלל — כל מספר הוא סכום שני הקודמים!\nשלב 2 — ${seq[len - 2]} + ${seq[len - 1]} = ${answer}.\n⚠️ המלכודת: ${seq[len - 1] * 2} מופיע בתשובות — הכפלת המספר האחרון במקום חיבור שני הקודמים.\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -356,7 +356,8 @@ const seq5: TemplateGen = (d) => {
 
   const stem = `מהו המספר החסר בסדרה? ${display}`;
   const { options, correctOption } = makeOptions(answer, [answer + diff, answer - diff, answer + 1]);
-  const explanation = `ההפרש בין כל שני מספרים: ${diff}.\nהמספר החסר: ${seq[missingIdx - 1]} + ${diff} = ${answer}.`;
+  const pairIdx = missingIdx >= 2 ? 0 : len - 2; // a visible neighbor pair to learn the rule from
+  const explanation = `🔍 השיטה: מגלים את הכלל מזוג שכנים שרואים, ורק אז ממלאים את החסר.\nשלב 1 — ${seq[pairIdx]}→${seq[pairIdx + 1]}: +${diff}. מצאנו שההפרש הקבוע הוא ${diff}!\nשלב 2 — המספר החסר: ${seq[missingIdx - 1]} + ${diff} = ${answer}.\n✓ בדיקה: ${answer} + ${diff} = ${seq[missingIdx + 1]} — מתאים בדיוק למספר הבא בסדרה.\n⚠️ המלכודת: ${answer + diff} ו-${answer - diff} הם השכנים שכבר כתובים בסדרה — לא המספר החסר!\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -375,7 +376,7 @@ const ml1: TemplateGen = (d) => {
   const stem = `אם ○ + ○ + △ = ${total}, וגם △ = ○ + ${k}, כמה שווה ○?`;
   const answer = circle;
   const { options, correctOption } = makeOptions(answer, [triangle, total - circle, k]);
-  const explanation = `נציב △ = ○ + ${k}:\n○ + ○ + (○ + ${k}) = ${total}\n3 × ○ + ${k} = ${total}\n3 × ○ = ${total - k}\n○ = ${answer}.`;
+  const explanation = `🔍 השיטה: כשיש שני סימנים — מציבים את הקשר ביניהם כדי להישאר עם סימן אחד בלבד.\nשלב 1 — נציב △ = ○ + ${k}: ○ + ○ + ○ + ${k} = ${total}, כלומר 3 × ○ + ${k} = ${total}.\nשלב 2 — 3 × ○ = ${total} − ${k} = ${total - k}, לכן ○ = ${total - k} ÷ 3 = ${answer}.\n✓ בדיקה: ${answer} + ${answer} + ${triangle} = ${total} — מסתדר בדיוק!\n⚠️ המלכודת: ${triangle} הוא הערך של △, לא של ○ — קוראים שוב מה בדיוק שאלו.\nלכן התשובה: ○ = ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -388,7 +389,7 @@ const ml2: TemplateGen = (d) => {
   const result = answer * mult + add;
   const stem = `יש לי מספר. הכפלתי אותו ב-${mult} ואז הוספתי ${add}. קיבלתי ${result}. מה המספר המקורי?`;
   const { options, correctOption } = makeOptions(answer, [answer + 1, answer - 1, mult + add]);
-  const explanation = `נעבוד אחורה:\nלפני ההוספה של ${add}: ${result} − ${add} = ${result - add}.\nלפני ההכפלה ב-${mult}: ${result - add} ÷ ${mult} = ${answer}.`;
+  const explanation = `🔍 השיטה: עובדים אחורה — מבטלים כל פעולה בסדר הפוך, עם הפעולה ההפוכה.\nשלב 1 — מבטלים את ההוספה: ${result} − ${add} = ${result - add}. מצאנו את המספר לפני ההוספה!\nשלב 2 — מבטלים את הכפל: ${result - add} ÷ ${mult} = ${answer}.\n✓ בדיקה: ${answer} × ${mult} + ${add} = ${result} — בדיוק מה שכתוב בשאלה!\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -405,7 +406,7 @@ const ml3: TemplateGen = (d) => {
   const stem = `שלושה חברים — ${names[0]}, ${names[1]} ו${names[2]} — אספו ביחד ${total} ${item.p}. ל${names[1]} יש ${knownAmount}. ל${names[0]} יש ${multiplier === 2 ? 'כפול' : 'פי שלושה'} מ${names[2]}. כמה ${item.p} יש ל${names[0]}?`;
   const answer = multiplier * x;
   const { options, correctOption } = makeOptions(answer, [x, total - knownAmount, knownAmount * multiplier]);
-  const explanation = `ל${names[1]} ${knownAmount}, לכן ל${names[0]} ו${names[2]} ביחד: ${total} - ${knownAmount} = ${total - knownAmount}.\nנסמן את ${names[2]} כ-X. ${names[0]} = ${multiplier}X.\nX + ${multiplier}X = ${total - knownAmount} → ${multiplier + 1}X = ${total - knownAmount} → X = ${x}.\n${names[0]} = ${multiplier} × ${x} = ${answer}.`;
+  const explanation = `🔍 השיטה: קודם מורידים את מה שידוע, ואז מסמנים את הלא-ידוע באות.\nשלב 1 — ל${names[1]} ${knownAmount}, לכן ל${names[0]} ו${names[2]} ביחד: ${total} − ${knownAmount} = ${total - knownAmount}.\nשלב 2 — נסמן את ${names[2]} כ-X, אז ${names[0]} = ${multiplier}X. יחד: ${multiplier + 1}X = ${total - knownAmount}, לכן X = ${x}.\nשלב 3 — ${names[0]} = ${multiplier} × ${x} = ${answer}.\n⚠️ המלכודת: ${x} הוא של ${names[2]} — אבל שאלו על ${names[0]}!\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -420,7 +421,9 @@ const ml4: TemplateGen = (d) => {
   const stem = `□ + ○ = ${sum}, □ - ○ = ${diff}. כמה שווה ${a >= b ? '□' : '○'}?`;
   const answer = bigger;
   const { options, correctOption } = makeOptions(answer, [sum, diff, Math.min(a, b)]);
-  const explanation = `${a >= b ? '□' : '○'} + ${a >= b ? '○' : '□'} = ${sum}\n${a >= b ? '□' : '○'} - ${a >= b ? '○' : '□'} = ${diff}\nנחבר: 2 × ${a >= b ? '□' : '○'} = ${sum + diff} → ${a >= b ? '□' : '○'} = ${bigger}.`;
+  const bigSym = a >= b ? '□' : '○';
+  const smallSym = a >= b ? '○' : '□';
+  const explanation = `🔍 השיטה: מחברים את שתי השורות — כך ה-${smallSym} מתבטל ונשאר רק סימן אחד.\nשלב 1 — נחבר: ${sum} + ${diff} = ${sum + diff}, וזה שווה ל-2 × ${bigSym}.\nשלב 2 — ${bigSym} = ${sum + diff} ÷ 2 = ${bigger}.\n✓ בדיקה: ${bigger} + ${Math.min(a, b)} = ${sum} וגם ${bigger} − ${Math.min(a, b)} = ${diff} — מסתדר!\n⚠️ המלכודת: ${sum} ו-${diff} עצמם מופיעים בתשובות — הם הנתונים, לא הפתרון.\nלכן התשובה: ${bigger} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -459,11 +462,17 @@ const tc1: TemplateGen = (d) => {
   const wrong3 = fmtTime(...addMin(h, m, durationMin + 30));
   const allOpts = shuffle([correctStr, wrong1, wrong2, wrong3]);
 
+  const toHour = (60 - m) % 60;
+  const rest = durationMin - toHour;
+  const explanation = m > 0 && rest > 0
+    ? `🔍 השיטה: קודם משלימים לשעה עגולה, ואז מוסיפים את השאר.\nשלב 1 — מ-${fmtTime(h, m)} עד ${fmtTime(h + 1, 0)} יש ${toHour} דקות.\nשלב 2 — נשארו ${durationMin} − ${toHour} = ${rest} דקות. ${fmtTime(h + 1, 0)} + ${rest} דקות = ${correctStr}.\nשימו לב: שעה = 60 דקות.\n⚠️ המלכודת: התשובות האחרות רחוקות רק ברבע שעה או חצי שעה מהנכונה — בודקים את החישוב לפני שבוחרים!\nלכן התשובה: ${correctStr} ✔`
+    : `🔍 השיטה: מוסיפים את הדקות לשעת ההתחלה — וכל 60 דקות שמצטברות הן שעה שלמה.\nשלב 1 — ${fmtTime(h, m)} + ${durationMin} דקות = ${correctStr}.\nשימו לב: שעה = 60 דקות.\n⚠️ המלכודת: התשובות האחרות רחוקות רק ברבע שעה או חצי שעה מהנכונה — בודקים את החישוב לפני שבוחרים!\nלכן התשובה: ${correctStr} ✔`;
+
   return {
     stem,
     options: allOpts,
     correctOption: allOpts.indexOf(correctStr),
-    explanation: `${fmtTime(h, m)} + ${durationMin} דקות = ${correctStr}.`,
+    explanation,
   };
 };
 
@@ -491,11 +500,15 @@ const tc2: TemplateGen = (d) => {
   const allOpts = shuffle(Array.from(new Set([correctStr, wrong1, wrong2, wrong3])).slice(0, 4));
   while (allOpts.length < 4) allOpts.push(fmtTime(...addMin(h, m, totalAdd + rand(15, 30))));
 
+  const explanation = wait > 0
+    ? `🔍 השיטה: קודם מחברים את כל הדקות של הדרך, ורק אז מוסיפים לשעון.\nשלב 1 — סך הדקות: ${walk} + ${wait} = ${totalAdd}. מצאנו כמה זמן לקחה כל הדרך!\nשלב 2 — ${fmtTime(h, m)} + ${totalAdd} דקות = ${correctStr}.\nשימו לב: כשעוברים 60 דקות — מתחלפת השעה.\n⚠️ המלכודת: מי ששוכח את ${wait} דקות ההמתנה מקבל ${wrong1} — תוצאת ביניים שמופיעה בתשובות!\nלכן התשובה: ${correctStr} ✔`
+    : `🔍 השיטה: מוסיפים את דקות ההליכה לשעת היציאה.\nשלב 1 — ${fmtTime(h, m)} + ${walk} דקות = ${correctStr}.\nשימו לב: כשעוברים 60 דקות — מתחלפת השעה (שעה = 60 דקות).\n⚠️ המלכודת: התשובות האחרות קרובות רק ב-10 דקות — בודקים את החישוב לפני שבוחרים!\nלכן התשובה: ${correctStr} ✔`;
+
   return {
     stem,
     options: allOpts.slice(0, 4),
     correctOption: allOpts.indexOf(correctStr),
-    explanation: `${fmtTime(h, m)} + ${walk} דקות${wait > 0 ? ` + ${wait} דקות` : ''} = ${correctStr}.`,
+    explanation,
   };
 };
 
@@ -524,7 +537,7 @@ const tc3: TemplateGen = (d) => {
     stem,
     options: allOpts.slice(0, 4),
     correctOption: allOpts.indexOf(correctStr),
-    explanation: `סך זמן: ${durations.join(' + ')} = ${totalMin} דקות.\n${fmtTime(h, m)} + ${totalMin} דקות = ${correctStr}.`,
+    explanation: `🔍 השיטה: קודם מחברים את כל הזמנים, ואז מוסיפים לשעת ההתחלה.\nשלב 1 — סך הדקות: ${durations.join(' + ')} = ${totalMin}. מצאנו כמה זמן למדה בסך הכול!\nשלב 2 — ${fmtTime(h, m)} + ${totalMin} דקות = ${correctStr}.\nשימו לב: כל 60 דקות שמצטברות הן שעה שלמה.\n⚠️ המלכודת: מי שמחשב רק את המקצוע הראשון (${durations[0]} דקות) מקבל ${wrong3} — אבל היא למדה ${numSubjects} מקצועות!\nלכן התשובה: ${correctStr} ✔`,
   };
 };
 
@@ -561,7 +574,7 @@ const mc1: TemplateGen = (d) => {
 
   const stem = `${name} קנה ${qty1} ${item1.plural} ב-${price1} שקלים כל אחת, ו${item2.name} ב-${price2} שקלים. שילם עם שטר של ${bill} שקלים. כמה עודף קיבל?`;
   const { options, correctOption } = makeOptions(answer, [total, bill - qty1 * price1, qty1 * price1]);
-  const explanation = `${item1.plural}: ${qty1} × ${price1} = ${qty1 * price1} ₪.\nסך הכול: ${qty1 * price1} + ${price2} = ${total} ₪.\nעודף: ${bill} - ${total} = ${answer} ₪.`;
+  const explanation = `🔍 השיטה: קודם מחשבים כמה עלתה כל הקנייה, ורק אז מחסירים מהשטר.\nשלב 1 — ${item1.plural}: ${qty1} × ${price1} = ${qty1 * price1} ₪.\nשלב 2 — סך הקנייה: ${qty1 * price1} + ${price2} = ${total} ₪. מצאנו כמה שילם!\nשלב 3 — עודף: ${bill} − ${total} = ${answer} ₪.\n⚠️ המלכודת: ${total} (מחיר הקנייה) מופיע בתשובות — אבל שאלו על העודף! וגם מי ששוכח את ה${item2.name} טועה.\nלכן התשובה: ${answer} ₪ ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -583,7 +596,7 @@ const mc2: TemplateGen = (d) => {
   const stem = `ל${name} יש ${actualStart} שקלים. היא קנתה ${parts.join(' ו')}. כמה כסף נשאר ל${name}?`;
   const { options, correctOption } = makeOptions(answer, [totalSpent, actualStart, costs[0]]);
   const stepLines = items.map((item, i) => `${item.plural}: ${qtys[i]} × ${prices[i]} = ${costs[i]} ₪`);
-  const explanation = `${stepLines.join('\n')}\nסך קנייה: ${costs.join(' + ')} = ${totalSpent} ₪.\nנשאר: ${actualStart} - ${totalSpent} = ${answer} ₪.`;
+  const explanation = `🔍 השיטה: מחשבים כל מוצר בנפרד, מחברים לסך הקנייה, ומחסירים ממה שהיה.\n${stepLines.join('\n')}\nסך הקנייה: ${costs.join(' + ')} = ${totalSpent} ₪. נשאר: ${actualStart} − ${totalSpent} = ${answer} ₪.\n⚠️ המלכודת: ${totalSpent} (כמה הוציאה) מופיע בתשובות — אבל שאלו כמה נשאר!\nלכן התשובה: ${answer} ₪ ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -598,7 +611,7 @@ const mc3: TemplateGen = (_d) => {
 
   const stem = `חנות מוכרת ${item.name} ב-${price} שקלים. אם קונים ${qty} ${item.plural}, מקבלים הנחה של ${discount} שקלים. כמה עולים ${qty} ${item.plural} אחרי ההנחה?`;
   const { options, correctOption } = makeOptions(answer, [fullPrice, discount, price * (qty - 1)]);
-  const explanation = `מחיר ללא הנחה: ${qty} × ${price} = ${fullPrice} ₪.\nאחרי הנחה: ${fullPrice} - ${discount} = ${answer} ₪.`;
+  const explanation = `🔍 השיטה: קודם מחשבים את המחיר המלא, ורק בסוף מורידים את ההנחה.\nשלב 1 — מחיר מלא: ${qty} × ${price} = ${fullPrice} ₪.\nשלב 2 — מורידים את ההנחה: ${fullPrice} − ${discount} = ${answer} ₪.\n⚠️ המלכודת: ${fullPrice} (המחיר לפני ההנחה) מופיע בתשובות — תוצאת ביניים!\nלכן התשובה: ${answer} ₪ ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -627,7 +640,7 @@ const dp1: TemplateGen = (d) => {
       stem,
       options: allOpts,
       correctOption,
-      explanation: `נסמן את ספרת המאות h, ספרת העשרות t, ספרת האחדות o.\nאנחנו יודעים: t = h + 1, o = t + 2.\nניסוי: h=${h}, אז t=${t}, ו-o=${o}.\nהמספר: ${answer}.`,
+      explanation: `🔍 השיטה: כשיש שני תנאים על ספרות — בודקים כל תשובה מול שני התנאים.\nשלב 1 — ב-${answer}: ספרת המאות ${h} וספרת העשרות ${t}. ${h} + 1 = ${t} — התנאי הראשון מתקיים!\nשלב 2 — ספרת האחדות ${o}. ${t} + 2 = ${o} — גם התנאי השני מתקיים!\n⚠️ המלכודת: תשובות אחרות מקיימות רק תנאי אחד מהשניים — חובה לבדוק את שניהם.\nלכן התשובה: ${answer} ✔`,
     };
   }
   const t = rand(1, 4);
@@ -661,7 +674,7 @@ const dp1: TemplateGen = (d) => {
     stem,
     options: allOpts,
     correctOption,
-    explanation: `אם ספרת העשרות היא ${t}, אז ספרת האחדות היא ${t} × 2 = ${o}.\nהמספר: ${answer}.\nאפשר לבדוק את כל המספרים מ-12 עד 48: רק ${answer} מקיים שהאחדות = פי שניים מהעשרות (${t} ו-${o}).`,
+    explanation: `🔍 השיטה: "כפולה מ..." — מנסים ערך לספרת העשרות ובונים ממנו את ספרת האחדות.\nשלב 1 — אם ספרת העשרות היא ${t}, ספרת האחדות היא ${t} × 2 = ${o}. קיבלנו את ${answer}!\n✓ בדיקה: ב-${answer} האחדות (${o}) באמת כפולה בדיוק מהעשרות (${t}).\n⚠️ המלכודת: בתשובות האחרות האחדות לא בדיוק כפולה מהעשרות — בודקים כל אפשרות, לא בוחרים "בערך".\nלכן התשובה: ${answer} ✔`,
   };
 };
 
@@ -676,7 +689,7 @@ const ag1: TemplateGen = (d) => {
   const names = shuffle([...girls]).slice(0, 2);
   const stem = `${names[0]} בת ${childA}, ו${names[1]} בן ${childB}. כש${names[0]} תהיה בת ${futureA}, בן כמה יהיה ${names[1]}?`;
   const { options, correctOption } = makeOptions(answer, [futureA, futureA - childA, childA + childB]);
-  const explanation = `ההפרש בין ${names[0]} ל${names[1]} הוא ${childA - childB} שנים.\nההפרש לא משתנה — שניהם מתבגרים ביחד.\nכש${names[0]} בת ${futureA}, ${names[1]} בן ${futureA} − ${childA - childB} = ${answer}.`;
+  const explanation = `🔍 השיטה: בשאלות גיל בודקים את ההפרש — כולם מתבגרים יחד, אז ההפרש לא משתנה לעולם.\nשלב 1 — ההפרש היום: ${childA} − ${childB} = ${childA - childB} שנים. מצאנו את מה שנשאר קבוע!\nשלב 2 — כש${names[0]} בת ${futureA}: ${futureA} − ${childA - childB} = ${answer}.\n⚠️ המלכודת: ${futureA} מופיע בתשובות — אבל הם אף פעם לא באותו גיל! ההפרש נשמר תמיד.\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -694,7 +707,7 @@ const ir1: TemplateGen = (d) => {
   const total = rows * cols;
   const stem = `במטע ${it.p} מסודרים ב-${cols} ${it.containers}. בכל ${it.container} ${rows} ${it.p}. כמה ${it.p} יש סך הכול?`;
   const { options, correctOption } = makeOptions(total, [rows + cols, rows * 2, cols * 2]);
-  const explanation = `${cols} ${it.containers} × ${rows} ${it.p} = ${total} ${it.p}.`;
+  const explanation = `🔍 השיטה: כשבכל ${it.container} יש אותו מספר — זה תרגיל כפל.\nשלב 1 — ${cols} ${it.containers}, בכל ${it.container} ${rows} ${it.p}: ${cols} × ${rows} = ${total}.\n⚠️ המלכודת: ${rows} + ${cols} = ${rows + cols} מופיע בתשובות — חיבור במקום כפל!\nלכן התשובה: ${total} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -706,7 +719,7 @@ const mw1: TemplateGen = (d) => {
   const total = week1 + week2;
   const stem = `בשבוע הראשון של החופש הוצא שקד ${week1} ש"ח. בשבוע השני הוציא ${diff} ש"ח פחות. כמה הוציא בשני השבועות יחד?`;
   const { options, correctOption } = makeOptions(total, [week1 + diff, week1, week2]);
-  const explanation = `שבוע 1: ${week1} ₪.\nשבוע 2: ${week1} − ${diff} = ${week2} ₪.\nיחד: ${week1} + ${week2} = ${total} ₪.`;
+  const explanation = `🔍 השיטה: "פחות" אומר שקודם מוצאים את השבוע השני, ורק אז מחברים.\nשלב 1 — שבוע 2: ${week1} − ${diff} = ${week2} ₪. מצאנו כמה הוציא בשבוע השני!\nשלב 2 — יחד: ${week1} + ${week2} = ${total} ₪.\n⚠️ המלכודת: מי שמוסיף ${diff} במקום להחסיר טועה בכיוון — כיוון הפוך!\nלכן התשובה: ${total} ₪ ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -731,7 +744,7 @@ const sp1: TemplateGen = (d) => {
   const sub = pick(subjects);
   const stem = `${sub.n} ${sub.verb} ${meters} מטר כל ${minutes} דקות. איזה מרחק יעבור ב${hours === 1 ? 'שעה' : `${hours} שעות`}?`;
   const { options, correctOption } = makeOptions(km, [km + 1, km - 1, hours * meters / 100]);
-  const explanation = `ב-${minutes} דקות עובר ${meters} מטר.\nב-${totalMin} דקות (= ${hours === 1 ? 'שעה' : `${hours} שעות`}) זה ${factor} פעמים יותר: ${meters} × ${factor} = ${totalMeters} מטר = ${km} ק"מ.`;
+  const explanation = `🔍 השיטה: מגלים פי כמה גדל הזמן — והמרחק גדל בדיוק באותו יחס.\nשלב 1 — ${hours === 1 ? 'שעה' : `${hours} שעות`} = ${totalMin} דקות. ${totalMin} ÷ ${minutes} = ${factor}, כלומר פי ${factor} זמן. מצאנו את היחס!\nשלב 2 — המרחק: ${meters} × ${factor} = ${totalMeters} מטר = ${km} ק"מ.\nשימו לב: שעה = 60 דקות, ו-1 ק"מ = 1,000 מטר.\nלכן התשובה: ${km} ק"מ ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -745,7 +758,7 @@ const gd1: TemplateGen = (d) => {
   const answer = groups + (leftover > 0 ? 1 : 0); // total groups including the leftover
   const stem = `המדריכה חילקה ${total} ילדים לקבוצות. בכל קבוצה היו ${groupSize} ילדים, אבל בקבוצה האחרונה היו רק ${leftover} ילדים. כמה קבוצות יצאו?`;
   const { options, correctOption } = makeOptions(answer, [groups, total - groups, leftover]);
-  const explanation = `${groups} קבוצות מלאות (${groups} × ${groupSize} = ${groups * groupSize} ילדים) + 1 קבוצה אחרונה עם ${leftover} ילדים = ${answer} קבוצות.`;
+  const explanation = `🔍 השיטה: מחלקים לקבוצות מלאות, ולא שוכחים את קבוצת ה"שארית" בסוף.\nשלב 1 — קבוצות מלאות: ${groups} × ${groupSize} = ${groups * groupSize} ילדים, כלומר ${groups} קבוצות. מצאנו את הקבוצות המלאות!\nשלב 2 — נשארו ${leftover} ילדים — גם הם קבוצה! ${groups} + 1 = ${answer}.\n⚠️ המלכודת: ${groups} מופיע בתשובות — מי ששוכח את הקבוצה הקטנה האחרונה עוצר צעד אחד מוקדם.\nלכן התשובה: ${answer} קבוצות ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -766,7 +779,7 @@ const by1: TemplateGen = (d) => {
       stem,
       options,
       correctOption,
-      explanation: `מספר השנים בין ${birthYear} ל-${targetYear} = ${targetYear} − ${birthYear} = ${targetAge}.`,
+      explanation: `🔍 השיטה: גיל = שנת היעד פחות שנת הלידה.\nשלב 1 — ${targetYear} − ${birthYear} = ${targetAge}.\n✓ בדיקה: ${birthYear} + ${targetAge} = ${targetYear} — מסתדר בדיוק.\n⚠️ המלכודת: ${targetAge - 1} ו-${targetAge + 1} קרובים בכוונה — עושים חיסור מדויק, לא הערכה!\nלכן התשובה: ${targetAge} ✔`,
     };
   }
   const targetAge = rand(2, ageNow - 1);
@@ -779,7 +792,7 @@ const by1: TemplateGen = (d) => {
     stem,
     options: allOpts,
     correctOption: allOpts.indexOf(correctStr),
-    explanation: `כדי להגיע לגיל ${targetAge}, צריך להוסיף ${targetAge} שנים לשנת הלידה.\n${birthYear} + ${targetAge} = ${targetYear}.`,
+    explanation: `🔍 השיטה: כדי למצוא שנה לפי גיל — מוסיפים את הגיל לשנת הלידה.\nשלב 1 — ${birthYear} + ${targetAge} = ${targetYear}.\n✓ בדיקה: מ-${birthYear} עד ${targetYear} עברו בדיוק ${targetAge} שנים — הגיל שחיפשנו.\n⚠️ המלכודת: ${targetYear + 1} ו-${targetYear - 1} רחוקים רק בשנה — טעות "צעד אחד" נפוצה מאוד.\nלכן התשובה: ${targetYear} ✔`,
   };
 };
 
@@ -801,7 +814,7 @@ const inv1: TemplateGen = (d) => {
   const name = pick([...girls]);
   const stem = `${name} הזמינה ${friends} חברים למסיבת יום ההולדת שלה, והכינה ${item.p} — אחת לכל חבר ועוד ${extras} ${item.p} ביתר לבטחון. הצליחה להכין רק ${have} ${item.p}. כמה ${item.p} נותרו לשני?`;
   const { options, correctOption } = makeOptions(missing, [extras, friends - have, totalNeeded]);
-  const explanation = `סך ${item.p} שצריך: ${friends} חברים + ${extras} ביתר = ${totalNeeded}.\nהכינה: ${have} ${item.p}.\nחסרות: ${totalNeeded} − ${have} = ${missing} ${item.p}.`;
+  const explanation = `🔍 השיטה: קודם מחשבים כמה צריך בסך הכול, ורק אז משווים למה שיש.\nשלב 1 — צריך: ${friends} חברים + ${extras} ביתר = ${totalNeeded} ${item.p}. מצאנו כמה צריך!\nשלב 2 — יש רק ${have}, לכן חסר: ${totalNeeded} − ${have} = ${missing}.\n⚠️ המלכודת: לא לשכוח את ${extras} ה${item.p} שביתר — מי שסופר רק את החברים מפספס חלק מהצורך.\nלכן התשובה: ${missing} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -816,7 +829,7 @@ const sf1: TemplateGen = (d) => {
   const stem = `בבניין יש ${floors} קומות. בין כל שתי קומות יש ${stairsPerFloor} מדרגות. כמה מדרגות יש בסך הכול בבניין מהקומה הראשונה לעליונה?`;
   const answer = stairsPerFloor * (floors - 1);
   const { options, correctOption } = makeOptions(answer, [total, stairsPerFloor + floors, stairsPerFloor * floors / 2]);
-  const explanation = `בין ${floors} קומות יש ${floors - 1} "מערכות מדרגות" (קומה 1 ל-2, 2 ל-3 וכו').\nכל מערכה: ${stairsPerFloor} מדרגות.\nסך הכול: ${floors - 1} × ${stairsPerFloor} = ${answer} מדרגות.`;
+  const explanation = `🔍 השיטה: סופרים את המעברים בין הקומות — תמיד אחד פחות ממספר הקומות.\nשלב 1 — בין ${floors} קומות יש ${floors - 1} מערכות מדרגות (קומה 1→2, 2→3 וכן הלאה). מצאנו כמה מעברים!\nשלב 2 — ${floors - 1} × ${stairsPerFloor} = ${answer} מדרגות.\n⚠️ המלכודת: ${total} (${floors} × ${stairsPerFloor}) מופיע בתשובות — מי שכופל במספר הקומות במקום במספר המעברים נופל שם.\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -837,11 +850,16 @@ const ba1: TemplateGen = (d) => {
   while (allOpts.length < 4) allOpts.push(fmt(endH + rand(1, 3), endM));
   const name = pick([...girls, ...boys]);
   const stem = `${name} עלה לאוטובוס בשעה ${fmt(startH, startM)}. הנסיעה אורכת ${durationMin} דקות. באיזו שעה יגיע ליעד?`;
+  const toHour = (60 - startM) % 60;
+  const rest = durationMin - toHour;
+  const explanation = startM > 0 && rest > 0
+    ? `🔍 השיטה: קודם משלימים לשעה עגולה, ואז מוסיפים את השאר.\nשלב 1 — מ-${fmt(startH, startM)} עד ${fmt(startH + 1, 0)} יש ${toHour} דקות.\nשלב 2 — נשארו ${durationMin} − ${toHour} = ${rest} דקות. ${fmt(startH + 1, 0)} + ${rest} דקות = ${correct}.\nשימו לב: שעה = 60 דקות.\n⚠️ המלכודת: יש תשובה שרחוקה בדיוק שעה (${wrong1}) — קל להתבלבל בספירת השעות!\nלכן התשובה: ${correct} ✔`
+    : `🔍 השיטה: יוצאים משעה עגולה — מוסיפים את הדקות, וכל 60 דקות הן שעה שלמה.\nשלב 1 — ${fmt(startH, startM)} + ${durationMin} דקות = ${correct}.\nשימו לב: שעה = 60 דקות.\n⚠️ המלכודת: יש תשובה שרחוקה בדיוק שעה (${wrong1}) — קל להתבלבל בספירת השעות!\nלכן התשובה: ${correct} ✔`;
   return {
     stem,
     options: allOpts.slice(0, 4),
     correctOption: allOpts.indexOf(correct),
-    explanation: `${fmt(startH, startM)} + ${durationMin} דקות = ${correct}.`,
+    explanation,
   };
 };
 
@@ -853,7 +871,7 @@ const rs1: TemplateGen = (d) => {
   const name = pick([...girls]);
   const stem = `${name} קוראת ${perDay} עמודים ביום. תוך כמה ימים תגמור ספר בעל ${total} עמודים?`;
   const { options, correctOption } = makeOptions(days, [days + 2, days - 1, perDay]);
-  const explanation = `${total} עמודים ÷ ${perDay} עמודים ליום = ${days} ימים.`;
+  const explanation = `🔍 השיטה: כשקוראים אותו מספר עמודים בכל יום — זה תרגיל חילוק.\nשלב 1 — ${total} עמודים ÷ ${perDay} עמודים ביום = ${days} ימים.\n✓ בדיקה: ${days} × ${perDay} = ${total} — בדיוק כל הספר.\n⚠️ המלכודת: ${perDay} מופיע בתשובות — זה כמה עמודים ביום, לא כמה ימים!\nלכן התשובה: ${days} ימים ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -867,7 +885,7 @@ const hw1: TemplateGen = (d) => {
   const name = pick([...boys, ...girls]);
   const stem = `${name} עובדת בשמרטפות ומקבלת ${ratePerHour} ש"ח לשעה. אם שמרה על הילדים מ-${startHour}:00 ועד ${endHour}:00, כמה הרוויחה?`;
   const { options, correctOption } = makeOptions(total, [ratePerHour, total + ratePerHour, total - ratePerHour]);
-  const explanation = `שמרה ${endHour} − ${startHour} = ${hours} שעות.\nכל שעה: ${ratePerHour} ש"ח.\nסך הכול: ${hours} × ${ratePerHour} = ${total} ש"ח.`;
+  const explanation = `🔍 השיטה: קודם מחשבים כמה שעות עבדה, ורק אז כופלים בשכר לשעה.\nשלב 1 — שעות: ${endHour} − ${startHour} = ${hours}. מצאנו כמה זמן שמרה!\nשלב 2 — שכר: ${hours} × ${ratePerHour} = ${total} ש"ח.\n⚠️ המלכודת: ${total - ratePerHour} ו-${total + ratePerHour} רחוקים בדיוק בשעת עבודה אחת — סופרים שעות בזהירות!\nלכן התשובה: ${total} ש"ח ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -882,7 +900,7 @@ const re1: TemplateGen = (d) => {
   const answer = product - subtract;
   const stem = `מספר שווה ל-${factor} פעמים ${multiplier}, פחות ${subtract}. מהו המספר?`;
   const { options, correctOption } = makeOptions(answer, [product, answer + 1, factor + multiplier]);
-  const explanation = `${factor} × ${multiplier} = ${product}.\n${product} − ${subtract} = ${answer}.`;
+  const explanation = `🔍 השיטה: קוראים את המשפט לפי הסדר — קודם הכפל, ואז החיסור.\nשלב 1 — ${factor} × ${multiplier} = ${product}. מצאנו את המכפלה!\nשלב 2 — ${product} − ${subtract} = ${answer}.\n⚠️ המלכודת: ${product} מופיע בתשובות — מי ששוכח את ה"פחות ${subtract}" עוצר בתוצאת ביניים!\nלכן התשובה: ${answer} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -916,7 +934,7 @@ const wt1: TemplateGen = (d) => {
     stem,
     options: allOpts,
     correctOption: allOpts.indexOf(correctStr),
-    explanation: `${itemA.name}: ${fmt(aWeight)}.\n${itemB.name}: ${fmt(aWeight)} + ${fmt(bWeight - aWeight)} = ${fmt(bWeight)}.\nיחד: ${fmt(aWeight)} + ${fmt(bWeight)} = ${fmt(total)}.`,
+    explanation: `🔍 השיטה: קודם מוצאים את המשקל של כל פריט בנפרד, ורק אז מחברים.\nשלב 1 — ${itemA.name}: ${fmt(aWeight)}.\nשלב 2 — ${itemB.name}: ${fmt(aWeight)} + ${fmt(bWeight - aWeight)} = ${fmt(bWeight)}. מצאנו את המשקל השני!\nשלב 3 — יחד: ${fmt(aWeight)} + ${fmt(bWeight)} = ${fmt(total)}.\n⚠️ המלכודת: ${itemB.name} שוקל ${fmt(bWeight - aWeight)} יותר — זה לא המשקל שלו עצמו, קודם צריך לחבר!\n💡 טיפ: חצי ועוד חצי = קילוגרם שלם.\nלכן התשובה: ${fmt(total)} ✔`,
   };
 };
 
@@ -931,7 +949,7 @@ const tw1: TemplateGen = (d) => {
   const sister = pick(girls.filter(g => g !== n1 && g !== n2));
   const stem = `${n1} ו${n2} תאומות בנות ${twinAge}. גילה של אחותן הגדולה ${sister} שווה לסכום הגילים של שתיהן, פחות ${k}. בת כמה ${sister}?`;
   const { options, correctOption } = makeOptions(sisterAge, [sum, twinAge + k, sum + k]);
-  const explanation = `סכום הגילים של התאומות: ${twinAge} + ${twinAge} = ${sum}.\nגיל האחות: ${sum} − ${k} = ${sisterAge}.`;
+  const explanation = `🔍 השיטה: הולכים לפי סדר המשפט — קודם סכום הגילים, ואז ה"פחות".\nשלב 1 — סכום התאומות: ${twinAge} + ${twinAge} = ${sum}. מצאנו את הסכום!\nשלב 2 — גיל האחות: ${sum} − ${k} = ${sisterAge}.\n⚠️ המלכודת: ${sum} מופיע בתשובות — מי ששוכח את ה"פחות ${k}" עוצר בתוצאת ביניים!\nלכן התשובה: ${sisterAge} ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -945,7 +963,7 @@ const sl1: TemplateGen = (d) => {
   const dayWord = days === 2 ? 'יומיים' : `${days} ימים`;
   const stem = `${name} ישן ${sleep} שעות בכל יממה. כמה שעות הוא ער במהלך ${dayWord} שלמים?`;
   const { options, correctOption } = makeOptions(answer, [awakePerDay, sleep * days, 24 * days - sleep]);
-  const explanation = `ביממה יש 24 שעות. ער בכל יממה: 24 − ${sleep} = ${awakePerDay} שעות.\nבמהלך ${dayWord}: ${awakePerDay} × ${days} = ${answer} שעות.\nשימו לב למלכודת: מי שמחשב כמה הוא ישן מקבל ${sleep * days} — אבל שאלו כמה הוא ער!`;
+  const explanation = `🔍 השיטה: קודם מוצאים כמה שעות ער ביממה אחת, ואז כופלים במספר הימים.\nשימו לב: ביממה יש 24 שעות.\nשלב 1 — ער בכל יממה: 24 − ${sleep} = ${awakePerDay} שעות. מצאנו את היממה האחת!\nשלב 2 — במהלך ${dayWord}: ${awakePerDay} × ${days} = ${answer} שעות.\n⚠️ המלכודת: מי שמחשב כמה הוא ישן מקבל ${sleep * days} — אבל שאלו כמה הוא ער! כיוון הפוך.\nלכן התשובה: ${answer} שעות ✔`;
   return { stem, options, correctOption, explanation };
 };
 
@@ -976,7 +994,7 @@ const dp2: TemplateGen = (d) => {
     stem,
     options: allOpts,
     correctOption: allOpts.indexOf(String(answer)),
-    explanation: `בודקים כל אפשרות מול שני התנאים:\n1) המספר זוגי (ספרת האחדות: 0, 2, 4, 6 או 8).\n2) סכום הספרות = ${digitSum}.\nרק ${answer} מקיים את שניהם: ${Math.floor(answer / 10)} + ${answer % 10} = ${digitSum}, וספרת האחדות ${answer % 10} זוגית.`,
+    explanation: `🔍 השיטה: כשיש שני תנאים — בודקים כל תשובה מול שניהם, אחד-אחד.\nתנאי 1: המספר זוגי (ספרת האחדות: 0, 2, 4, 6 או 8). תנאי 2: סכום הספרות = ${digitSum}.\n✓ בדיקה על ${answer}: ${Math.floor(answer / 10)} + ${answer % 10} = ${digitSum}, וספרת האחדות ${answer % 10} זוגית — שני התנאים מתקיימים!\n⚠️ המלכודת: יש תשובות עם הסכום הנכון אבל אי-זוגיות — כמעט נכון, קיים רק תנאי אחד מהשניים!\nלכן התשובה: ${answer} ✔`,
   };
 };
 

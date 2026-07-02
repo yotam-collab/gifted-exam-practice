@@ -23,6 +23,11 @@ type Pair = [string, string]; // [word1, word2]
 interface RelationBank {
   skill: WordRelationSkill;
   label: string; // Hebrew description of the relation
+  /** Bridge-sentence template (משפט-גשר): turns a pair into an explicit
+   *  sentence a 2nd-grader can test answers against. Placeholders {a}/{b}. */
+  bridge: string;
+  /** Short relation name used when naming a trap's REAL relation. */
+  relShort: string;
   pairs: Pair[];
 }
 
@@ -32,6 +37,8 @@ const banks: RelationBank[] = [
   {
     skill: 'synonyms_antonyms',
     label: 'מילים נרדפות או הפכים',
+    bridge: '{a} הוא בדיוק ההפך מ{b}',
+    relShort: 'הפכים',
     pairs: [
       ['חָם', 'קַר'], ['גָּבוֹהַּ', 'נָמוּךְ'], ['גָּדוֹל', 'קָטָן'], ['מָהִיר', 'אִטִּי'],
       ['חָזָק', 'חָלָשׁ'], ['יָפֶה', 'מְכוֹעָר'], ['רָחוֹק', 'קָרוֹב'], ['עָשִׁיר', 'עָנִי'],
@@ -44,6 +51,8 @@ const banks: RelationBank[] = [
   {
     skill: 'part_whole',
     label: 'חלק מתוך שלם',
+    bridge: '{a} הוא חלק מ{b}',
+    relShort: 'חלק מתוך שלם',
     pairs: [
       ['עָלֶה', 'עֵץ'], ['גַּלְגַּל', 'מְכוֹנִית'], ['דַּף', 'סֵפֶר'], ['אֶצְבַּע', 'יָד'],
       ['חַלּוֹן', 'בַּיִת'], ['כְּנָף', 'צִפּוֹר'], ['מַקְלֶדֶת', 'מַחְשֵׁב'], ['עַיִן', 'פָּנִים'],
@@ -55,6 +64,8 @@ const banks: RelationBank[] = [
   {
     skill: 'tool_use',
     label: 'כלי ושימושו',
+    bridge: 'עם {a} אפשר {b}',
+    relShort: 'כלי והפעולה שעושים איתו',
     pairs: [
       ['מַסְפָּרַיִם', 'לִגְזֹר'], ['עֵט', 'לִכְתֹּב'], ['מַזְלֵג', 'לֶאֱכֹל'],
       ['מַפְתֵּחַ', 'לִפְתֹּחַ'], ['מַסּוֹר', 'לַחֲתֹךְ'], ['מִטְרִיָּה', 'לְהָגֵן מִגֶּשֶׁם'],
@@ -67,6 +78,8 @@ const banks: RelationBank[] = [
   {
     skill: 'material_product',
     label: 'חומר ומוצר',
+    bridge: 'מ{a} מכינים {b}',
+    relShort: 'חומר והמוצר שמכינים ממנו',
     pairs: [
       ['עֵץ', 'שֻׁלְחָן'], ['צֶמֶר', 'סְוֶדֶר'], ['חוֹל', 'זְכוּכִית'],
       ['קֶמַח', 'לֶחֶם'], ['בַּרְזֶל', 'מַסְמֵר'], ['כּוֹתְנָה', 'חוּלְצָה'],
@@ -79,6 +92,8 @@ const banks: RelationBank[] = [
   {
     skill: 'category_item',
     label: 'קטגוריה ופריט',
+    bridge: '{a} הוא סוג של {b}',
+    relShort: 'פריט והקבוצה שלו',
     pairs: [
       ['כֶּלֶב', 'חַיָּה'], ['תַּפּוּחַ', 'פְּרִי'], ['וֶרֶד', 'פֶּרַח'],
       ['כִּסֵּא', 'רָהִיט'], ['פְּסַנְתֵּר', 'כְּלִי נְגִינָה'], ['כַּדּוּרֶגֶל', 'סְפּוֹרְט'],
@@ -91,6 +106,8 @@ const banks: RelationBank[] = [
   {
     skill: 'cause_effect',
     label: 'סיבה ותוצאה',
+    bridge: 'בגלל {a} יש {b}',
+    relShort: 'סיבה ותוצאה',
     pairs: [
       ['אֵשׁ', 'עָשָׁן'], ['גֶּשֶׁם', 'שְׁלוּלִית'], ['שֶׁמֶשׁ', 'צֵל'],
       ['קֹר', 'רְעִידָה'], ['חֹם', 'זֵעָה'], ['רַעַשׁ', 'הֵד'],
@@ -107,6 +124,8 @@ const banks: RelationBank[] = [
   {
     skill: 'verbal_analogy',
     label: 'אנלוגיה: בעל מקצוע ומקום עבודה',
+    bridge: '{a} עובד ב{b}',
+    relShort: 'בעל מקצוע ומקום העבודה שלו',
     pairs: [
       ['מוֹרֶה', 'בֵּית סֵפֶר'], ['רוֹפֵא', 'בֵּית חוֹלִים'], ['שֵׁף', 'מִסְעָדָה'],
       ['טַיָּס', 'מָטוֹס'], ['סַפָּר', 'מִסְפָּרָה'], ['חַקְלַאי', 'שָׂדֶה'],
@@ -116,6 +135,8 @@ const banks: RelationBank[] = [
   {
     skill: 'verbal_analogy',
     label: 'אנלוגיה: בעל חיים וצאצא',
+    bridge: 'התינוק של {a} נקרא {b}',
+    relShort: 'בעל חיים והתינוק שלו',
     pairs: [
       ['פָּרָה', 'עֵגֶל'], ['כֶּלֶב', 'גּוּר'], ['תַּרְנְגֹלֶת', 'אֶפְרוֹחַ'],
       ['חֲתוּלָה', 'גּוֹרָה'], ['כִּבְשָׂה', 'טָלֶה'], ['חֲזִירָה', 'חֲזַרְזִיר'],
@@ -125,6 +146,8 @@ const banks: RelationBank[] = [
   {
     skill: 'verbal_analogy',
     label: 'אנלוגיה: בעל חיים ומקום מחיה',
+    bridge: '{a} גר ב{b}',
+    relShort: 'בעל חיים והמקום שבו הוא גר',
     pairs: [
       ['דָּג', 'מַיִם'], ['צִפּוֹר', 'קֵן'], ['דֹּב', 'מְעָרָה'],
       ['דְּבוֹרָה', 'כַּוֶּרֶת'], ['נְמָלָה', 'קֵן נְמָלִים'], ['חַפַרְפֶּרֶת', 'מַחִלָּה'],
@@ -134,6 +157,8 @@ const banks: RelationBank[] = [
   {
     skill: 'verbal_analogy',
     label: 'אנלוגיה: מדינה ובירה',
+    bridge: '{b} היא עיר הבירה של {a}',
+    relShort: 'מדינה ועיר הבירה שלה',
     pairs: [
       ['יִשְׂרָאֵל', 'יְרוּשָׁלַיִם'], ['צָרְפַת', 'פָּרִיז'], ['אַנְגְּלִיָּה', 'לוֹנְדוֹן'],
       ['אִיטַלְיָה', 'רוֹמָא'], ['יָוָן', 'אָתוּנָה'], ['רוּסְיָה', 'מוֹסְקְבָה'],
@@ -147,6 +172,8 @@ const banks: RelationBank[] = [
   {
     skill: 'synonyms',
     label: 'מילים נרדפות (אותה משמעות, מילה אחרת)',
+    bridge: '{a} זה בדיוק כמו {b} — אותה משמעות במילה אחרת',
+    relShort: 'מילים נרדפות',
     pairs: [
       ['שֶׁמֶשׁ', 'חַמָּה'], ['יָרֵחַ', 'לְבָנָה'], ['עָנָן', 'עָב'],
       ['סוֹד', 'כָּמוּס'], ['אִישׁוֹן', 'בָּבָה'], ['פַּחַד', 'אֵימָה'],
@@ -159,6 +186,8 @@ const banks: RelationBank[] = [
   {
     skill: 'action_object',
     label: 'פעולה ועצם נחוץ לה',
+    bridge: 'בשביל {a} צריך {b}',
+    relShort: 'פעולה והחפץ שצריך בשבילה',
     pairs: [
       ['שְׁכִיבָה', 'מִזְרָן'], ['יְשִׁיבָה', 'כִּסֵּא'], ['אֲכִילָה', 'צַלַּחַת'],
       ['שְׁתִיָּה', 'כּוֹס'], ['כְּתִיבָה', 'עֵט'], ['קְרִיאָה', 'סֵפֶר'],
@@ -170,6 +199,8 @@ const banks: RelationBank[] = [
   {
     skill: 'disease_cure',
     label: 'בעיה ופתרונה',
+    bridge: 'נגד {a} עוזר {b}',
+    relShort: 'בעיה והפתרון שלה',
     pairs: [
       ['רָעָב', 'אֹכֶל'], ['צָמָא', 'שְׁתִיָּה'], ['עֲיֵפוּת', 'שֵׁנָה'],
       ['קֹר', 'מְעִיל'], ['חֹם', 'מָגֵן הַשֶּׁמֶשׁ'], ['גֶּשֶׁם', 'מִטְרִיָּה'],
@@ -181,6 +212,8 @@ const banks: RelationBank[] = [
   {
     skill: 'animal_baby',
     label: 'בעל חיים והצאצא המיוחד שלו',
+    bridge: 'התינוק של {a} נקרא {b}',
+    relShort: 'בעל חיים והתינוק שלו',
     pairs: [
       ['צְפַרְדֵּעַ', 'רֹאשָׁן'], ['פַּרְפַּר', 'זַחַל'], ['פָּרָה', 'עֵגֶל'],
       ['כִּבְשָׂה', 'טָלֶה'], ['חֲזִירָה', 'חֲזַרְזִיר'], ['גָּמָל', 'בַּכְרָה'],
@@ -192,6 +225,8 @@ const banks: RelationBank[] = [
   {
     skill: 'animal_trait',
     label: 'בעל חיים ותכונה בולטת שלו',
+    bridge: '{a} מפורסם ב{b} שלו',
+    relShort: 'בעל חיים והתכונה המפורסמת שלו',
     pairs: [
       ['צָב', 'אִטִּיּוּת'], ['נְמָלָה', 'חָרִיצוּת'], ['אַרְיֵה', 'גְּבוּרָה'],
       ['שׁוּעָל', 'עָרְמָה'], ['פִּיל', 'זִכָּרוֹן'], ['חַרְגוֹל', 'קְפִיצָה'],
@@ -206,6 +241,8 @@ const banks: RelationBank[] = [
   {
     skill: 'animal_habitat',
     label: 'בעל חיים ושם הבית שלו',
+    bridge: 'הבית של {a} נקרא {b}',
+    relShort: 'בעל חיים ושם הבית שלו',
     pairs: [
       ['יוֹנָה', 'שׁוֹבָךְ'], ['פָּרָה', 'רֶפֶת'], ['סוּס', 'אֻרְוָה'],
       ['כֶּלֶב', 'מְלוּנָה'], ['עוֹף', 'לוּל'], ['דְּבוֹרָה', 'כַּוֶּרֶת'],
@@ -217,6 +254,8 @@ const banks: RelationBank[] = [
   {
     skill: 'liquid_container',
     label: 'נוזל וכלי הקיבול הרגיל שלו',
+    bridge: 'שמים {a} בתוך {b}',
+    relShort: 'נוזל והכלי שמחזיק אותו',
     pairs: [
       ['מַיִם', 'כּוֹס'], ['חָלָב', 'בַּקְבּוּק'], ['יַיִן', 'גָּבִיעַ'],
       ['קָפֶה', 'סֵפֶל'], ['תֵּה', 'סֵפֶל'], ['מִיץ', 'קַרְטוֹן'],
@@ -228,6 +267,8 @@ const banks: RelationBank[] = [
   {
     skill: 'tool_domain',
     label: 'כלי מדידה והגודל שהוא מודד',
+    bridge: 'עם {a} מודדים {b}',
+    relShort: 'כלי מדידה ומה שהוא מודד',
     pairs: [
       ['שָׁעוֹן', 'זְמַן'], ['סַרְגֵּל', 'אֹרֶךְ'], ['מֹאזְנַיִם', 'מִשְׁקָל'],
       ['מַדְחֹם', 'חֹם'], ['קִילוֹמֶטֶר', 'מֶרְחָק'], ['אַמַּת מַיִם', 'נֶפַח'],
@@ -239,6 +280,8 @@ const banks: RelationBank[] = [
   {
     skill: 'work_part',
     label: 'יצירה והחלק שלה (חלק-שלם תוך יצירה)',
+    bridge: '{b} הוא חלק מ{a}',
+    relShort: 'יצירה והחלק שבתוכה',
     pairs: [
       ['סֵפֶר', 'פֶּרֶק'], ['שִׁיר', 'בַּיִת'], ['סִפּוּר', 'פִּסְקָה'],
       ['פֶּסֶל', 'חֵלֶק'], ['סֵרֶט', 'תְּמוּנָה'], ['נְאוּם', 'מִשְׁפָּט'],
@@ -250,6 +293,8 @@ const banks: RelationBank[] = [
   {
     skill: 'intensity',
     label: 'דרגות עוצמה: אותה תופעה, מהחלש אל החזק',
+    bridge: '{b} הוא כמו {a}, רק הרבה יותר חזק',
+    relShort: 'אותו דבר — מהחלש אל החזק',
     pairs: [
       ['טִפְטוּף', 'מַבּוּל'], ['מַשָּׁב', 'סְעָרָה'], ['לְחִישָׁה', 'צְעָקָה'],
       ['חִיּוּךְ', 'צְחוֹק'], ['הֲלִיכָה', 'רִיצָה'], ['גִּבְעָה', 'הַר'],
@@ -297,6 +342,61 @@ function clusterSiblings(skill: WordRelationSkill): WordRelationSkill[] {
     }
   }
   return [...out];
+}
+
+// ── Explanation builder (house style: bridge-sentence method) ───────────
+
+function fillBridge(tpl: string, p: Pair): string {
+  return tpl.replace(/\{a\}/g, p[0]).replace(/\{b\}/g, p[1]);
+}
+
+/** The tempting distractor the generator deliberately built, threaded to the
+ *  explanation so המלכודת names the ACTUAL pair on screen. */
+interface TrapInfo {
+  /** Cluster-sibling pair — feels related, but its real relation differs. */
+  sibling: { pair: Pair; bank: RelationBank } | null;
+  /** Reversed-direction pair — right relation, wrong order. */
+  reversed: Pair | null;
+}
+
+function buildExplanation(
+  bank: RelationBank,
+  stemPair: Pair,
+  correctPair: Pair,
+  trap: TrapInfo,
+): string {
+  const lines: string[] = [
+    '🔍 השיטה: הופכים את הזוג למשפט — ורק אז בודקים את התשובות.',
+    `המשפט שלנו: "${fillBridge(bank.bridge, stemPair)}".`,
+    `נציב את התשובה: "${fillBridge(bank.bridge, correctPair)}" — מתאים בדיוק!`,
+  ];
+  // Symmetric relations (synonyms/opposites): the reversed sentence still
+  // reads fine, so we teach the same-order convention instead of claiming
+  // the sentence "doesn't work".
+  const symmetric = bank.skill === 'synonyms' || bank.skill === 'synonyms_antonyms';
+  if (trap.sibling) {
+    const { pair, bank: sibBank } = trap.sibling;
+    lines.push(
+      `⚠️ המלכודת: הזוג ${pair[0]}–${pair[1]} גם מרגיש קשור, אבל הקשר שם הוא ${sibBank.relShort} — לא אותו קשר כמו שלנו.`,
+    );
+  } else if (trap.reversed) {
+    lines.push(
+      symmetric
+        ? `⚠️ המלכודת: כיוון הפוך! בזוג ${trap.reversed[0]}–${trap.reversed[1]} המילים דומות, אבל הסדר הפוך מהזוג שלנו — ובשאלות כאלה בוחרים זוג שכתוב באותו סדר בדיוק.`
+        : `⚠️ המלכודת: כיוון הפוך! בזוג ${trap.reversed[0]}–${trap.reversed[1]} המילים מתאימות אבל הסדר הפוך. נציב: "${fillBridge(bank.bridge, trap.reversed)}" — לא מסתדר.`,
+    );
+  }
+  // When BOTH traps were built (medium/hard), המלכודת goes to the sibling
+  // (the harder rejection) and the direction trap gets a short שימו-לב line.
+  if (trap.sibling && trap.reversed) {
+    lines.push(
+      symmetric
+        ? `שימו לב: יש גם זוג בכיוון הפוך (${trap.reversed[0]}–${trap.reversed[1]}) — שומרים תמיד על אותו סדר כמו בזוג שלנו!`
+        : `שימו לב: יש גם זוג בכיוון הפוך (${trap.reversed[0]}–${trap.reversed[1]}) — במשפט יוצא "${fillBridge(bank.bridge, trap.reversed)}", והסדר חשוב!`,
+    );
+  }
+  lines.push(`לכן התשובה: ${correctPair[0]} : ${correctPair[1]} ✔`);
+  return lines.join('\n');
 }
 
 function generateOneRelation(
@@ -348,8 +448,12 @@ function generateOneRelation(
     return true;
   };
 
+  // Track WHICH deliberate traps actually landed in the options, so the
+  // explanation can call them out by name (bridge-sentence המלכודת lines).
+  const trap: TrapInfo = { sibling: null, reversed: null };
+
   const reversed = reversedPairDistractor(bank, stemPair);
-  if (reversed) tryPush(reversed);
+  if (reversed && tryPush(reversed)) trap.reversed = reversed;
 
   const siblings = clusterSiblings(skill);
   const siblingBanks = shuffle(banks.filter(b => siblings.includes(b.skill)));
@@ -359,7 +463,10 @@ function generateOneRelation(
     effectiveDiff === 'hard' ? 2 : effectiveDiff === 'medium' ? 1 : 0;
   for (const sb of siblingBanks) {
     if (distractorPairs.length >= 1 + wantedSiblingCount) break;
-    tryPush(pick(sb.pairs));
+    const sibPair = pick(sb.pairs);
+    if (tryPush(sibPair) && !trap.sibling) {
+      trap.sibling = { pair: sibPair, bank: sb };
+    }
   }
   for (const fb of farBanks) {
     if (distractorPairs.length >= 3) break;
@@ -389,7 +496,7 @@ function generateOneRelation(
     stem: fmtPair(stemPair),
     options: allOptions,
     correctOption: allOptions.indexOf(fmtPair(correctPair)),
-    explanation: `הקשר: ${bank.label}.\n${stemPair[0]} ⟵⟶ ${stemPair[1]}.\nאותו קשר ובאותו כיוון: ${correctPair[0]} ⟵⟶ ${correctPair[1]}.\nשים לב: זוג שהמילים בו בכיוון ההפוך — אינו אותו קשר!`,
+    explanation: buildExplanation(bank, stemPair, correctPair, trap),
     recommendedTimeSec: effectiveDiff === 'easy' ? 40 : effectiveDiff === 'hard' ? 60 : 50,
     generatorSource: 'generated',
     qualityScore: 89,

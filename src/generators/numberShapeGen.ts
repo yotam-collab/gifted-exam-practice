@@ -75,7 +75,7 @@ function genDividedCircle(d: Difficulty): NSGenResult {
     circle1 = [top1, top1 - k, top1 + k];
     circle2 = [top2, top2 - k];
     answer = top2 + k;
-    ruleText = `הכלל בתוך כל עיגול: המספר משמאל למטה קטן ב-${k} מהעליון, והמספר מימין למטה גדול ב-${k} מהעליון.\nבעיגול הראשון: ${top1} − ${k} = ${top1 - k}, ${top1} + ${k} = ${top1 + k} ✓\nבעיגול השני: ${top2} + ${k} = ${answer}.`;
+    ruleText = `🔍 השיטה: בעיגול השלם משווים כל מספר תחתון למספר העליון ומגלים את הקפיצה.\nבעיגול הראשון: ${top1} − ${k} = ${top1 - k} וגם ${top1} + ${k} = ${top1 + k} ✓ — שמאל קטן ב-${k}, ימין גדול ב-${k}.\nבעיגול השני חסר הימני: ${top2} + ${k} = ${answer}.\n⚠️ המלכודת: מי שמחסיר במקום להוסיף מקבל ${top2 - k} — אבל הוא כבר רשום בעיגול!\nלכן התשובה: ${answer} ✔`;
   } else if (opType === 'multiply') {
     // a × b = c in each circle
     const a1 = rand(2, d === 'hard' ? 12 : 8);
@@ -86,7 +86,10 @@ function genDividedCircle(d: Difficulty): NSGenResult {
     answer = a2 * b2;
     circle1 = [a1, b1, c1];
     circle2 = [a2, b2];
-    ruleText = `הכלל: המספר הראשון × המספר השני = המספר השלישי.\n${a2} × ${b2} = ${answer}.`;
+    const contrast = a1 + b1 !== c1
+      ? `\n✓ בדיקה: חיבור לא מסתדר (${a1} + ${b1} = ${a1 + b1}, לא ${c1}) — הכלל הוא באמת כפל.`
+      : '';
+    ruleText = `🔍 השיטה: מתחילים מהעיגול השלם — איך שני המספרים הראשונים נותנים את השלישי?\nבעיגול הראשון: ${a1} × ${b1} = ${c1} — מצאנו: כפל!${contrast}\nבאותו כלל בעיגול השני: ${a2} × ${b2} = ${answer}.\n⚠️ המלכודת: ${a2} ו-${b2} מופיעים גם בתשובות — הם כבר בעיגול, מחשבים ולא מעתיקים.\nלכן התשובה: ${answer} ✔`;
   } else if (opType === 'add') {
     // a + b = c
     const a1 = rand(3, d === 'hard' ? 20 : 12);
@@ -97,7 +100,10 @@ function genDividedCircle(d: Difficulty): NSGenResult {
     answer = a2 + b2;
     circle1 = [a1, b1, c1];
     circle2 = [a2, b2];
-    ruleText = `הכלל: המספר הראשון + המספר השני = המספר השלישי.\n${a2} + ${b2} = ${answer}.`;
+    const contrast = a1 * b1 !== c1
+      ? `\n✓ בדיקה: כפל לא מסתדר (${a1} × ${b1} = ${a1 * b1}, לא ${c1}) — הכלל הוא באמת חיבור.`
+      : '';
+    ruleText = `🔍 השיטה: מתחילים מהעיגול השלם — איך שני המספרים הראשונים נותנים את השלישי?\nבעיגול הראשון: ${a1} + ${b1} = ${c1} — מצאנו: חיבור!${contrast}\nבאותו כלל בעיגול השני: ${a2} + ${b2} = ${answer}.\n⚠️ המלכודת: ${a2} ו-${b2} מופיעים גם בתשובות — הם כבר בעיגול, מחשבים ולא מעתיקים.\nלכן התשובה: ${answer} ✔`;
   } else {
     // a ÷ b = c
     const c1 = rand(2, d === 'hard' ? 10 : 6);
@@ -109,7 +115,10 @@ function genDividedCircle(d: Difficulty): NSGenResult {
     answer = c2base;
     circle1 = [a1, b1, c1];
     circle2 = [a2, b2];
-    ruleText = `הכלל: המספר הראשון ÷ המספר השני = המספר השלישי.\n${a2} ÷ ${b2} = ${answer}.`;
+    const contrast = a1 - b1 !== c1
+      ? `\n✓ בדיקה: חיסור לא מסתדר (${a1} − ${b1} = ${a1 - b1}, לא ${c1}) — הכלל הוא באמת חילוק.`
+      : '';
+    ruleText = `🔍 השיטה: מתחילים מהעיגול השלם — איך שני המספרים הראשונים נותנים את השלישי?\nבעיגול הראשון: ${a1} ÷ ${b1} = ${c1} — מצאנו: חילוק!${contrast}\nבאותו כלל בעיגול השני: ${a2} ÷ ${b2} = ${answer}.\n⚠️ המלכודת: ${a2} ו-${b2} מופיעים גם בתשובות — הם כבר בעיגול, מחשבים ולא מעתיקים.\nלכן התשובה: ${answer} ✔`;
   }
 
   const { options, correctOption } = makeNumOptions(answer, [circle2[0], circle2[1]]);
@@ -159,12 +168,44 @@ function genPyramid(d: Difficulty): NSGenResult {
 
   const { options, correctOption } = makeNumOptions(answer);
 
+  // Explanation only — find a fully visible parent+children triple to verify
+  // the rule on before solving the hidden cell.
+  const lastRow = rows.length - 1;
+  let demoRow = -1;
+  let demoCol = -1;
+  for (let ri = 0; ri < lastRow && demoRow < 0; ri++) {
+    for (let ci = 0; ci < rows[ri].length; ci++) {
+      const touchesHidden = (ri === hideRow && ci === hideCol)
+        || (ri + 1 === hideRow && (ci === hideCol || ci + 1 === hideCol));
+      if (!touchesHidden) {
+        demoRow = ri;
+        demoCol = ci;
+        break;
+      }
+    }
+  }
+  const checkLine = demoRow >= 0
+    ? `✓ בדיקה: ${rows[demoRow + 1][demoCol]} + ${rows[demoRow + 1][demoCol + 1]} = ${rows[demoRow][demoCol]} — הכלל באמת עובד!`
+    : `✓ בדיקה: כל מספר גלוי הוא סכום השניים שמתחתיו.`;
+  let solveLine: string;
+  if (hideRow < lastRow) {
+    const l = rows[hideRow + 1][hideCol];
+    const r = rows[hideRow + 1][hideCol + 1];
+    solveLine = `מתחת לסימן השאלה יושבים ${l} ו-${r}: ${l} + ${r} = ${answer}.`;
+  } else {
+    const useLeftParent = hideCol === rows[lastRow].length - 1;
+    const pCol = useLeftParent ? hideCol - 1 : hideCol;
+    const parent = rows[lastRow - 1][pCol];
+    const sibling = useLeftParent ? rows[lastRow][hideCol - 1] : rows[lastRow][hideCol + 1];
+    solveLine = `סימן השאלה בשורה התחתונה, אז הופכים לתרגיל חסר: ${sibling} + ? = ${parent} ⇐ ? = ${parent} − ${sibling} = ${answer}.`;
+  }
+
   return {
     skill: 'number_pyramid',
     stem: 'בפירמידת המספרים, כל מספר הוא סכום שני המספרים שמתחתיו. מהו המספר החסר?',
     options,
     correctOption,
-    explanation: `כל מספר = סכום שני המספרים מתחתיו.\nהמספר החסר: ${answer}.`,
+    explanation: `🔍 השיטה: בפירמידה כל מספר = סכום שני המספרים שמתחתיו — קודם בודקים את הכלל על תא שלם.\n${checkLine}\n${solveLine}\nלכן התשובה: ${answer} ✔`,
     visualConfig: {
       type: 'number_pyramid',
       rows: displayRows,
@@ -223,16 +264,45 @@ function genGrid(d: Difficulty): NSGenResult {
   );
 
   const { options, correctOption } = makeNumOptions(answer);
-  const ruleExplain = ruleType === 'row_sum'
-    ? `כל שורה מסתכמת באותו מספר.`
-    : `כל עמודה עולה בקפיצות קבועות.`;
+
+  // Explanation only — discover the rule on complete rows/columns, verify,
+  // then solve the incomplete one as a missing-value exercise.
+  let explanation: string;
+  if (ruleType === 'row_sum') {
+    const others = grid.map((_, i) => i).filter(i => i !== hideRow);
+    const rA = others[0];
+    const rB = others[1];
+    const sumA = grid[rA].reduce((s, v) => s + v, 0);
+    const sumB = grid[rB].reduce((s, v) => s + v, 0);
+    const visibleSum = grid[hideRow].reduce((s, v, i) => (i === hideCol ? s : s + v), 0);
+    const rowWithQ = grid[hideRow].map((v, i) => (i === hideCol ? '?' : String(v))).join(' + ');
+    explanation = `🔍 השיטה: בטבלה כזו בודקים קודם כמה נותנת כל שורה שלמה.\nשורה ${rA + 1}: ${grid[rA].join(' + ')} = ${sumA} — מצאנו סכום!\n✓ בדיקה: שורה ${rB + 1}: ${grid[rB].join(' + ')} = ${sumB} — שוב אותו סכום! הכלל: כל שורה = ${sumA}.\nבשורה של סימן השאלה: ${rowWithQ} = ${sumA} ⇐ ? = ${sumA} − ${visibleSum} = ${answer}.\nלכן התשובה: ${answer} ✔`;
+  } else {
+    const inc = grid[1][hideCol] - grid[0][hideCol];
+    const demoC = hideCol === 0 ? 1 : 0;
+    const dInc = grid[1][demoC] - grid[0][demoC];
+    let adj = -1;
+    for (let r = 0; r < size - 1; r++) {
+      if (r !== hideRow && r + 1 !== hideRow) {
+        adj = r;
+        break;
+      }
+    }
+    const hiddenColLine = adj >= 0
+      ? `בעמודה של סימן השאלה: מ-${grid[adj][hideCol]} ל-${grid[adj + 1][hideCol]} הקפיצה היא ${inc}.`
+      : `בעמודה של סימן השאלה: מ-${grid[0][hideCol]} עד ${grid[2][hideCol]} יש 2 קפיצות ביחד (${grid[2][hideCol] - grid[0][hideCol]}), אז כל קפיצה = ${inc}.`;
+    const applyLine = hideRow > 0
+      ? `סימן השאלה בא אחרי ${grid[hideRow - 1][hideCol]}: ${grid[hideRow - 1][hideCol]} + ${inc} = ${answer}.`
+      : `סימן השאלה בא לפני ${grid[1][hideCol]}: ${grid[1][hideCol]} − ${inc} = ${answer}.`;
+    explanation = `🔍 השיטה: בטבלה כזו יורדים בכל עמודה ובודקים בכמה קופצים בכל צעד.\nנתבונן בעמודה שלמה: מ-${grid[0][demoC]} ל-${grid[1][demoC]} קפצנו ${dInc}.\n✓ בדיקה: מ-${grid[1][demoC]} ל-${grid[2][demoC]} שוב ${dInc} — לכל עמודה קפיצה קבועה משלה!\n${hiddenColLine}\n${applyLine}\nלכן התשובה: ${answer} ✔`;
+  }
 
   return {
     skill: 'number_grid',
     stem: 'בטבלת המספרים יש כלל נסתר. מהו המספר החסר?',
     options,
     correctOption,
-    explanation: `${ruleExplain}\nהמספר החסר: ${answer}.`,
+    explanation,
     visualConfig: {
       type: 'number_grid',
       rows: displayGrid,
@@ -283,25 +353,27 @@ function genTriangle(d: Difficulty): NSGenResult {
   // not the known total. Previous version always wrote "top + bl + br = center",
   // so when the kid hid e.g. `top`, the explanation's last `=` was the known
   // center — kids would pick that as the answer and get marked wrong.
-  let ruleExplain: string;
+  const trapLine = `⚠️ המלכודת: מספרים שכבר רשומים במשולש מופיעים גם בתשובות — מחשבים, לא מעתיקים.`;
+  let explanation: string;
   if (ruleType === 'sum_center') {
     if (hidePos === 'center') {
-      ruleExplain = `הכלל: סכום שלושת הפינות = המספר במרכז.\n${top} + ${bl} + ${br} = ${center}.`;
-    } else if (hidePos === 'top') {
-      ruleExplain = `הכלל: סכום שלושת הפינות = המספר במרכז (${center}).\nלמצוא את העליון: ${center} − ${bl} − ${br} = ${top}.`;
-    } else if (hidePos === 'bottomLeft') {
-      ruleExplain = `הכלל: סכום שלושת הפינות = המספר במרכז (${center}).\nלמצוא את שמאל-תחתון: ${center} − ${top} − ${br} = ${bl}.`;
+      explanation = `🔍 השיטה: במשולש כזה בודקים איך שלוש הפינות מתחברות למספר במרכז.\nמחברים את הפינות: ${top} + ${bl} + ${br} = ${center} — זה בדיוק המספר שבמרכז.\n${trapLine}\nלכן התשובה: ${answer} ✔`;
     } else {
-      ruleExplain = `הכלל: סכום שלושת הפינות = המספר במרכז (${center}).\nלמצוא את ימין-תחתון: ${center} − ${top} − ${bl} = ${br}.`;
+      const solve = hidePos === 'top'
+        ? `? + ${bl} + ${br} = ${center} ⇐ ? = ${center} − ${bl} − ${br} = ${top}`
+        : hidePos === 'bottomLeft'
+          ? `${top} + ? + ${br} = ${center} ⇐ ? = ${center} − ${top} − ${br} = ${bl}`
+          : `${top} + ${bl} + ? = ${center} ⇐ ? = ${center} − ${top} − ${bl} = ${br}`;
+      explanation = `🔍 השיטה: במשולש כזה סכום שלוש הפינות = המספר במרכז.\nהופכים לתרגיל חסר: ${solve}.\n✓ בדיקה: ${top} + ${bl} + ${br} = ${center} — מסתדר בול עם המרכז!\n${trapLine}\nלכן התשובה: ${answer} ✔`;
     }
   } else {
     // product: top × bl = br. Center isn't hidden in this branch (filtered above).
     if (hidePos === 'top') {
-      ruleExplain = `הכלל: עליון × שמאל-תחתון = ימין-תחתון.\nלמצוא את העליון: ${br} ÷ ${bl} = ${top}.`;
+      explanation = `🔍 השיטה: במשולש כזה עליון × שמאל-תחתון = ימין-תחתון.\nהופכים לתרגיל חסר: ? × ${bl} = ${br} ⇐ ? = ${br} ÷ ${bl} = ${top}.\n✓ בדיקה: ${top} × ${bl} = ${br} — הכלל עובד!\n${trapLine}\nלכן התשובה: ${answer} ✔`;
     } else if (hidePos === 'bottomLeft') {
-      ruleExplain = `הכלל: עליון × שמאל-תחתון = ימין-תחתון.\nלמצוא את שמאל-תחתון: ${br} ÷ ${top} = ${bl}.`;
+      explanation = `🔍 השיטה: במשולש כזה עליון × שמאל-תחתון = ימין-תחתון.\nהופכים לתרגיל חסר: ${top} × ? = ${br} ⇐ ? = ${br} ÷ ${top} = ${bl}.\n✓ בדיקה: ${top} × ${bl} = ${br} — הכלל עובד!\n${trapLine}\nלכן התשובה: ${answer} ✔`;
     } else {
-      ruleExplain = `הכלל: עליון × שמאל-תחתון = ימין-תחתון.\n${top} × ${bl} = ${br}.`;
+      explanation = `🔍 השיטה: מחפשים פעולה שמקשרת בין העליון לשמאל-תחתון.\nננסה כפל: ${top} × ${bl} = ${top * bl} — מצאנו את הכלל!\n${trapLine}\nלכן התשובה: ${answer} ✔`;
     }
   }
 
@@ -310,7 +382,7 @@ function genTriangle(d: Difficulty): NSGenResult {
     stem: 'במשולש המספרים יש כלל מתמטי. מהו המספר החסר?',
     options,
     correctOption,
-    explanation: `${ruleExplain}\nהמספר החסר הוא ${answer}.`,
+    explanation,
     visualConfig: {
       type: 'number_triangle',
       top: display.top as number | string,
@@ -367,11 +439,15 @@ function genArrowChain(d: Difficulty): NSGenResult {
 
   const stem = 'בשרשרת המספרים, כל חץ מסמל פעולה אחת. מהו המספר החסר?';
   const { options, correctOption } = makeNumOptions(answer, [steps[hideIdx - 1].value]);
+  const s0 = steps[0].value;
+  const s1 = steps[1].value;
+  const prev = steps[hideIdx - 1].value;
+  const kAdd = s1 - s0;
   const explanation = flavor === 'sub'
-    ? `כל חץ = להחסיר 1. בין המספר האחרון יש 3 חצים → להחסיר 3.\n${steps[hideIdx - 1].value} − 3 = ${answer}.`
+    ? `🔍 השיטה: קודם מגלים כמה שווה חץ אחד — מהמעבר הראשון.\nמ-${s0} ל-${s1} יש חץ אחד, וירדנו ב-1. מצאנו: כל חץ = פחות 1.\n✓ בדיקה: במעבר הבא יש 2 חצים: ${s1} − 2 = ${steps[2].value} — מסתדר!\nלפני סימן השאלה יש 3 חצים: ${prev} − 3 = ${answer}.\n⚠️ המלכודת: ${prev} כבר כתוב בשרשרת — מי שלא סופר חצים בוחר בו בטעות.\nלכן התשובה: ${answer} ✔`
     : flavor === 'add'
-      ? `כל חץ = להוסיף ${(steps[1].value as number) - (steps[0].value as number)}. בין המספר האחרון יש 3 חצים → להוסיף ${3 * ((steps[1].value as number) - (steps[0].value as number))}.\nהתשובה: ${answer}.`
-      : `כל חץ = לכפול ב-2. בין המספר האחרון יש 2 חצים → לכפול ב-4.\nהתשובה: ${answer}.`;
+      ? `🔍 השיטה: קודם מגלים כמה שווה חץ אחד — מהמעבר הראשון.\nמ-${s0} ל-${s1} יש חץ אחד, ועלינו ב-${kAdd}. מצאנו: כל חץ = ועוד ${kAdd}.\n✓ בדיקה: במעבר הבא יש 2 חצים: ${s1} + ${2 * kAdd} = ${steps[2].value} — מסתדר!\nלפני סימן השאלה יש 3 חצים: ${prev} + ${3 * kAdd} = ${answer}.\n⚠️ המלכודת: ${prev} כבר כתוב בשרשרת — מי שלא סופר חצים בוחר בו בטעות.\nלכן התשובה: ${answer} ✔`
+      : `🔍 השיטה: קודם מגלים כמה שווה חץ אחד — מהמעבר הראשון.\nמ-${s0} ל-${s1} יש חץ אחד, והמספר הוכפל: ${s0} × 2 = ${s1}. מצאנו: כל חץ = כפול 2.\nלפני סימן השאלה יש 2 חצים — מכפילים פעמיים: ${prev} × 2 × 2 = ${answer}.\n⚠️ המלכודת: ${prev} כבר כתוב בשרשרת, והוא לא המספר החסר.\nלכן התשובה: ${answer} ✔`;
 
   return {
     skill: 'number_flow',
@@ -410,7 +486,7 @@ function genBidirectionalFlow(d: Difficulty): NSGenResult {
     row2 = { left: l2, box: l2 + r2, right: r2 };
     missingSide = 'box';
     answer = row2.box;
-    explanation = `הכלל בקופסה: שמאל + ימין = קופסה.\nשורה 1: ${l1} + ${r1} = ${row1.box} ✓\nשורה 2: ${l2} + ${r2} = ${answer}.`;
+    explanation = `🔍 השיטה: מהשורה השלמה מגלים מה הקופסה עושה לשני המספרים.\nשורה 1: ${l1} + ${r1} = ${row1.box} ✓ — הקופסה מחברת את שמאל וימין.\nשורה 2 באותו כלל: ${l2} + ${r2} = ${answer}.\n⚠️ המלכודת: מספרים שכבר רשומים בציור מופיעים בתשובות — מחשבים, לא מעתיקים.\nלכן התשובה: ${answer} ✔`;
   } else if (ruleType === 'diff_right') {
     // right = left − box (the box subtracts)
     const l1 = rand(15, 30), b1 = rand(2, d === 'hard' ? 12 : 8);
@@ -419,7 +495,7 @@ function genBidirectionalFlow(d: Difficulty): NSGenResult {
     row2 = { left: l2, box: b2, right: l2 - b2 };
     missingSide = 'right';
     answer = row2.right;
-    explanation = `הכלל: הקופסה מורידה מהמספר השמאלי.\nשורה 1: ${l1} − ${b1} = ${row1.right} ✓\nשורה 2: ${l2} − ${b2} = ${answer}.`;
+    explanation = `🔍 השיטה: מהשורה השלמה מגלים מה הקופסה עושה לשני המספרים.\nשורה 1: ${l1} − ${b1} = ${row1.right} ✓ — הקופסה מחסירה את המספר שבתוכה.\nשורה 2 באותו כלל: ${l2} − ${b2} = ${answer}.\n⚠️ המלכודת: מספרים שכבר רשומים בציור מופיעים בתשובות — מחשבים, לא מעתיקים.\nלכן התשובה: ${answer} ✔`;
   } else {
     // box = left × right (small numbers)
     const l1 = rand(2, 6), r1 = rand(2, 6);
@@ -428,7 +504,7 @@ function genBidirectionalFlow(d: Difficulty): NSGenResult {
     row2 = { left: l2, box: l2 * r2, right: r2 };
     missingSide = 'box';
     answer = row2.box;
-    explanation = `הכלל בקופסה: שמאל × ימין = קופסה.\nשורה 1: ${l1} × ${r1} = ${row1.box} ✓\nשורה 2: ${l2} × ${r2} = ${answer}.`;
+    explanation = `🔍 השיטה: מהשורה השלמה מגלים מה הקופסה עושה לשני המספרים.\nשורה 1: ${l1} × ${r1} = ${row1.box} ✓ — הקופסה מכפילה את שמאל בימין.\nשורה 2 באותו כלל: ${l2} × ${r2} = ${answer}.\n⚠️ המלכודת: מספרים שכבר רשומים בציור מופיעים בתשובות — מחשבים, לא מעתיקים.\nלכן התשובה: ${answer} ✔`;
   }
 
   const { options, correctOption } = makeNumOptions(answer, [row1.box, row2.left, row2.right].filter(v => v !== answer));
@@ -499,11 +575,6 @@ function genFunctionMachine(d: Difficulty): NSGenResult {
 
   const opSymbol = rule === 'add' ? '+' : rule === 'sub' ? '−' : rule === 'mul' ? '×' : '÷';
 
-  const ruleText = rule === 'add' ? `הקלט + ${k} = הפלט`
-    : rule === 'sub' ? `הקלט − ${k} = הפלט`
-    : rule === 'mul' ? `הקלט × ${k} = הפלט`
-    : `הקלט ÷ ${k} = הפלט`;
-
   const stem = 'בכל שורה נכנס מספר משמאל למכונה, ויוצא מספר מימין. המכונה עושה את אותה פעולה בכל שורה. מהו המספר החסר בשורה האחרונה?';
   const { options, correctOption } = makeNumOptions(answer, [
     rule === 'add' ? inputs[2] : inputs[2] + 1,
@@ -516,7 +587,7 @@ function genFunctionMachine(d: Difficulty): NSGenResult {
     stem,
     options,
     correctOption,
-    explanation: `מהשורה הראשונה: ${inputs[0]} ${opSymbol} ? = ${outputs[0]} → המכונה מבצעת ${opSymbol}${k}.\nמהשורה השנייה: ${inputs[1]} ${opSymbol} ${k} = ${outputs[1]} ✓ (אותו כלל).\nשורה אחרונה: ${inputs[2]} ${opSymbol} ${k} = ${answer}.\nהכלל: ${ruleText}.`,
+    explanation: `🔍 השיטה: מגלים את הפעולה מהשורה הראשונה, בודקים בשנייה — ורק אז פותרים.\nשורה 1: ${inputs[0]} הפך ל-${outputs[0]}. מה קרה? ${inputs[0]} ${opSymbol} ${k} = ${outputs[0]} — המכונה עושה ${opSymbol}${k}.\n✓ בדיקה: שורה 2: ${inputs[1]} ${opSymbol} ${k} = ${outputs[1]} — אותו כלל בדיוק!\nשורה 3: ${inputs[2]} ${opSymbol} ${k} = ${answer}.\n⚠️ המלכודת: ${inputs[2]} מופיע בתשובות — זה מה שנכנס למכונה, לא מה שיצא.\nלכן התשובה: ${answer} ✔`,
     visualConfig: {
       type: 'bidirectional_flow',
       rows,
@@ -556,7 +627,7 @@ function genWheelSums(d: Difficulty): NSGenResult {
     stem: 'בגלגל: כל מספר חיצוני שווה לסכום שני המספרים הפנימיים שנוגעים בקו שלו. מהו המספר החסר?',
     options,
     correctOption,
-    explanation: `כל מספר חיצוני יושב על קו שמפריד בין שני חלקים פנימיים — והוא הסכום שלהם.\nליד סימן השאלה נמצאים החלקים ${a} ו-${b}.\n${a} + ${b} = ${answer}.\nמלכודת נפוצה: לחבר חלקים שלא נוגעים באותו קו.`,
+    explanation: `🔍 השיטה: כל מספר חיצוני יושב על קו — קודם מזהים אילו שני חלקים פנימיים נוגעים באותו קו.\n✓ בדיקה: על קו אחר נוגעים ${inner[(missingOuterIndex + 2) % n]} ו-${inner[(missingOuterIndex + 3) % n]}, ובאמת ${inner[(missingOuterIndex + 2) % n]} + ${inner[(missingOuterIndex + 3) % n]} = ${outerFull[(missingOuterIndex + 3) % n]} — הכלל עובד!\nליד סימן השאלה נוגעים ${a} ו-${b}: ${a} + ${b} = ${answer}.\n⚠️ המלכודת: לחבר חלקים שלא נוגעים באותו קו (למשל ${a} + ${nonAdjacent} = ${a + nonAdjacent}) — או להחסיר במקום לחבר.\nלכן התשובה: ${answer} ✔`,
     visualConfig: {
       type: 'number_wheel',
       inner,

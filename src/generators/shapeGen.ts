@@ -149,7 +149,7 @@ function genAnalogy(): ShapeGenResult {
     stem: 'מהי הצורה החסרה?',
     options: allOptions.map(describeShape),
     correctOption: correctIdx,
-    explanation: `הכלל: ${shapeNameHe[type1]} ${fillNameHe[fill1]} → ${shapeNameHe[type1]} ${fillNameHe[fill2]}.\nלכן ${shapeNameHe[type2]} ${fillNameHe[fill1]} → ${shapeNameHe[type2]} ${fillNameHe[fill2]}.`,
+    explanation: `🔍 השיטה: באנלוגיה בודקים מה קרה בין הצורה הראשונה לשנייה — ואז עושים בדיוק אותו דבר לצורה השלישית.\nהכלל: הצורה נשארה ${shapeNameHe[type1]}, רק המילוי השתנה (${fillNameHe[fill1]} → ${fillNameHe[fill2]}).\nמיישמים על ${shapeNameHe[type2]} ${fillNameHe[fill1]}: משנים רק את המילוי.\n⚠️ המלכודת: ${shapeNameHe[type2]} ${fillNameHe[fill1]} נראה מוכר — אבל בו לא השתנה כלום.\nלכן התשובה: ${shapeNameHe[type2]} ${fillNameHe[fill2]} ✔`,
     visualConfig: {
       stemLayout: 'analogy',
       stemShapes: [A, B, C],
@@ -183,7 +183,7 @@ function genScaleAnalogy(): ShapeGenResult {
     stem: 'מהי הצורה החסרה?',
     options: allOptions.map(describeShape),
     correctOption: allOptions.indexOf(correct),
-    explanation: `הכלל: קטן → גדול.\n${shapeNameHe[type1]} קטן → גדול. לכן ${shapeNameHe[type2]} קטן → גדול.`,
+    explanation: `🔍 השיטה: בודקים מה השתנה בין הצורה הראשונה לשנייה — ואז עושים אותו שינוי לשלישית.\nהכלל: ${shapeNameHe[type1]} קטן → ${shapeNameHe[type1]} גדול. רק הגודל השתנה, הצורה נשמרה.\nמיישמים: ${shapeNameHe[type2]} קטן צריך להפוך ל${shapeNameHe[type2]} גדול.\n⚠️ המלכודת: ${shapeNameHe[type1]} גדול — הגודל נכון אבל זו הצורה מהזוג הראשון, לא שלנו.\nלכן התשובה: ${shapeNameHe[type2]} גדול ✔`,
     visualConfig: {
       stemLayout: 'analogy',
       stemShapes: [A, B, C],
@@ -215,7 +215,7 @@ function genTransformation(): ShapeGenResult {
     stem: 'מה הכלל שחל על הצורות?',
     options,
     correctOption: options.indexOf(`הצורה השתנתה מ${fillNameHe[beforeFill]} ל${fillNameHe[afterFill]}`),
-    explanation: `הצורה נשארה ${shapeNameHe[type]}, אבל המילוי השתנה: ${ruleText}.`,
+    explanation: `🔍 השיטה: משווים את שתי הצורות — מה נשאר אותו דבר, ומה השתנה?\nהצורה נשארה ${shapeNameHe[type]} — לא הסתובבה ולא הוקטנה.\nרק המילוי השתנה: ${ruleText}.\n⚠️ המלכודת: "מ${fillNameHe[afterFill]} ל${fillNameHe[beforeFill]}" — כיוון הפוך! בודקים תמיד מה היה קודם ומה אחר כך.\nלכן התשובה: הצורה השתנתה מ${fillNameHe[beforeFill]} ל${fillNameHe[afterFill]} ✔`,
     visualConfig: {
       stemLayout: 'series',
       stemShapes: [before, after],
@@ -248,7 +248,7 @@ function genSeries(): ShapeGenResult {
     stem: 'מהי הצורה הבאה בסדרה?',
     options: allOptions.map(describeShape),
     correctOption: allOptions.indexOf(correct),
-    explanation: `הסדרה מתחלפת: ${shapeNameHe[typeA]}, ${shapeNameHe[typeB]}, ${shapeNameHe[typeA]}, ${shapeNameHe[typeB]}...\nהבא: ${shapeNameHe[typeB]}.`,
+    explanation: `🔍 השיטה: משווים כל צורה לזו שלפניה — מה השתנה? ומה חוזר על עצמו?\nמצאנו: ${shapeNameHe[typeA]}, ${shapeNameHe[typeB]}, ${shapeNameHe[typeA]}, ${shapeNameHe[typeB]}... — הצורות מתחלפות לסירוגין.\nהאחרונה היא ${shapeNameHe[typeA]}, אז עכשיו תור ${shapeNameHe[typeB]}.\n⚠️ המלכודת: עוד ${shapeNameHe[typeA]} — אבל הכלל אומר להתחלף, לא לחזור על אותה צורה פעמיים.\nלכן התשובה: ${shapeNameHe[typeB]} ${fillNameHe[fill]} ✔`,
     visualConfig: {
       stemLayout: 'series',
       stemShapes: series,
@@ -278,7 +278,7 @@ function genFillSeries(): ShapeGenResult {
     stem: 'מהי הצורה הבאה בסדרה?',
     options: allOptions.map(describeShape),
     correctOption: allOptions.indexOf(correct),
-    explanation: `הכלל: ריק → מפוספס → מלא, חוזר.\nהבא בסדרה: ${shapeNameHe[type]} מלא.`,
+    explanation: `🔍 השיטה: משווים כל צורה לזו שלפניה — מה השתנה? ומה חוזר על עצמו?\nהצורה תמיד ${shapeNameHe[type]}; המילוי נע במחזור: ריק → מפוספס → מלא, וחוזר חלילה.\nעצרנו אחרי ריק ומפוספס — עכשיו תור המלא.\n⚠️ המלכודת: ${shapeNameHe[type]} ריק מתחיל מחזור חדש — אבל קודם חייבים לסיים את המחזור במלא.\nלכן התשובה: ${shapeNameHe[type]} מלא ✔`,
     visualConfig: {
       stemLayout: 'series',
       stemShapes: series,
@@ -308,7 +308,7 @@ function genOddOneOut(): ShapeGenResult {
     stem: 'איזו צורה שונה מהאחרות?',
     options: labels,
     correctOption: oddIdx,
-    explanation: `3 צורות הן ${shapeNameHe[commonType]}, אבל צורה ${labels[oddIdx]} היא ${shapeNameHe[oddType]} — והיא השונה.`,
+    explanation: `🔍 השיטה: מחפשים מה משותף לרוב הצורות — ואז מי ששוברת את הכלל.\nמצאנו: שלוש צורות הן ${shapeNameHe[commonType]} — זה המשותף.\nצורה ${labels[oddIdx]} היא ${shapeNameHe[oddType]} — היא לא שייכת לקבוצה.\nלכן התשובה: ${labels[oddIdx]} ✔`,
     visualConfig: {
       stemLayout: 'odd_one_out',
       stemShapes,
@@ -337,7 +337,7 @@ function genFillOddOneOut(): ShapeGenResult {
     stem: 'איזו צורה שונה מהאחרות?',
     options: labels,
     correctOption: oddIdx,
-    explanation: `3 צורות הן ${fillNameHe[commonFill]}, אבל צורה ${labels[oddIdx]} היא ${fillNameHe[oddFill]} — והיא השונה.`,
+    explanation: `🔍 השיטה: כשכל הצורות זהות בצורתן — בודקים את המילוי של כל אחת.\nמצאנו: שלוש צורות הן ${fillNameHe[commonFill]} — זה המשותף.\nצורה ${labels[oddIdx]} היא ${fillNameHe[oddFill]} — היא שוברת את הכלל.\nלכן התשובה: ${labels[oddIdx]} ✔`,
     visualConfig: {
       stemLayout: 'odd_one_out',
       stemShapes,
@@ -375,7 +375,7 @@ function genGridPattern(): ShapeGenResult {
     stem: 'מהי הצורה החסרה בטבלה?',
     options: allOptions.map(describeShape),
     correctOption: allOptions.indexOf(correct),
-    explanation: `שורה 1: ${shapeNameHe[type1]}. שורה 2: ${shapeNameHe[type2]}.\nעמודה 1: ${fillNameHe[fill1]}. עמודה 2: ${fillNameHe[fill2]}.\nחסר: ${shapeNameHe[type2]} ${fillNameHe[fill2]}.`,
+    explanation: `🔍 השיטה: בטבלה בודקים שני כיוונים — מה משותף לכל שורה, ומה משותף לכל עמודה.\nכלל 1 — שורות: שורה 1 כולה ${shapeNameHe[type1]}, שורה 2 כולה ${shapeNameHe[type2]}.\nכלל 2 — עמודות: עמודה 1 ${fillNameHe[fill1]}, עמודה 2 ${fillNameHe[fill2]}.\nהמשבצת החסרה בשורה 2 ובעמודה 2 — חייבת לקיים את שני הכללים.\n⚠️ המלכודת: ${shapeNameHe[type2]} ${fillNameHe[fill1]} כמעט נכון — קיים רק כלל אחד מהשניים (השורה בלי העמודה).\nלכן התשובה: ${shapeNameHe[type2]} ${fillNameHe[fill2]} ✔`,
     visualConfig: {
       stemLayout: 'grid',
       gridCells: grid,
@@ -415,7 +415,7 @@ function genGrid3x3(): ShapeGenResult {
     stem: 'מהי הצורה החסרה במשבצת הריקה?',
     options: allOptions.map(describeShape),
     correctOption: allOptions.indexOf(correct),
-    explanation: `כל שורה היא צורה אחרת: ${shapeNameHe[types[0]]}, ${shapeNameHe[types[1]]}, ${shapeNameHe[types[2]]}.\nכל עמודה היא מילוי אחר: ${fillNameHe[fills[0]]}, ${fillNameHe[fills[1]]}, ${fillNameHe[fills[2]]}.\nהשורה האחרונה היא ${shapeNameHe[types[2]]}, העמודה האחרונה ${fillNameHe[fills[2]]}.\nלכן הצורה החסרה: ${shapeNameHe[types[2]]} ${fillNameHe[fills[2]]}.`,
+    explanation: `🔍 השיטה: בטבלה בודקים שני כיוונים — מה משותף לכל שורה, ומה משותף לכל עמודה.\nכלל 1 — כל שורה היא צורה אחרת: ${shapeNameHe[types[0]]}, ${shapeNameHe[types[1]]}, ${shapeNameHe[types[2]]}.\nכלל 2 — כל עמודה היא מילוי אחר: ${fillNameHe[fills[0]]}, ${fillNameHe[fills[1]]}, ${fillNameHe[fills[2]]}.\nהמשבצת החסרה: שורת ה${shapeNameHe[types[2]]} ועמודת ה${fillNameHe[fills[2]]}.\n⚠️ המלכודת: ${shapeNameHe[types[2]]} ${fillNameHe[fills[0]]} כמעט נכון — השורה נכונה, אבל המילוי נלקח מעמודה אחרת.\nלכן התשובה: ${shapeNameHe[types[2]]} ${fillNameHe[fills[2]]} ✔`,
     visualConfig: {
       stemLayout: 'grid',
       gridCells: grid,
@@ -447,7 +447,7 @@ function genCutShapeAnalogy(): ShapeGenResult {
     stem: 'מהי הצורה החסרה?',
     options: allOptions.map(describeShape),
     correctOption: allOptions.indexOf(correct),
-    explanation: 'הכלל: מסירים רבע מהצורה (פינה אחת).\nריבוע ⟶ ריבוע ללא פינה.\nאותו הכלל על עיגול ⟶ עיגול ללא רבע (כמו פקמן).',
+    explanation: '🔍 השיטה: בודקים מה קרה לצורה הראשונה — ואז עושים בדיוק אותו דבר לצורה השלישית.\nהכלל: מסירים רבע מהצורה (פינה אחת). ריבוע ⟶ ריבוע חסר פינה.\nאותו כלל על עיגול: מסירים רבע ⟶ עיגול חסר רבע.\n⚠️ המלכודת: חצי עיגול מפתה — אבל שם הסירו חצי, לא רבע. ועיגול שלם? בו לא הסירו כלום.\nלכן התשובה: עיגול חסר רבע ✔',
     visualConfig: {
       stemLayout: 'analogy',
       stemShapes: [A, B, C],
@@ -482,7 +482,7 @@ function genDotCountSeries(): ShapeGenResult {
     stem: 'מהי הצורה הבאה בסדרה?',
     options: allOptions.map(o => `משושה עם ${o.perimeterDots} נקודות`),
     correctOption: allOptions.indexOf(correct),
-    explanation: `מספר הנקודות גדל ב-1 בכל שלב: ${startDots}, ${startDots + 1}, ${startDots + 2}, ${startDots + 3}.\nהבא: ${startDots + 4}.`,
+    explanation: `🔍 השיטה: כשהצורה לא משתנה — סופרים! משווים את מספר הנקודות בין שכנים.\n${startDots}→${startDots + 1}: נוספה נקודה. ${startDots + 1}→${startDots + 2}: שוב אחת. מצאנו את הכלל — עוד נקודה אחת בכל שלב.\n✓ בדיקה: ${startDots + 2}+1=${startDots + 3}, מתאים לצורה האחרונה.\n⚠️ המלכודת: ${startDots + 3} נקודות — בדיוק כמו האחרונה בסדרה, שכחנו להוסיף 1!\nלכן התשובה: משושה עם ${startDots + 4} נקודות ✔`,
     visualConfig: {
       stemLayout: 'series',
       stemShapes: series,
@@ -521,7 +521,7 @@ function genMultiRuleAnalogy(): ShapeGenResult {
     stem: 'מהי הצורה החסרה?',
     options: allOptions.map(describeShape),
     correctOption: allOptions.indexOf(correct),
-    explanation: `שני שינויים בו-זמנית:\n1) הצורה גדלה (קטן → גדול).\n2) המילוי השתנה (${fillNameHe[fillStart]} → ${fillNameHe[fillEnd]}).\n${shapeNameHe[type1]} ${fillNameHe[fillStart]} קטן ⟶ ${shapeNameHe[type1]} ${fillNameHe[fillEnd]} גדול.\nאותם שינויים על ${shapeNameHe[type2]}: התשובה היא ${shapeNameHe[type2]} ${fillNameHe[fillEnd]} גדול.`,
+    explanation: `🔍 השיטה: בודקים את כל מה שהשתנה בין הצורה הראשונה לשנייה — לפעמים זה יותר מדבר אחד!\nכלל 1: הגודל — קטן → גדול.\nכלל 2: המילוי — ${fillNameHe[fillStart]} → ${fillNameHe[fillEnd]}.\nמיישמים את שני הכללים על ${shapeNameHe[type2]} ${fillNameHe[fillStart]} הקטן.\n⚠️ המלכודת: ${shapeNameHe[type2]} ${fillNameHe[fillEnd]} קטן כמעט נכון — קיים רק כלל אחד מהשניים (המילוי בלי הגודל).\nלכן התשובה: ${shapeNameHe[type2]} ${fillNameHe[fillEnd]} גדול ✔`,
     visualConfig: {
       stemLayout: 'analogy',
       stemShapes: [A, B, C],
@@ -559,7 +559,7 @@ function genMultiRuleSeries(): ShapeGenResult {
     stem: 'מהי הצורה הבאה בסדרה?',
     options: allOptions.map(o => `חץ ${fillNameHe[o.fill] || ''} מצביע ${rotName(o.rotation || 0)}`),
     correctOption: allOptions.indexOf(correct),
-    explanation: `יש שני כללים פועלים בו-זמנית:\n1) החץ מסתובב ב-90° בכיוון השעון בכל שלב.\n2) המילוי מתחלף במחזור: ריק → מפוספס → מלא → ריק...\nהשלב הבא: סיבוב ${90 * correctIdx % 360}°, מילוי ${fillNameHe[fills[correctIdx % 3]]}.`,
+    explanation: `🔍 השיטה: משווים כל חץ לזה שלפניו — בודקים גם את הכיוון וגם את המילוי.\nכלל 1: החץ מסתובב 90° עם כיוון השעון בכל שלב.\nכלל 2: המילוי נע במחזור — ריק → מפוספס → מלא, וחוזר חלילה.\nהשלב הבא: חץ שמצביע ${rotName(90 * correctIdx % 360)}, מילוי ${fillNameHe[fills[correctIdx % 3]]}.\n⚠️ המלכודת: חץ שנשאר בכיוון של האחרון — כמעט נכון, קיים רק כלל המילוי בלי הסיבוב.\nלכן התשובה: חץ ${fillNameHe[fills[correctIdx % 3]]} שמצביע ${rotName(90 * correctIdx % 360)} ✔`,
     visualConfig: {
       stemLayout: 'series',
       stemShapes: series,
@@ -598,7 +598,7 @@ function genCompoundTransformation(): ShapeGenResult {
     stem: 'מהי הצורה החסרה? שים לב לצורה החיצונית וגם לצורה הפנימית.',
     options: allOptions.map(o => `${shapeNameHe[o.type] || o.type} עם ${shapeNameHe[(o.innerShape?.type) || ''] || 'צורה'} בפנים`),
     correctOption: allOptions.indexOf(correct),
-    explanation: `שני שינויים שמתחלפים:\n• הצורה החיצונית מתחלפת בין ${shapeNameHe[outer1]} ל-${shapeNameHe[outer2]}.\n• הצורה הפנימית מתחלפת בין ${shapeNameHe[inner1]} ל-${shapeNameHe[inner2]}.\nהזוג הזה ($A→B$) ⟶ הזוג הבא ($C→?$) צריך לקיים את אותם שני חילופים. התשובה: ${shapeNameHe[outer2]} עם ${shapeNameHe[inner1]} בפנים.`,
+    explanation: `🔍 השיטה: בודקים שתי שכבות בנפרד — הצורה החיצונית וגם הצורה הפנימית.\nכלל 1: החיצונית מתחלפת בין ${shapeNameHe[outer1]} ל-${shapeNameHe[outer2]}.\nכלל 2: הפנימית מתחלפת בין ${shapeNameHe[inner1]} ל-${shapeNameHe[inner2]}.\nמיישמים את שני החילופים על הצורה השלישית.\n⚠️ המלכודת: ${shapeNameHe[outer2]} עם ${shapeNameHe[inner2]} בפנים — כמעט נכון, רק החיצונית התחלפה והפנימית נשכחה.\nלכן התשובה: ${shapeNameHe[outer2]} עם ${shapeNameHe[inner1]} בפנים ✔`,
     visualConfig: {
       stemLayout: 'analogy',
       stemShapes: [A, B, C],
@@ -635,7 +635,7 @@ function genLongSeries(): ShapeGenResult {
     stem: 'מהי הצורה הבאה בסדרה?',
     options: allOptions.map(o => `${shapeNameHe[o.type]} ${fillNameHe[o.fill]} עם ${o.perimeterDots} נקודות`),
     correctOption: allOptions.indexOf(correct),
-    explanation: `שני כללים פועלים יחד:\n• מספר הנקודות עולה ב-1 בכל שלב.\n• המילוי מתחלף: ריק/מפוספס לסירוגין.\nאחרי 6 שלבים, השלב הבא: 7 נקודות, מילוי ריק.`,
+    explanation: `🔍 השיטה: משווים כל צורה לזו שלפניה — מה השתנה? ומה חוזר על עצמו?\nכלל 1: מספר הנקודות עולה ב-1 בכל שלב (1, 2, 3...).\nכלל 2: המילוי מתחלף לסירוגין — ריק, מפוספס, ריק, מפוספס...\nהאחרונה: 6 נקודות מפוספס. הבאה: 7 נקודות, ריק.\n⚠️ המלכודת: 7 נקודות מפוספס — כמעט נכון, קיים רק כלל הנקודות בלי חילוף המילוי.\nלכן התשובה: ${shapeNameHe[type]} ריק עם 7 נקודות ✔`,
     visualConfig: {
       stemLayout: 'series',
       stemShapes: series,
@@ -705,7 +705,7 @@ function genCompositeShapeAnalogy(): ShapeGenResult {
     stem: 'מהי הצורה החסרה?',
     options: allOptions.map((_, i) => `אפשרות ${'אבגד'[i]}`),
     correctOption: allOptions.indexOf(correct),
-    explanation: `הכלל: הצורה גדלה, והקטנה הצמודה נשמרת על אותה צלע.\n${shapeNameHe[types[0]]} קטן עם ${shapeNameHe[types[0]]} זעיר ⟶ ${shapeNameHe[types[0]]} גדול עם ${shapeNameHe[types[0]]} זעיר.\nבאותו כלל: ${shapeNameHe[types[1]]} קטן עם ${shapeNameHe[types[1]]} זעיר ⟶ ${shapeNameHe[types[1]]} גדול עם ${shapeNameHe[types[1]]} זעיר.`,
+    explanation: `🔍 השיטה: בודקים מה השתנה בין הצורה הראשונה לשנייה — ומה נשמר בדיוק כמו שהיה.\nהכלל: הצורה הגדולה גדלה, והצורה הזעירה הצמודה נשארת עליה באותו מקום.\n${shapeNameHe[types[0]]} קטן עם ${shapeNameHe[types[0]]} זעיר ⟶ ${shapeNameHe[types[0]]} גדול עם ${shapeNameHe[types[0]]} זעיר.\nאותו כלל: ${shapeNameHe[types[1]]} קטן ⟶ ${shapeNameHe[types[1]]} גדול, והזעיר נשאר.\n⚠️ המלכודת: ${shapeNameHe[types[1]]} גדול לבד — הגודל נכון אבל הצורה הזעירה נעלמה. זה רק חצי מהכלל.\nלכן התשובה: ${shapeNameHe[types[1]]} גדול עם ${shapeNameHe[types[1]]} זעיר עליו ✔`,
     visualConfig: {
       stemLayout: 'analogy',
       stemShapes: [A, B, C],
@@ -769,7 +769,7 @@ function genGridColoringMatrix(): ShapeGenResult {
     stem: 'מהי המשבצת החסרה? שים לב: בכל משבצת יש רשת קטנה עם תאים שחורים.',
     options: allOptions.map((_, i) => `משבצת ${'אבגד'[i]}`),
     correctOption: allOptions.indexOf(correct),
-    explanation: 'יש שני כללים:\n1) בכל שורה — מספר התאים השחורים גדל ב-1 (1, 2, 3 תאים).\n2) בכל עמודה — התאים השחורים נמצאים בעמודה המתאימה במשבצת.\nהשורה האחרונה צריכה 3 תאים שחורים, והעמודה האחרונה במשבצת השלישית.',
+    explanation: '🔍 השיטה: בטבלה בודקים שני כיוונים — מה קורה לאורך שורה, ומה לאורך עמודה.\nכלל 1 — שורות: מספר התאים השחורים גדל ב-1 (שורה 1: תא אחד, שורה 2: שניים, שורה 3: שלושה).\nכלל 2 — עמודות: מקום התאים השחורים זז לפי מספר העמודה.\nהמשבצת החסרה: 3 תאים שחורים, בעמודה האחרונה של המשבצת.\n⚠️ המלכודת: משבצת עם 2 תאים בלבד — כמעט נכון, קיים רק כלל המקום בלי כלל הכמות.\nלכן התשובה: המשבצת עם 3 תאים שחורים בעמודה האחרונה ✔',
     visualConfig: {
       stemLayout: 'grid',
       gridCells: outerCells,
@@ -804,7 +804,7 @@ function genPatternTransferAnalogy(): ShapeGenResult {
     stem: 'מהי הצורה החסרה? שים לב לדפוס המילוי שמשתנה.',
     options: allOptions.map((_, i) => `אפשרות ${'אבגד'[i]}`),
     correctOption: allOptions.indexOf(correct),
-    explanation: 'הכלל: הדפוס המורכב (פסים/נקודות) מצטמצם לסימן יחיד באמצע הצורה.\nריבוע מפוספס ⟶ ריבוע עם קו יחיד.\nריבוע מנוקד ⟶ ריבוע עם נקודה יחידה.',
+    explanation: '🔍 השיטה: בודקים מה קרה לדפוס המילוי בין הצורה הראשונה לשנייה — ומעבירים לצורה השלישית.\nהכלל: דפוס שלם (הרבה פסים או נקודות) מצטמצם לסימן אחד בודד באמצע.\nריבוע מפוספס ⟶ ריבוע עם קו יחיד. אותו כלל: ריבוע מנוקד ⟶ ריבוע עם נקודה יחידה.\n⚠️ המלכודת: ריבוע שנשאר עם הדפוס המלא — לא הופעל עליו שום כלל.\nלכן התשובה: הריבוע עם הנקודה היחידה באמצע ✔',
     visualConfig: {
       stemLayout: 'analogy',
       stemShapes: [A, B, C],
@@ -849,7 +849,7 @@ function genDotMatrix3x3(): ShapeGenResult {
     stem: 'כמה נקודות צריכות להיות במשבצת החסרה?',
     options: allOptions.map(o => `${o.perimeterDots} נקודות`),
     correctOption: allOptions.indexOf(correct),
-    explanation: `הכלל: מספר הנקודות במשבצת = (מספר השורה) × (מספר העמודה).\nשורה אחרונה (3) × עמודה אחרונה (3) = 9 נקודות.`,
+    explanation: `🔍 השיטה: בטבלת נקודות סופרים — ומחפשים קשר בין מספר השורה, מספר העמודה והנקודות.\nהכלל: מספר הנקודות = (מספר השורה) × (מספר העמודה).\n✓ בדיקה: שורה 2, עמודה 3 → 2×3 = 6 — בדיוק מה שמצויר!\nהמשבצת החסרה: שורה 3 × עמודה 3 = 9.\n⚠️ המלכודת: 8 נקודות — טעות של נקודה אחת בספירה. סופרים לאט ובודקים שוב.\nלכן התשובה: 9 נקודות ✔`,
     visualConfig: {
       stemLayout: 'grid',
       gridCells: cells,
@@ -888,7 +888,7 @@ function genProgressiveLinesSeries(): ShapeGenResult {
     stem: 'מהי הצורה הבאה בסדרה?',
     options: allOptions.map((o) => `${shapeNameHe[o.type]} עם ${(o.gridFill?.rows || 0) - 1} קווים פנימיים`),
     correctOption: allOptions.indexOf(correct),
-    explanation: `מספר הקווים בכל ${shapeNameHe[baseShape]} גדל ב-1 בכל שלב: 1, 2, 3, 4. הבא: 5 קווים.`,
+    explanation: `🔍 השיטה: משווים כל צורה לזו שלפניה — מה השתנה? ומה חוזר על עצמו?\nסופרים קווים: 1, 2, 3, 4 — בכל שלב נוסף קו אחד.\n✓ בדיקה: 4+1=5, ממשיך בדיוק את הכלל.\n⚠️ המלכודת: 4 קווים — בדיוק כמו הצורה האחרונה, שכחנו להוסיף 1.\nלכן התשובה: ${shapeNameHe[baseShape]} עם 5 קווים פנימיים ✔`,
     visualConfig: {
       stemLayout: 'series',
       stemShapes: series,
@@ -936,7 +936,7 @@ function genBlackWhitePairSeries(): ShapeGenResult {
     stem: 'מהי הצורה הבאה בסדרה?',
     options: allOptions.map((_, i) => `אפשרות ${'אבגד'[i]}`),
     correctOption: allOptions.indexOf(correct),
-    explanation: 'הצורות מתחלפות לסירוגין: עיגול ריק עם קטן מלא, עיגול מלא עם קטן ריק, וחוזר חלילה.',
+    explanation: '🔍 השיטה: משווים כל זוג לזה שלפניו — מה השתנה? ומה חוזר על עצמו?\nהכלל: הזוגות מתחלפים לסירוגין — עיגול ריק עם קטן מלא, ואז עיגול מלא עם קטן ריק, וחוזר חלילה.\nהזוג האחרון היה מלא עם קטן ריק — עכשיו תור ההפך.\n⚠️ המלכודת: שני עיגולים מלאים (או שניהם ריקים) — בכלל הזה הצבעים תמיד הפוכים זה מזה, אף פעם לא זהים.\nלכן התשובה: עיגול ריק עם עיגול קטן מלא ✔',
     visualConfig: {
       stemLayout: 'series',
       stemShapes: series,
@@ -983,7 +983,7 @@ function genRotationMatrix3x3(): ShapeGenResult {
     stem: 'איזו צורה צריכה להיות במשבצת החסרה?',
     options: allOptions.map((_, i) => `אפשרות ${'אבגד'[i]}`),
     correctOption: allOptions.indexOf(correct),
-    explanation: `יש שני כללים:\n1) בכל שורה: הצורה מסתובבת ב-45° בכיוון השעון בין עמודות.\n2) בכל עמודה: הצורה מסתובבת ב-90° בין שורות.\nהמשבצת החסרה נמצאת בשורה האחרונה (2 × 90° = 180°) ובעמודה האחרונה (2 × 45° = 90°).\nסיבוב כולל: 270°.`,
+    explanation: `🔍 השיטה: בטבלה בודקים שני כיוונים — כמה החץ מסתובב לאורך שורה, וכמה לאורך עמודה.\nכלל 1: כל צעד ימינה בשורה — סיבוב 45° עם כיוון השעון.\nכלל 2: כל צעד למטה בעמודה — סיבוב 90° עם כיוון השעון.\nהמשבצת החסרה: שורה אחרונה ועמודה אחרונה → 2×90° + 2×45° = 270°.\n⚠️ המלכודת: כיוון הפוך — חץ שסובב נגד כיוון השעון נראה דומה, אבל מצביע לצד הלא נכון.\nלכן התשובה: החץ בסיבוב של 270° ✔`,
     visualConfig: {
       stemLayout: 'grid',
       gridCells: cells,
@@ -1016,7 +1016,7 @@ function genStateChangeAnalogy(): ShapeGenResult {
     stem: 'מהי הצורה החסרה?',
     options: allOptions.map((_, i) => `אפשרות ${'אבגד'[i]}`),
     correctOption: allOptions.indexOf(correct),
-    explanation: `הכלל: הצורה מסתובבת חצי סיבוב (180°) — מתהפכת.\nחץ למעלה ⟵⟶ חץ למטה.\nאותו כלל על ${shapeNameHe[baseC] || baseC}: הצורה הופכת.`,
+    explanation: `🔍 השיטה: בודקים מה קרה לחץ — ואז עושים בדיוק אותו דבר לצורה השלישית.\nהכלל: הצורה מתהפכת — מסתובבת חצי סיבוב (180°).\nחץ למעלה ⟶ חץ למטה. אותו כלל על ${shapeNameHe[baseC] || baseC}: גם הוא מתהפך.\n⚠️ המלכודת: סיבוב של 90° בלבד — הצורה שוכבת על הצד, לא הפוכה. חצי סיבוב זה 180°.\nלכן התשובה: ${shapeNameHe[baseC] || baseC} הפוך ✔`,
     visualConfig: {
       stemLayout: 'analogy',
       stemShapes: [A, B, C],
@@ -1055,7 +1055,7 @@ function genTripleRuleAnalogy(): ShapeGenResult {
     stem: 'מהי הצורה החסרה?',
     options: allOptions.map(describeShape),
     correctOption: allOptions.indexOf(correct),
-    explanation: `שלושה כללים פועלים בו-זמנית:\n1) הצורה התחלפה (${shapeNameHe[types[0]]} → ${shapeNameHe[types[1]]}).\n2) המילוי השתנה (${fillNameHe[fills[0]]} → ${fillNameHe[fills[1]]}).\n3) הגודל גדל (קטן → גדול).\nכל הכללים פועלים יחד על הצורה הימנית.`,
+    explanation: `🔍 השיטה: בודקים את כל מה שהשתנה בין הצורה הראשונה לשנייה — כאן זה יותר מדבר אחד!\nכלל 1: המילוי השתנה (${fillNameHe[fills[0]]} → ${fillNameHe[fills[1]]}).\nכלל 2: הגודל גדל (קטן → גדול).\nמיישמים את שני הכללים על ${shapeNameHe[types[1]]} ${fillNameHe[fills[0]]} הקטן.\n⚠️ המלכודת: ${shapeNameHe[types[1]]} ${fillNameHe[fills[1]]} קטן — כמעט נכון, קיים רק כלל המילוי בלי הגודל. ו-${shapeNameHe[types[0]]} ${fillNameHe[fills[1]]} גדול? זו בכלל הצורה השנייה!\nלכן התשובה: ${shapeNameHe[types[1]]} ${fillNameHe[fills[1]]} גדול ✔`,
     visualConfig: {
       stemLayout: 'analogy',
       stemShapes: [A, B, C],
@@ -1098,7 +1098,7 @@ function genCompoundOddOneOut(): ShapeGenResult {
     stem: 'איזו צורה שונה מהאחרות? שים לב — שלוש מהן זהות בכל המאפיינים, ואחת שונה רק במאפיין אחד.',
     options: labels,
     correctOption: oddIdx,
-    explanation: `שלוש מהצורות חולקות שלושה מאפיינים: צורה (${shapeNameHe[sharedType]}), מילוי (${fillNameHe[sharedFill]}), וגודל. צורה ${labels[oddIdx]} שונה ${dimensionHe} בלבד.`,
+    explanation: `🔍 השיטה: בודקים כל מאפיין בנפרד — צורה, מילוי וגודל — ומחפשים מי ששובר אחד מהם.\nשלוש צורות זהות בהכול: ${shapeNameHe[sharedType]} ${fillNameHe[sharedFill]}, באותו גודל.\nצורה ${labels[oddIdx]} שונה ${dimensionHe} בלבד — בשאר המאפיינים היא זהה.\n⚠️ המלכודת: מי שבודק רק מאפיין אחד עלול לפספס — חייבים לעבור על שלושתם.\nלכן התשובה: ${labels[oddIdx]} ✔`,
     visualConfig: {
       stemLayout: 'odd_one_out',
       stemShapes,
@@ -1147,7 +1147,7 @@ function genHiddenRuleLongSeries(): ShapeGenResult {
     stem: 'מהי הצורה הבאה בסדרה?',
     options: allOptions.map((_, i) => `אפשרות ${'אבגד'[i]}`),
     correctOption: allOptions.indexOf(correct),
-    explanation: `שני כללים פועלים בו-זמנית לאורך 6 שלבים:\n1) הצורה מסתובבת ב-60° בכל שלב.\n2) הגודל מתחלף (קטן → גדול → קטן → גדול).\nהשלב הבא: סיבוב 360° (= 0°), גודל קטן.`,
+    explanation: `🔍 השיטה: משווים כל צורה לזו שלפניה — מה השתנה? ומה חוזר על עצמו?\nכלל 1: הצורה מסתובבת 60° בכל שלב.\nכלל 2: הגודל והמילוי מתחלפים לסירוגין — קטן ריק, גדול מלא, וחוזר חלילה.\nהשלב הבא: הסיבוב חוזר להתחלה (360° = 0°), קטן וריק.\n⚠️ המלכודת: צורה שנשארה בזווית של הקודמת — כמעט נכון, קיים רק כלל הגודל בלי הסיבוב.\nלכן התשובה: הצורה הקטנה הריקה שחזרה לזווית ההתחלה ✔`,
     visualConfig: {
       stemLayout: 'series',
       stemShapes: series,
@@ -1198,7 +1198,7 @@ function genOverlayCombination(): ShapeGenResult {
     stem: 'שתי המשבצות הראשונות מונחות זו על זו. משבצת שחורה נשארת שחורה. מהי התוצאה?',
     options: allOptions.map((_, i) => `אפשרות ${'אבגד'[i]}`),
     correctOption: allOptions.indexOf(correct),
-    explanation: 'מחברים את שתי המשבצות: כל תא שהיה שחור באחת מהן (או בשתיהן) נשאר שחור בתוצאה. זהו איחוד של שתי הרשתות.',
+    explanation: '🔍 השיטה: מניחים בדמיון את שתי הרשתות זו על זו, ועוברים תא-תא.\nהכלל: תא שחור ברשת הראשונה או בשנייה (או בשתיהן) → שחור בתוצאה.\nרק תא שריק בשתי הרשתות נשאר ריק.\n⚠️ המלכודת: לצבוע רק תאים ששחורים בשתי הרשתות יחד — כך יוצאים תאים חסרים.\nלכן התשובה: הרשת שמאחדת את כל התאים השחורים משתי המשבצות ✔',
     visualConfig: {
       stemLayout: 'row',
       stemShapes: [mkShape(gridA), mkShape(gridB)],
@@ -1228,7 +1228,7 @@ function genCompleteTheShape(): ShapeGenResult {
     stem: 'לצורה חסרה פינה. איזו חתיכה תשלים אותה בדיוק לריבוע שלם?',
     options: allOptions.map(describeShape),
     correctOption: allOptions.indexOf(correct),
-    explanation: 'הפינה החסרה היא ריבוע קטן. רק ריבוע קטן בגודל המתאים ימלא בדיוק את החלל וישלים את הצורה לריבוע שלם. משולש או עיגול לא יתאימו לפינה ישרה.',
+    explanation: '🔍 השיטה: מסתכלים על החור ומדמיינים את החתיכה נכנסת פנימה — מה בדיוק חסר שם?\nהפינה שנחתכה היא ריבוע קטן עם זוויות ישרות.\n✓ בדיקה: ריבוע קטן נכנס בול בפינה ומשלים לריבוע שלם.\n⚠️ המלכודת: ריבוע גדול מדי — הצורה נכונה אבל הגודל לא, והוא יבלוט החוצה. משולש ועיגול לא מתאימים לפינה ישרה.\nלכן התשובה: הריבוע הקטן ✔',
     visualConfig: {
       stemLayout: 'row',
       stemShapes: [stemShape],
@@ -1269,7 +1269,7 @@ function genAccumulationMatrix(): ShapeGenResult {
     stem: 'כמה תאים מלאים צריכים להיות במשבצת החסרה?',
     options: allOptions.map(o => `${o.gridFill?.cells.flat().filter(Boolean).length} תאים מלאים`),
     correctOption: allOptions.indexOf(correct),
-    explanation: `מספר התאים המלאים גדל ב-1 בכל צעד ימינה וב-1 בכל צעד למטה.\nהמשבצת החסרה בשורה האחרונה ובעמודה האחרונה — לכן היא המלאה ביותר: ${correctN} תאים.`,
+    explanation: `🔍 השיטה: בטבלה בודקים שני כיוונים — מה קורה בצעד ימינה, ומה בצעד למטה.\nכלל 1: כל צעד ימינה — עוד תא מלא אחד.\nכלל 2: כל צעד למטה — עוד תא מלא אחד.\nהמשבצת החסרה בפינה — הכי רחוקה והכי מלאה: ${correctN} תאים.\n⚠️ המלכודת: ${correctN - 1} תאים — כמעט נכון, חסר תא אחד. סופרים שוב לפני שעונים.\nלכן התשובה: ${correctN} תאים מלאים ✔`,
     visualConfig: {
       stemLayout: 'grid',
       gridCells: cells,
@@ -1319,7 +1319,7 @@ function genPatternPatch(): ShapeGenResult {
     stem: 'התבנית חוזרת על עצמה. איזו משבצת חסרה בחור?',
     options: allOptions.map(describeShape),
     correctOption: allOptions.indexOf(correct),
-    explanation: `התבנית היא שחמט של שתי צורות: ${shapeNameHe[typeA]} ${fillNameHe[fillA]} ו-${shapeNameHe[typeB]} ${fillNameHe[fillB]}, לסירוגין.\nבודקים את השכנים של החור: מעליו, מתחתיו ומצדדיו נמצאת תמיד הצורה השנייה — לכן בחור עצמו חייבת להיות ${shapeNameHe[holeIsA ? typeA : typeB]} ${fillNameHe[holeIsA ? fillA : fillB]}.\nהמלכודת: לבחור את הצורה השכנה (פאזה הפוכה).`,
+    explanation: `🔍 השיטה: בתבנית שחוזרת בודקים את השכנים של החור — מה מקיף אותו?\nהכלל: לוח שחמט של שתי צורות לסירוגין — ${shapeNameHe[typeA]} ${fillNameHe[fillA]} ו-${shapeNameHe[typeB]} ${fillNameHe[fillB]}.\nבודקים: מעל החור, מתחתיו ומצדדיו נמצאת תמיד הצורה השנייה.\nלכן בחור עצמו חייבת להיות הצורה האחרת.\n⚠️ המלכודת: לבחור את הצורה השכנה — פאזה הפוכה, בדיוק ההפך מהנכון.\nלכן התשובה: ${shapeNameHe[holeIsA ? typeA : typeB]} ${fillNameHe[holeIsA ? fillA : fillB]} ✔`,
     visualConfig: {
       stemLayout: 'grid',
       gridCells: cells,
@@ -1350,7 +1350,7 @@ function genMirrorOddOneOut(): ShapeGenResult {
     stem: 'איזו צורה שונה מהאחרות?',
     options: labels,
     correctOption: oddIdx,
-    explanation: `שלושה חצים מצביעים באותו אלכסון. צורה ${labels[oddIdx]} משוקפת — היא מצביעה לכיוון ההפוך באלכסון. זהו השוני.`,
+    explanation: `🔍 השיטה: כשכל הצורות דומות — בודקים את הכיוון המדויק של כל אחת.\nמצאנו: שלושה חצים מצביעים לאותו אלכסון בדיוק.\nצורה ${labels[oddIdx]} הפוכה כמו במראה — מצביעה לאלכסון הנגדי.\n⚠️ המלכודת: שיקוף נראה כמעט כמו סיבוב — אבל במראה ימין ושמאל מתחלפים, וזה שוני אמיתי.\nלכן התשובה: ${labels[oddIdx]} ✔`,
     visualConfig: {
       stemLayout: 'odd_one_out',
       stemShapes,
