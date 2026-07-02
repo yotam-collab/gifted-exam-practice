@@ -109,9 +109,17 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
         availableQuestions = selectAdaptiveQuestions(userId, count);
       } else {
         // Blend manual bank items (polished distractors + explanations) with
-        // generated content. Exam mode uses zero manual share so every full
-        // exam attempt feels new; practice modes get half manual.
-        const manualShare = mode === 'full_exam' || mode === 'mini_exam' ? 0 : 0.5;
+        // generated content. Exam modes use zero manual share so every attempt
+        // feels new.
+        //
+        // Figural sections (shapes / numbers-in-shapes): the generators produce
+        // genuinely exam-level, multi-rule content, while the small manual bank
+        // holds simpler single-rule figures that were diluting hard practice.
+        // So we rely entirely on generators there. Text sections keep a manual
+        // blend, where authored wording quality matters most.
+        const isExam = mode === 'full_exam' || mode === 'mini_exam';
+        const isFigural = sectionType === 'shapes' || sectionType === 'numbers_in_shapes';
+        const manualShare = isExam || isFigural ? 0 : 0.5;
         availableQuestions = selectForSection(
           sectionType,
           config.difficulty || 'medium',

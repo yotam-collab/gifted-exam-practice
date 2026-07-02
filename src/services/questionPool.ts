@@ -168,6 +168,10 @@ export function selectForSection(
     if (!q.isActive) return false;
     if (options?.skill && q.skillTag !== options.skill) return false;
     if (difficulty !== 'adaptive' && q.difficulty !== difficulty) return false;
+    // In adaptive mode (the default practice mode), lift the floor: don't dilute
+    // with easy authored items. A gifted-exam prep session should stretch, and
+    // the generators produce genuinely exam-level content at medium/hard.
+    if (difficulty === 'adaptive' && q.difficulty === 'easy') return false;
     return true;
   });
 

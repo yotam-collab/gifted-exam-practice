@@ -9,6 +9,7 @@ import type { VisualConfig } from '../data/shapeVisuals';
 let _c = 0;
 const uid = () => `gsh_${Date.now()}_${++_c}_${Math.random().toString(36).slice(2, 6)}`;
 const pick = <T>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
+const rand = (lo: number, hi: number): number => lo + Math.floor(Math.random() * (hi - lo + 1));
 function shuffle<T>(a: T[]): T[] {
   const b = [...a];
   for (let i = b.length - 1; i > 0; i--) {
@@ -1155,6 +1156,128 @@ function genHiddenRuleLongSeries(): ShapeGenResult {
   };
 }
 
+// ── HARD: Overlay / superimposition (classic Raven-matrix type) ─────────
+// Two frames each carry some black cells on a 3×3 grid. The answer is the
+// UNION — every cell black in EITHER input is black in the result. This is
+// one of the most iconic hard figural types and requires the child to hold
+// two patterns in mind and merge them. Distractors: intersection (only cells
+// black in BOTH), one of the inputs unchanged, and union-minus-one.
+function genOverlayCombination(): ShapeGenResult {
+  const R = 3, C = 3;
+  const randGrid = (count: number): boolean[][] => {
+    const flat = Array.from({ length: R * C }, (_, i) => i);
+    shuffle(flat);
+    const chosen = new Set(flat.slice(0, count));
+    return Array.from({ length: R }, (_, r) =>
+      Array.from({ length: C }, (_, c) => chosen.has(r * C + c)),
+    );
+  };
+  const gridA = randGrid(rand(2, 3));
+  const gridB = randGrid(rand(2, 3));
+  const mkShape = (cells: boolean[][]): RenderShape => ({
+    type: 'square', fill: 'none', color: '#1f2937',
+    gridFill: { rows: R, cols: C, cells },
+  });
+  const union = Array.from({ length: R }, (_, r) =>
+    Array.from({ length: C }, (_, c) => gridA[r][c] || gridB[r][c]),
+  );
+  const intersection = Array.from({ length: R }, (_, r) =>
+    Array.from({ length: C }, (_, c) => gridA[r][c] && gridB[r][c]),
+  );
+  // union-minus-one: turn off one black cell in the union
+  const unionMinus = union.map(row => [...row]);
+  outer: for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    if (unionMinus[r][c]) { unionMinus[r][c] = false; break outer; }
+  }
+  const correct = mkShape(union);
+  const distractors = [mkShape(intersection), mkShape(gridA), mkShape(unionMinus)];
+  const allOptions = [correct, ...distractors];
+  shuffle(allOptions);
+  return {
+    skill: 'graphic_rule',
+    stem: 'שתי המשבצות הראשונות מונחות זו על זו. משבצת שחורה נשארת שחורה. מהי התוצאה?',
+    options: allOptions.map((_, i) => `אפשרות ${'אבגד'[i]}`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: 'מחברים את שתי המשבצות: כל תא שהיה שחור באחת מהן (או בשתיהן) נשאר שחור בתוצאה. זהו איחוד של שתי הרשתות.',
+    visualConfig: {
+      stemLayout: 'row',
+      stemShapes: [mkShape(gridA), mkShape(gridB)],
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
+// ── HARD: Complete the shape (spatial part-whole) ───────────────────────
+// A square with a corner bitten out is shown; the child picks the piece that
+// exactly fills the bite. Requires mental fitting of parts into a whole.
+function genCompleteTheShape(): ShapeGenResult {
+  // The stem shows the bitten square (square_corner_cut). The missing piece is
+  // a small square. Distractors: a triangle (wrong shape), a too-big square,
+  // and a circle (clearly wrong).
+  const stemShape: RenderShape = { type: 'square_corner_cut', fill: 'none', color: '#1f2937', scale: 1.15 };
+  const correct: RenderShape = { type: 'square', fill: 'solid', color: '#1f2937', scale: 0.45 };
+  const distractors: RenderShape[] = [
+    { type: 'triangle', fill: 'solid', color: '#1f2937', scale: 0.5 },
+    { type: 'square', fill: 'solid', color: '#1f2937', scale: 0.85 },
+    { type: 'circle', fill: 'solid', color: '#1f2937', scale: 0.45 },
+  ];
+  const allOptions = [correct, ...distractors];
+  shuffle(allOptions);
+  return {
+    skill: 'fill_frame',
+    stem: 'לצורה חסרה פינה. איזו חתיכה תשלים אותה בדיוק לריבוע שלם?',
+    options: allOptions.map(describeShape),
+    correctOption: allOptions.indexOf(correct),
+    explanation: 'הפינה החסרה היא ריבוע קטן. רק ריבוע קטן בגודל המתאים ימלא בדיוק את החלל וישלים את הצורה לריבוע שלם. משולש או עיגול לא יתאימו לפינה ישרה.',
+    visualConfig: {
+      stemLayout: 'row',
+      stemShapes: [stemShape],
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
+// ── HARD: Accumulation matrix (3×3, cells fill progressively) ───────────
+// Each cell's mini-grid fills up by (row + col + 1) cells in reading order.
+// The bottom-right accumulates the most. Distinct from dot-matrix: this is
+// additive accumulation, not multiplication, and shows a "filling bar".
+function genAccumulationMatrix(): ShapeGenResult {
+  const IR = 3, IC = 3; // inner grid 3×3 = up to 9 fill steps
+  const buildFill = (n: number): boolean[][] => {
+    const cells = Array.from({ length: IR }, () => Array.from({ length: IC }, () => false));
+    for (let k = 0; k < n && k < IR * IC; k++) cells[Math.floor(k / IC)][k % IC] = true;
+    return cells;
+  };
+  const fillCount = (r: number, c: number) => r + c + 1; // 1..5
+  const mk = (n: number): RenderShape => ({
+    type: 'square', fill: 'none', color: '#1f2937',
+    gridFill: { rows: IR, cols: IC, cells: buildFill(n) },
+  });
+  const cells: (RenderShape | null)[][] = [];
+  for (let r = 0; r < 3; r++) {
+    const row: (RenderShape | null)[] = [];
+    for (let c = 0; c < 3; c++) row.push(r === 2 && c === 2 ? null : mk(fillCount(r, c)));
+    cells.push(row);
+  }
+  const correctN = fillCount(2, 2); // 5
+  const correct = mk(correctN);
+  const distractors = [mk(correctN - 1), mk(correctN + 1), mk(correctN - 2)];
+  const allOptions = [correct, ...distractors];
+  shuffle(allOptions);
+  return {
+    skill: 'graphic_pattern',
+    stem: 'כמה תאים מלאים צריכים להיות במשבצת החסרה?',
+    options: allOptions.map(o => `${o.gridFill?.cells.flat().filter(Boolean).length} תאים מלאים`),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `מספר התאים המלאים גדל ב-1 בכל צעד ימינה וב-1 בכל צעד למטה.\nהמשבצת החסרה בשורה האחרונה ובעמודה האחרונה — לכן היא המלאה ביותר: ${correctN} תאים.`,
+    visualConfig: {
+      stemLayout: 'grid',
+      gridCells: cells,
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
 // ── Mirror-symmetry odd-one-out ─────────────────────────────────────────
 // Three shapes are rotated identically; one is mirrored. Trains the
 // "rotation vs reflection" trap that's classic on Stage B figural items.
@@ -1197,36 +1320,39 @@ type GenFn = () => ShapeGenResult;
 //   • Medium = two related dimensions or 2×2 grids.
 //   • Hard = multi-rule (≥2 rules apply simultaneously), 3×3 matrices,
 //     long series (5+ steps), compound shapes, mirror traps.
+// EASY pool — single-rule questions (one attribute changes). Appropriate as a
+// warm-up / confidence-builder, but NOT representative of real Stage B.
 const easyGenerators: GenFn[] = [
   genAnalogy, genTransformation, genSeries, genFillSeries,
   genOddOneOut, genFillOddOneOut,
-];
-const mediumGenerators: GenFn[] = [
-  genAnalogy, genScaleAnalogy, genTransformation, genSeries,
-  genFillSeries, genGridPattern, genCutShapeAnalogy, genDotCountSeries,
-  genMirrorOddOneOut,
-  // Single-rule generators that match real exam types but are too simple
-  // for the hard pool — sit at medium so they still get rotation but kids
-  // at hard difficulty don't get stuck on them.
+  // Single-rule real-exam TYPES live here too — they match exam formats but
+  // are individually simple (one thing changes).
   genPatternTransferAnalogy, genProgressiveLinesSeries, genStateChangeAnalogy,
+  genCutShapeAnalogy, genDotCountSeries,
 ];
-// Hard pool — STRICTLY multi-rule and matrix questions. After user feedback
-// that "hard" felt easy: the previous hard pool included single-rule items
-// (cut-shape, dot-count, state-change, progressive-lines) that match real
-// exam TYPES but are individually too simple. Those are now medium-only.
-// Hard pool is reserved for items where the kid must reason about ≥2
-// dimensions simultaneously OR navigate a 3×3 matrix with two-axis rules.
+// MEDIUM pool — every generator here requires tracking at least TWO attributes
+// simultaneously, or navigating a 2×2 grid. This matches the mid-band of the
+// real exam. Single-rule generators were demoted to easy after repeated user
+// feedback that medium felt trivial.
+const mediumGenerators: GenFn[] = [
+  genScaleAnalogy,            // shape + size
+  genGridPattern,             // 2×2 row/column rules
+  genMirrorOddOneOut,         // rotation-vs-reflection
+  genMultiRuleAnalogy,        // fill + size
+  genMultiRuleSeries,         // rotation + fill
+  genCompoundTransformation,  // outer + inner change
+  genBlackWhitePairSeries,    // two alternating attributes
+  genCompoundOddOneOut,       // must check 3 dimensions to find the odd one
+  genOverlayCombination,      // union of two frames (2 grids merged)
+];
+// HARD pool — three simultaneous rules, 3×3 matrices with two-axis rules, long
+// (6-step) series, or spatial completion. This is genuine gifted-exam level.
 const hardGenerators: GenFn[] = [
-  genGrid3x3, genMirrorOddOneOut,
-  // Multi-rule combinations, long-step series, compound transformations.
-  genMultiRuleAnalogy, genMultiRuleSeries, genCompoundTransformation, genLongSeries,
-  // Composite, grid-coloring, dot-matrix — all are 3×3 or compound figures.
-  genCompositeShapeAnalogy, genGridColoringMatrix, genDotMatrix3x3,
-  // Pair series and rotation matrix — both require tracking two attributes.
-  genBlackWhitePairSeries, genRotationMatrix3x3,
-  // 3-rule and compound generators added after user feedback that hard
-  // wasn't hard enough — these vary 3 independent dimensions.
-  genTripleRuleAnalogy, genCompoundOddOneOut, genHiddenRuleLongSeries,
+  genGrid3x3, genGridColoringMatrix, genDotMatrix3x3, genRotationMatrix3x3,
+  genTripleRuleAnalogy, genHiddenRuleLongSeries, genLongSeries,
+  genCompositeShapeAnalogy,
+  // New spatial-reasoning generators added to lift the ceiling further.
+  genOverlayCombination, genCompleteTheShape, genAccumulationMatrix,
 ];
 
 
@@ -1251,8 +1377,11 @@ export function generateShapeQuestions(difficulty: Difficulty, count: number): S
   for (let i = 0; i < count; i++) {
     let d = effectiveDiff;
     if (difficulty === 'adaptive') {
-      // Adaptive sweeps all difficulty levels — biased slightly toward medium.
-      d = pick(['easy', 'medium', 'medium', 'hard']);
+      // Adaptive is the DEFAULT practice mode for a gifted-exam prep tool, so
+      // it must stretch toward exam level: no pure-easy, majority hard.
+      // (Previous 1×easy / 2×medium / 1×hard skewed far too soft — kids saw
+      // mostly warm-up questions and never met exam-level items.)
+      d = pick(['medium', 'medium', 'hard', 'hard', 'hard']);
     }
     const gen = pick(poolFor(d));
     const r = gen();
@@ -1267,7 +1396,8 @@ export function generateShapeQuestions(difficulty: Difficulty, count: number): S
       options: r.options,
       correctOption: r.correctOption,
       explanation: r.explanation,
-      recommendedTimeSec: d === 'easy' ? 50 : d === 'hard' ? 75 : 60,
+      // Harder figural items need more thinking time, matching real exam pacing.
+      recommendedTimeSec: d === 'easy' ? 45 : d === 'hard' ? 90 : 65,
       generatorSource: 'generated',
       qualityScore: 87,
       isActive: true,
