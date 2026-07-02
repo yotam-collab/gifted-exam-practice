@@ -4,6 +4,7 @@ import { storage } from '../services/storage';
 import { useCurrentUserId } from './currentUser';
 import { buildAdaptive, buildFullExam, buildMiniExam, buildPractice } from './sessionLaunch';
 import { SECTION_CONFIGS } from '../config/sections';
+import { useEntitlement } from '../hooks/useEntitlement';
 import type { SectionType } from '../types';
 
 /** Small lock/free badge — gating turns real at build step 6. */
@@ -29,6 +30,7 @@ export default function CategoryRoute() {
   const navigate = useNavigate();
   const userId = useCurrentUserId();
   const category = categoryId ? getCategory(categoryId) : undefined;
+  const { isEntitled } = useEntitlement();
 
   if (!category) return <Navigate to="/library" replace />;
 
@@ -37,6 +39,10 @@ export default function CategoryRoute() {
     skillTag ? Math.round(stats.find(s => s.skillTag === skillTag)?.masteryScore ?? 0) : 0;
 
   const launchItem = (item: LibraryItem) => {
+    // Gate: locked paid items route to the paywall instead of launching.
+    if (item.access === 'paid' && !isEntitled) {
+      return navigate(`/paywall?item=${encodeURIComponent(item.titleHe)}`);
+    }
     switch (item.kind) {
       case 'exam': {
         if (item.examKind === 'full') return navigate('/session', { state: buildFullExam() });

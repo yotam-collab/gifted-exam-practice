@@ -12,13 +12,17 @@ import CategoryRoute from './routes/CategoryRoute';
 import SubtopicRoute from './routes/SubtopicRoute';
 import GuideRoute from './routes/GuideRoute';
 import PrintRoute from './routes/PrintRoute';
+import AuthRoute from './routes/AuthRoute';
+import AuthCallbackRoute from './routes/AuthCallbackRoute';
+import PaywallRoute from './routes/PaywallRoute';
+import { RequireAuth, RequireEntitlement } from './routes/guards';
 
 /**
- * Root layout — global chrome (font link + bg) shared by every route.
- * Two layout branches sit inside it:
- *   • AppShell — desktop sidebar+topbar; wraps everyday pages.
- *   • Full-bleed — /session and /print render edge-to-edge (no shell), so a
- *     kid taking a test or an adult printing a worksheet gets a clean canvas.
+ * Root layout — global chrome (font + bg). Branches inside it:
+ *   • AppShell — desktop sidebar+topbar; everyday pages.
+ *       - RequireEntitlement guards the paid whole-routes (/exam, /print).
+ *       - RequireAuth guards the parent dashboard.
+ *   • Full-bleed — /session, /print, /auth/callback render edge-to-edge.
  */
 function RootLayout() {
   return (
@@ -46,25 +50,39 @@ export const router = createBrowserRouter(
             { path: '/library/:categoryId', element: <CategoryRoute /> },
             { path: '/library/:categoryId/:subtopicId', element: <SubtopicRoute /> },
             { path: '/practice', element: <PracticeRoute /> },
-            { path: '/exam', element: <ExamRoute /> },
             { path: '/results/:sessionId', element: <ResultsRoute /> },
             { path: '/achievements', element: <AchievementsRoute /> },
             { path: '/guides/:guideId', element: <GuideRoute /> },
+            { path: '/auth', element: <AuthRoute /> },
+            { path: '/paywall', element: <PaywallRoute /> },
+            // Legacy PIN gate — kept until the parent area fully moves to auth.
             { path: '/parent-login', element: <ParentLoginRoute /> },
-            { path: '/parent', element: <ParentDashboardRoute /> },
+            // Parent dashboard requires a real login.
+            {
+              element: <RequireAuth />,
+              children: [{ path: '/parent', element: <ParentDashboardRoute /> }],
+            },
+            // Paid whole-routes.
+            {
+              element: <RequireEntitlement />,
+              children: [{ path: '/exam', element: <ExamRoute /> }],
+            },
           ],
         },
         // ── Full-bleed routes (no shell) ─────────────────────────────
         { path: '/session', element: <SessionRoute /> },
-        { path: '/print/:worksheetSpec', element: <PrintRoute /> },
+        { path: '/auth/callback', element: <AuthCallbackRoute /> },
+        {
+          element: <RequireEntitlement />,
+          children: [{ path: '/print/:worksheetSpec', element: <PrintRoute /> }],
+        },
         // Unknown paths → home (SPA-friendly, no dead ends for kids)
         { path: '*', element: <Navigate to="/" replace /> },
       ],
     },
   ],
   {
-    // '/gifted-exam-practice/' on gh-pages today; '/' after the Vercel move —
-    // one env change, zero code changes.
+    // '/gifted-exam-practice/' on gh-pages today; '/' after the Vercel move.
     basename: import.meta.env.BASE_URL,
   },
 );

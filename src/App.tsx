@@ -1,14 +1,18 @@
 import { RouterProvider } from 'react-router';
+import { AuthProvider } from './hooks/useAuth';
 import { router } from './router';
 
 /**
- * App is now a thin RouterProvider host. The previous view-state machine
- * (useState<AppView> + conditional screen rendering) was dismantled into
- * route adapters under src/routes/ — see src/router.tsx for the route table
- * and src/routes/sessionLaunch.ts for the session config builders.
+ * App is a thin RouterProvider host wrapped in AuthProvider, so every route
+ * (and the entitlement layer) can read the parent's session. The former
+ * view-state machine was dismantled into route adapters under src/routes/.
  */
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  );
 }
 
 export default App;

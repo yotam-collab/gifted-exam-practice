@@ -3,6 +3,7 @@ import { getCategory, getSubtopic } from '../config/library';
 import { storage } from '../services/storage';
 import { useCurrentUserId } from './currentUser';
 import { buildPractice } from './sessionLaunch';
+import { useEntitlement } from '../hooks/useEntitlement';
 import type { Difficulty } from '../types';
 
 /**
@@ -17,10 +18,15 @@ export default function SubtopicRoute() {
 
   const category = categoryId ? getCategory(categoryId) : undefined;
   const subtopic = categoryId && subtopicId ? getSubtopic(categoryId, subtopicId) : undefined;
+  const { isEntitled } = useEntitlement();
 
   if (!category || !subtopic || !subtopic.sectionType || !subtopic.skillTag) {
     return <Navigate to={category ? `/library/${category.id}` : '/library'} replace />;
   }
+
+  // A skill is paid if its practice item is; locked skills paywall on launch.
+  const practiceItem = subtopic.items.find(i => i.kind === 'practice');
+  const locked = practiceItem?.access === 'paid' && !isEntitled;
 
   const stat = storage
     .getSkillStats(userId)
@@ -29,10 +35,12 @@ export default function SubtopicRoute() {
   const attempts = stat?.attempts ?? 0;
   const correct = stat?.correctCount ?? 0;
 
-  const launch = (difficulty: Difficulty, count: number) =>
+  const launch = (difficulty: Difficulty, count: number) => {
+    if (locked) return navigate(`/paywall?item=${encodeURIComponent(subtopic.titleHe)}`);
     navigate('/session', {
       state: buildPractice(subtopic.sectionType!, difficulty, count, 'per_question', subtopic.skillTag),
     });
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 lg:px-8 py-6 page-enter">
