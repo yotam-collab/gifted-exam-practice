@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import type { SectionType, Difficulty, TimerMode } from '../types';
+import type { SectionType, Difficulty, TimerMode, SkillTag } from '../types';
 import { SECTION_CONFIGS } from '../config/sections';
 
 interface Props {
   onBack: () => void;
-  onStart: (section: SectionType, difficulty: Difficulty, count: number, timer: TimerMode) => void;
+  onStart: (section: SectionType, difficulty: Difficulty, count: number, timer: TimerMode, skillTag?: SkillTag) => void;
 }
 
 // Defaults are tuned for fastest "tap and go" practice:
@@ -21,6 +21,12 @@ export default function PracticeSetup({ onBack, onStart }: Props) {
   const [questionCount, setQuestionCount] = useState(DEFAULT_COUNT);
   const [timerMode, setTimerMode] = useState<TimerMode>(DEFAULT_TIMER);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  // Sub-type focus. null = mixed practice across the whole section (default).
+  const [skillTag, setSkillTag] = useState<SkillTag | null>(null);
+
+  const sectionSkills = section
+    ? SECTION_CONFIGS.find(s => s.type === section)?.skills ?? []
+    : [];
 
   const difficulties: { value: Difficulty; label: string; desc: string }[] = [
     { value: 'easy', label: 'קל', desc: 'שאלות בסיסיות' },
@@ -57,7 +63,7 @@ export default function PracticeSetup({ onBack, onStart }: Props) {
           {SECTION_CONFIGS.map((s) => (
             <button
               key={s.type}
-              onClick={() => setSection(s.type)}
+              onClick={() => { setSection(s.type); setSkillTag(null); }}
               className={`section-card ${section === s.type ? 'active' : ''}`}
             >
               <div className="text-3xl mb-1">{s.icon}</div>
@@ -73,7 +79,7 @@ export default function PracticeSetup({ onBack, onStart }: Props) {
               Defaults are tuned for the most useful practice (adaptive + 20 + per-Q timer);
               advanced users can expand to tweak. */}
           <button
-            onClick={() => onStart(section, difficulty, questionCount, timerMode)}
+            onClick={() => onStart(section, difficulty, questionCount, timerMode, skillTag ?? undefined)}
             className="btn-game w-full text-lg py-4 mb-4"
           >
             התחל תרגול! ⚔️
@@ -86,6 +92,8 @@ export default function PracticeSetup({ onBack, onStart }: Props) {
             <b className="text-primary-light">{questionCount}</b> שאלות
             {' · '}
             <b className="text-primary-light">{timerModes.find(t=>t.value===timerMode)?.label}</b>
+            {' · '}
+            <b className="text-primary-light">{skillTag ? (sectionSkills.find(sk => sk.tag === skillTag)?.nameHe ?? 'תת-נושא') : 'כל הנושאים'}</b>
           </div>
 
           {/* Toggle to reveal advanced controls — tap-friendly chevron */}
@@ -98,6 +106,36 @@ export default function PracticeSetup({ onBack, onStart }: Props) {
 
           {showAdvanced && (
             <div className="animate-slide-up">
+              {/* Sub-type focus */}
+              <div className="mb-5">
+                <h2 className="text-base font-semibold mb-2 text-text-secondary">תת-נושא:</h2>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setSkillTag(null)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border-2 cursor-pointer transition-all ${
+                      skillTag === null
+                        ? 'border-primary bg-primary/15 text-primary-light'
+                        : 'border-border bg-card text-text-secondary hover:border-primary/30'
+                    }`}
+                  >
+                    הכל
+                  </button>
+                  {sectionSkills.map((sk) => (
+                    <button
+                      key={sk.tag}
+                      onClick={() => setSkillTag(sk.tag)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border-2 cursor-pointer transition-all ${
+                        skillTag === sk.tag
+                          ? 'border-primary bg-primary/15 text-primary-light'
+                          : 'border-border bg-card text-text-secondary hover:border-primary/30'
+                      }`}
+                    >
+                      {sk.nameHe}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Difficulty */}
               <div className="mb-5">
                 <h2 className="text-base font-semibold mb-2 text-text-secondary">רמת קושי:</h2>

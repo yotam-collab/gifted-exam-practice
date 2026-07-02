@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { AppView, SessionMode, SessionConfig, SectionType, Difficulty, TimerMode } from './types';
+import type { AppView, SessionMode, SessionConfig, SectionType, Difficulty, TimerMode, SkillTag } from './types';
 import HomeScreen from './screens/HomeScreen';
 import PracticeSetup from './screens/PracticeSetup';
 import MiniExamSetup from './screens/MiniExamSetup';
@@ -17,7 +17,7 @@ function App() {
   const [sessionConfig, setSessionConfig] = useState<{mode: SessionMode; config: SessionConfig} | null>(null);
   const [lastSessionId, setLastSessionId] = useState<string | null>(null);
 
-  const startPractice = useCallback((sectionType: SectionType, difficulty: Difficulty, questionCount: number, timerMode: TimerMode) => {
+  const startPractice = useCallback((sectionType: SectionType, difficulty: Difficulty, questionCount: number, timerMode: TimerMode, skillTag?: SkillTag) => {
     const section = SECTION_CONFIGS.find(s => s.type === sectionType)!;
     const config: SessionConfig = {
       sections: [sectionType],
@@ -25,6 +25,7 @@ function App() {
       difficulty,
       timerMode,
       timeLimitSec: timerMode === 'per_section' ? section.defaultTimeSec : undefined,
+      skillTag,
     };
     setSessionConfig({ mode: 'practice', config });
     setView('session_active');

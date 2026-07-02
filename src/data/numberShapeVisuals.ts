@@ -50,6 +50,15 @@ export type NSVisualConfig =
       type: 'bidirectional_flow';
       rows: { left: number | string; box: number | string; right: number | string }[];
       missing: { row: number; side: 'left' | 'right' | 'box' };
+    }
+  | {
+      // Sector wheel: a circle divided into N sectors with inner numbers;
+      // each OUTER number sits on a boundary spoke and equals the sum of the
+      // two inner sectors flanking that boundary. One outer number is hidden.
+      type: 'number_wheel';
+      inner: number[];
+      outer: (number | string)[];
+      missingOuterIndex: number;
     };
 
 export const numberShapeVisuals: Record<string, NSVisualConfig> = {

@@ -116,7 +116,9 @@ export function generateFresh(
     }
 
     case 'shapes': {
-      const items = generateShapeQuestions(difficulty, count);
+      const items = generateShapeQuestions(difficulty, count, {
+        skill: options?.skill as import('../types').ShapeSkill | undefined,
+      });
       const questions: Question[] = [];
       for (const item of items) {
         questionMap.set(item.question.id, item.question);
@@ -127,7 +129,9 @@ export function generateFresh(
     }
 
     case 'numbers_in_shapes': {
-      const items = generateNSQuestions(difficulty, count);
+      const items = generateNSQuestions(difficulty, count, {
+        skill: options?.skill as import('../types').NumbersInShapesSkill | undefined,
+      });
       const questions: Question[] = [];
       for (const item of items) {
         questionMap.set(item.question.id, item.question);

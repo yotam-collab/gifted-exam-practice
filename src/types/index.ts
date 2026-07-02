@@ -45,7 +45,8 @@ export type WordRelationSkill =
   | 'animal_habitat'       // animal and the formal name of its habitat (dove : dovecote)
   | 'liquid_container'     // liquid and its typical container (water : cup, wine : bottle)
   | 'tool_domain'          // measurement tool and its domain (watch : time, ruler : length)
-  | 'work_part';           // creative work and its named part (book : chapter, song : stanza)
+  | 'work_part'            // creative work and its named part (book : chapter, song : stanza)
+  | 'intensity';           // weak↔strong degrees of the same phenomenon (drizzle : downpour)
 
 export type ShapeSkill =
   | 'shape_analogy'
@@ -57,14 +58,16 @@ export type ShapeSkill =
   | 'graphic_rule'
   | 'rotation_position_count'
   | 'fill_frame_direction'
-  | 'multi_rule_jump';
+  | 'multi_rule_jump'
+  | 'pattern_completion';  // repeating-tessellation patch (pick the tile that continues the pattern)
 
 export type NumbersInShapesSkill =
   | 'divided_circle'
   | 'number_pyramid'
   | 'number_flow'
   | 'number_grid'
-  | 'number_pattern';
+  | 'number_pattern'
+  | 'wheel_sums';          // sector wheel: each outer number = sum of the two adjacent inner sectors
 
 export type SkillTag = MathSkill | SentenceSkill | WordRelationSkill | ShapeSkill | NumbersInShapesSkill;
 
@@ -125,6 +128,8 @@ export interface SessionConfig {
   difficulty: Difficulty;
   timerMode: TimerMode;
   timeLimitSec?: number;
+  /** Optional focus on a single sub-skill (practice mode's sub-type picker). */
+  skillTag?: SkillTag;
 }
 
 export interface SessionSection {

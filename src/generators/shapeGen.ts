@@ -1278,6 +1278,56 @@ function genAccumulationMatrix(): ShapeGenResult {
   };
 }
 
+// ── Tessellation patch: repeating pattern with a hole ───────────────────
+// A 4×4 field tiled by a period-2 checkerboard of two figures. One inner
+// cell is missing; the kid picks the tile that continues the pattern. The
+// key skill is PHASE tracking — the strongest distractor is the other tile
+// (right pattern, wrong phase).
+function genPatternPatch(): ShapeGenResult {
+  const typeA = pick(SHAPE_TYPES);
+  const typeB = pick(SHAPE_TYPES.filter(t => t !== typeA));
+  const fillA = pick(['solid', 'striped'] as const);
+  const fillB = pick((['none', 'solid', 'striped'] as const).filter(f => f !== fillA));
+
+  const tileA = () => s(typeA, fillA);
+  const tileB = () => s(typeB, fillB);
+
+  // Hide an inner cell so the pattern surrounds the hole on all sides.
+  const holeR = rand(1, 2);
+  const holeC = rand(1, 2);
+  const cells: (RenderShape | null)[][] = [];
+  for (let r = 0; r < 4; r++) {
+    const row: (RenderShape | null)[] = [];
+    for (let c = 0; c < 4; c++) {
+      if (r === holeR && c === holeC) row.push(null);
+      else row.push((r + c) % 2 === 0 ? tileA() : tileB());
+    }
+    cells.push(row);
+  }
+
+  const holeIsA = (holeR + holeC) % 2 === 0;
+  const correct = holeIsA ? tileA() : tileB();
+  const distractors: RenderShape[] = [
+    holeIsA ? tileB() : tileA(),                       // wrong phase — the classic trap
+    s(holeIsA ? typeA : typeB, holeIsA ? fillB : fillA), // right shape, wrong fill
+    s(pick(SHAPE_TYPES.filter(t => t !== typeA && t !== typeB)), fillA), // foreign tile
+  ];
+  const allOptions = dedupShapeOptions(shuffle([correct, ...distractors]), correct);
+
+  return {
+    skill: 'pattern_completion',
+    stem: 'התבנית חוזרת על עצמה. איזו משבצת חסרה בחור?',
+    options: allOptions.map(describeShape),
+    correctOption: allOptions.indexOf(correct),
+    explanation: `התבנית היא שחמט של שתי צורות: ${shapeNameHe[typeA]} ${fillNameHe[fillA]} ו-${shapeNameHe[typeB]} ${fillNameHe[fillB]}, לסירוגין.\nבודקים את השכנים של החור: מעליו, מתחתיו ומצדדיו נמצאת תמיד הצורה השנייה — לכן בחור עצמו חייבת להיות ${shapeNameHe[holeIsA ? typeA : typeB]} ${fillNameHe[holeIsA ? fillA : fillB]}.\nהמלכודת: לבחור את הצורה השכנה (פאזה הפוכה).`,
+    visualConfig: {
+      stemLayout: 'grid',
+      gridCells: cells,
+      optionShapes: allOptions.map(o => [o]),
+    },
+  };
+}
+
 // ── Mirror-symmetry odd-one-out ─────────────────────────────────────────
 // Three shapes are rotated identically; one is mirrored. Trains the
 // "rotation vs reflection" trap that's classic on Stage B figural items.
@@ -1344,6 +1394,7 @@ const mediumGenerators: GenFn[] = [
   genBlackWhitePairSeries,    // two alternating attributes
   genCompoundOddOneOut,       // must check 3 dimensions to find the odd one
   genOverlayCombination,      // union of two frames (2 grids merged)
+  genPatternPatch,            // tessellation hole — phase tracking
 ];
 // HARD pool — three simultaneous rules, 3×3 matrices with two-axis rules, long
 // (6-step) series, or spatial completion. This is genuine gifted-exam level.
@@ -1353,7 +1404,12 @@ const hardGenerators: GenFn[] = [
   genCompositeShapeAnalogy,
   // New spatial-reasoning generators added to lift the ceiling further.
   genOverlayCombination, genCompleteTheShape, genAccumulationMatrix,
+  genPatternPatch,
 ];
+
+// Combined pool (deduped) — used by the sub-skill picker, which needs to
+// search ALL generators regardless of the session's difficulty pool.
+const generators: GenFn[] = [...new Set([...easyGenerators, ...mediumGenerators, ...hardGenerators])];
 
 
 export interface ShapeQuestionWithVisual {
@@ -1361,7 +1417,11 @@ export interface ShapeQuestionWithVisual {
   visualConfig: VisualConfig;
 }
 
-export function generateShapeQuestions(difficulty: Difficulty, count: number): ShapeQuestionWithVisual[] {
+export function generateShapeQuestions(
+  difficulty: Difficulty,
+  count: number,
+  options?: { skill?: ShapeSkill },
+): ShapeQuestionWithVisual[] {
   const result: ShapeQuestionWithVisual[] = [];
   const effectiveDiff: Difficulty = difficulty === 'adaptive' ? 'medium' : difficulty;
 
@@ -1383,8 +1443,17 @@ export function generateShapeQuestions(difficulty: Difficulty, count: number): S
       // mostly warm-up questions and never met exam-level items.)
       d = pick(['medium', 'medium', 'hard', 'hard', 'hard']);
     }
-    const gen = pick(poolFor(d));
-    const r = gen();
+    // Sub-skill focus (practice sub-type picker): every generator returns a
+    // constant skill tag, so we discover each generator's skill with one probe
+    // call and then sample only from the matching ones — exact, no rejection
+    // sampling. Falls back to the difficulty pool if no generator matches.
+    const wanted = options?.skill;
+    let samplingPool = poolFor(d);
+    if (wanted) {
+      const matching = generators.filter(g => g().skill === wanted);
+      if (matching.length > 0) samplingPool = matching;
+    }
+    const r = pick(samplingPool)();
 
     const question: Question = {
       id: uid(),

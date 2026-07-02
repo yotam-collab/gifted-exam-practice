@@ -5,7 +5,7 @@ import { storage } from '../services/storage';
 import { updateMastery, selectAdaptiveQuestions } from '../services/adaptive';
 import { useTimer } from '../hooks/useTimer';
 import { selectForSection, getVisualConfig, getNSVisualConfig } from '../services/questionPool';
-import { ShapeAnalogy, ShapeSeries, ShapeGrid, ShapeRow, ShapeOddOneOut, ShapeOptions, DividedCirclePair, NumberPyramid, NumberGrid, NumberFlowChart, NumberTriangle, ArrowChain, BidirectionalFlow } from '../utils/shapeRenderer';
+import { ShapeAnalogy, ShapeSeries, ShapeGrid, ShapeRow, ShapeOddOneOut, ShapeOptions, DividedCirclePair, NumberPyramid, NumberGrid, NumberFlowChart, NumberTriangle, ArrowChain, BidirectionalFlow, NumberWheel } from '../utils/shapeRenderer';
 import { sounds } from '../services/sounds';
 
 interface Props {
@@ -124,7 +124,7 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
           sectionType,
           config.difficulty || 'medium',
           count,
-          { manualShare },
+          { manualShare, skill: config.skillTag },
         );
       }
 
@@ -478,6 +478,9 @@ export default function SessionScreen({ userId, mode, config, onEnd, isPracticeM
             )}
             {nsVisual.type === 'bidirectional_flow' && (
               <BidirectionalFlow rows={nsVisual.rows} missing={nsVisual.missing} />
+            )}
+            {nsVisual.type === 'number_wheel' && (
+              <NumberWheel inner={nsVisual.inner} outer={nsVisual.outer} missingOuterIndex={nsVisual.missingOuterIndex} />
             )}
           </div>
         )}

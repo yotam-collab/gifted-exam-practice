@@ -58,6 +58,7 @@ export const SECTION_CONFIGS: SectionConfig[] = [
       { tag: 'liquid_container', nameHe: 'נוזל-כלי קיבול' },
       { tag: 'tool_domain', nameHe: 'כלי מדידה-תחום' },
       { tag: 'work_part', nameHe: 'יצירה-חלק' },
+      { tag: 'intensity', nameHe: 'דרגות עוצמה' },
     ],
   },
   {
@@ -78,6 +79,7 @@ export const SECTION_CONFIGS: SectionConfig[] = [
       { tag: 'rotation_position_count', nameHe: 'סיבוב / מיקום / כמות' },
       { tag: 'fill_frame_direction', nameHe: 'שינוי מילוי וכיוון' },
       { tag: 'multi_rule_jump', nameHe: 'קפיצות חוקיות מרובות' },
+      { tag: 'pattern_completion', nameHe: 'השלמת תבנית' },
     ],
   },
   {
@@ -93,6 +95,7 @@ export const SECTION_CONFIGS: SectionConfig[] = [
       { tag: 'number_flow', nameHe: 'תרשים זרימה' },
       { tag: 'number_grid', nameHe: 'טבלת מספרים' },
       { tag: 'number_pattern', nameHe: 'חוקיות מספרית' },
+      { tag: 'wheel_sums', nameHe: 'גלגל סכומים' },
     ],
   },
 ];

@@ -1284,6 +1284,95 @@ export function BidirectionalFlow({
 }
 
 // ---------------------------------------------------------------------------
+// Component: NumberWheel – circle split into N sectors with inner numbers;
+// each outer number sits on a boundary spoke and equals the sum of the two
+// inner sectors that touch that spoke. Classic hard Stage B figure.
+// ---------------------------------------------------------------------------
+
+export function NumberWheel({
+  inner,
+  outer,
+  missingOuterIndex,
+}: {
+  inner: number[];
+  outer: (number | string)[];
+  missingOuterIndex: number;
+}): React.ReactElement {
+  const n = inner.length;
+  const size = 230;
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = 62;               // wheel radius
+  const innerTextR = r * 0.62; // sector-center label radius
+  const outerTextR = r + 26;   // boundary label radius (outside the wheel)
+
+  // Boundary i sits between sector i-1 and sector i. We place boundary angles
+  // at (i / n) turns starting from "up"; sector centers halfway between.
+  const boundaryAngle = (i: number) => -Math.PI / 2 + (2 * Math.PI * i) / n;
+  const sectorAngle = (i: number) => boundaryAngle(i) + Math.PI / n;
+
+  return (
+    <DiagramPaper>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={cx} cy={cy} r={r} fill={DIAGRAM_THEME.paper} stroke={DIAGRAM_THEME.ink} strokeWidth="2.4" />
+        {/* Boundary spokes, extended slightly outward toward the outer labels */}
+        {Array.from({ length: n }).map((_, i) => {
+          const a = boundaryAngle(i);
+          return (
+            <line
+              key={i}
+              x1={cx}
+              y1={cy}
+              x2={cx + Math.cos(a) * (r + 10)}
+              y2={cy + Math.sin(a) * (r + 10)}
+              stroke={DIAGRAM_THEME.ink}
+              strokeWidth="1.6"
+            />
+          );
+        })}
+        {/* Inner sector numbers */}
+        {inner.map((v, i) => {
+          const a = sectorAngle(i);
+          return (
+            <text
+              key={`in-${i}`}
+              x={cx + Math.cos(a) * innerTextR}
+              y={cy + Math.sin(a) * innerTextR}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={16}
+              fontWeight="bold"
+              fill={DIAGRAM_THEME.ink}
+            >
+              {v}
+            </text>
+          );
+        })}
+        {/* Outer boundary numbers (one may be the hidden "?") */}
+        {outer.map((v, i) => {
+          const a = boundaryAngle(i);
+          const isMissing = i === missingOuterIndex;
+          return (
+            <text
+              key={`out-${i}`}
+              x={cx + Math.cos(a) * outerTextR}
+              y={cy + Math.sin(a) * outerTextR}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={17}
+              fontWeight="bold"
+              fill={isMissing ? DIAGRAM_THEME.missing : DIAGRAM_THEME.ink}
+            >
+              {isMissing ? '?' : v}
+            </text>
+          );
+        })}
+      </svg>
+    </DiagramPaper>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Component: NumberTriangle – triangle with numbers at vertices and center
 // ---------------------------------------------------------------------------
 

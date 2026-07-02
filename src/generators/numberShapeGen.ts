@@ -525,6 +525,47 @@ function genFunctionMachine(d: Difficulty): NSGenResult {
   };
 }
 
+// ── Sector wheel: outer number = sum of the two adjacent inner sectors ──
+// Hard figure: the kid must first DISCOVER which two inner numbers each
+// outer number relates to (spatial adjacency), then apply the sum rule to
+// the hidden boundary.
+function genWheelSums(d: Difficulty): NSGenResult {
+  const n = 6; // six sectors — six boundaries, rich enough without clutter
+  const lo = d === 'easy' ? 1 : d === 'hard' ? 4 : 2;
+  const hi = d === 'easy' ? 9 : d === 'hard' ? 15 : 12;
+  const inner = Array.from({ length: n }, () => rand(lo, hi));
+  // Boundary i sits between sector (i-1+n)%n and sector i.
+  const outerFull = Array.from({ length: n }, (_, i) => inner[(i - 1 + n) % n] + inner[i]);
+  const missingOuterIndex = rand(0, n - 1);
+  const answer = outerFull[missingOuterIndex];
+  const a = inner[(missingOuterIndex - 1 + n) % n];
+  const b = inner[missingOuterIndex];
+
+  const outer: (number | string)[] = outerFull.map((v, i) => (i === missingOuterIndex ? '?' : v));
+  // Distractors: sum with a NON-adjacent sector (the classic wrong-pairing
+  // trap), off-by-one, and the difference instead of the sum.
+  const nonAdjacent = inner[(missingOuterIndex + 2) % n];
+  const { options, correctOption } = makeNumOptions(answer, [
+    a + nonAdjacent,
+    answer + 1,
+    Math.abs(a - b) > 0 ? Math.abs(a - b) : answer - 1,
+  ]);
+
+  return {
+    skill: 'wheel_sums',
+    stem: 'בגלגל: כל מספר חיצוני שווה לסכום שני המספרים הפנימיים שנוגעים בקו שלו. מהו המספר החסר?',
+    options,
+    correctOption,
+    explanation: `כל מספר חיצוני יושב על קו שמפריד בין שני חלקים פנימיים — והוא הסכום שלהם.\nליד סימן השאלה נמצאים החלקים ${a} ו-${b}.\n${a} + ${b} = ${answer}.\nמלכודת נפוצה: לחבר חלקים שלא נוגעים באותו קו.`,
+    visualConfig: {
+      type: 'number_wheel',
+      inner,
+      outer,
+      missingOuterIndex,
+    },
+  };
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // Public API
 // ═══════════════════════════════════════════════════════════════════════
@@ -548,19 +589,32 @@ const allGenerators: Array<{ skill: NumbersInShapesSkill; gen: NSGenFn }> = [
   { skill: 'number_flow', gen: genArrowChain },
   { skill: 'number_flow', gen: genBidirectionalFlow },
   { skill: 'number_flow', gen: genFunctionMachine },
+  // Sector wheel: spatial-adjacency sum rule (hard exam figure).
+  { skill: 'wheel_sums', gen: genWheelSums },
 ];
 
-export function generateNSQuestions(difficulty: Difficulty, count: number): NSQuestionWithVisual[] {
+export function generateNSQuestions(
+  difficulty: Difficulty,
+  count: number,
+  options?: { skill?: NumbersInShapesSkill },
+): NSQuestionWithVisual[] {
   const result: NSQuestionWithVisual[] = [];
 
+  // Sub-skill focus (practice sub-type picker): registry entries carry their
+  // skill tag, so we can filter directly. Fall back to all if none match.
+  const registry = options?.skill
+    ? allGenerators.filter(g => g.skill === options.skill)
+    : allGenerators;
+  const activeGenerators = registry.length > 0 ? registry : allGenerators;
+
   // Distribute across skills
-  const perSkill = Math.max(1, Math.floor(count / allGenerators.length));
+  const perSkill = Math.max(1, Math.floor(count / activeGenerators.length));
   const pool: Array<{ skill: NumbersInShapesSkill; gen: NSGenFn }> = [];
 
-  for (const entry of allGenerators) {
+  for (const entry of activeGenerators) {
     for (let i = 0; i < perSkill; i++) pool.push(entry);
   }
-  while (pool.length < count) pool.push(pick(allGenerators));
+  while (pool.length < count) pool.push(pick(activeGenerators));
 
   for (const { gen } of shuffle(pool).slice(0, count)) {
     // Adaptive stretches toward exam level — no pure-easy in the default mode.

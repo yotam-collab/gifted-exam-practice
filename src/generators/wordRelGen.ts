@@ -246,6 +246,17 @@ const banks: RelationBank[] = [
       ['מַנְגִּינָה', 'תָּו'], ['רוֹמָן', 'פֶּרֶק'], ['פֹּעַל', 'מִשְׁפָּט'],
     ],
   },
+
+  {
+    skill: 'intensity',
+    label: 'דרגות עוצמה: אותה תופעה, מהחלש אל החזק',
+    pairs: [
+      ['טִפְטוּף', 'מַבּוּל'], ['מַשָּׁב', 'סְעָרָה'], ['לְחִישָׁה', 'צְעָקָה'],
+      ['חִיּוּךְ', 'צְחוֹק'], ['הֲלִיכָה', 'רִיצָה'], ['גִּבְעָה', 'הַר'],
+      ['שְׁלוּלִית', 'אֲגַם'], ['חֲשָׁשׁ', 'אֵימָה'], ['טְעִימָה', 'זְלִילָה'],
+      ['עֲיֵפוּת', 'תְּשִׁישׁוּת'], ['נִצְנוּץ', 'זֹהַר'], ['רוּחַ', 'סוּפָה'],
+    ],
+  },
 ];
 
 // ── Generator logic ─────────────────────────────────────────────────────
@@ -270,7 +281,9 @@ function reversedPairDistractor(bank: RelationBank, stemPair: Pair): Pair | null
 const CONFUSABLE_CLUSTERS: WordRelationSkill[][] = [
   ['tool_use', 'action_object', 'tool_domain', 'material_product'],
   ['part_whole', 'work_part', 'category_item', 'liquid_container'],
-  ['synonyms', 'synonyms_antonyms'],
+  // intensity pairs feel like synonyms ("both mean rain") — the kid must spot
+  // that the relation is weak→strong of the SAME thing, not sameness.
+  ['synonyms', 'synonyms_antonyms', 'intensity'],
   ['animal_baby', 'animal_habitat', 'animal_trait'],
   ['cause_effect', 'disease_cure'],
   ['verbal_analogy', 'category_item', 'animal_habitat'],
