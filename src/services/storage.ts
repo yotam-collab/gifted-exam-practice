@@ -11,6 +11,8 @@ import type {
 export interface AppSettings {
   parentPin: string;
   childName: string;
+  /** ISO date (yyyy-mm-dd) of the child's exam — powers the countdown + plan. */
+  examDate?: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
