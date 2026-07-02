@@ -262,6 +262,30 @@ function reversedPairDistractor(bank: RelationBank, stemPair: Pair): Pair | null
   return [p[1], p[0]];
 }
 
+// Confusable clusters: relation types that FEEL similar to a 7-year-old.
+// At medium/hard, distractors are drawn from the same cluster as the stem's
+// relation — so eliminating them requires understanding the PRECISE relation,
+// not just "this pair feels unrelated". This is what separates exam-level
+// items from warm-ups.
+const CONFUSABLE_CLUSTERS: WordRelationSkill[][] = [
+  ['tool_use', 'action_object', 'tool_domain', 'material_product'],
+  ['part_whole', 'work_part', 'category_item', 'liquid_container'],
+  ['synonyms', 'synonyms_antonyms'],
+  ['animal_baby', 'animal_habitat', 'animal_trait'],
+  ['cause_effect', 'disease_cure'],
+  ['verbal_analogy', 'category_item', 'animal_habitat'],
+];
+
+function clusterSiblings(skill: WordRelationSkill): WordRelationSkill[] {
+  const out = new Set<WordRelationSkill>();
+  for (const cluster of CONFUSABLE_CLUSTERS) {
+    if (cluster.includes(skill)) {
+      for (const s of cluster) if (s !== skill) out.add(s);
+    }
+  }
+  return [...out];
+}
+
 function generateOneRelation(
   skill: WordRelationSkill,
   difficulty: Difficulty,
@@ -285,23 +309,54 @@ function generateOneRelation(
   }
   const correctPair = shuffledPairs.find(p => p !== stemPair) ?? shuffledPairs[1];
 
+  // Difficulty first — the distractor strategy depends on it.
+  // Adaptive (default practice) stretches toward exam level: no pure-easy.
+  const effectiveDiff = difficulty === 'adaptive' ? pick(['medium', 'medium', 'hard', 'hard'] as Difficulty[]) : difficulty;
+
   // Distractor strategy:
   //   • slot 1: a REVERSED pair from the same bank — same words, wrong direction.
   //     This is the canonical Stage B trap (kid sees the right relation but
   //     in the wrong order).
-  //   • slots 2–3: pairs from OTHER banks (clearly different relation) so the
-  //     question stays solvable for a 7-year-old who's grasped the concept.
+  //   • slots 2–3, by difficulty:
+  //       easy   → pairs from clearly-different banks (solvable by concept).
+  //       medium → one cluster-sibling pair (confusable relation) + one far bank.
+  //       hard   → both from cluster-sibling banks. The kid must articulate the
+  //                exact relation to reject "close but different" pairs.
   const distractorPairs: Pair[] = [];
-  const reversed = reversedPairDistractor(bank, stemPair);
-  if (reversed) distractorPairs.push(reversed);
+  const usedKeys = new Set<string>([
+    `${stemPair[0]}:${stemPair[1]}`,
+    `${correctPair[0]}:${correctPair[1]}`,
+  ]);
+  const tryPush = (p: Pair): boolean => {
+    const key = `${p[0]}:${p[1]}`;
+    if (usedKeys.has(key)) return false;
+    usedKeys.add(key);
+    distractorPairs.push(p);
+    return true;
+  };
 
-  const otherBanks = banks.filter(b => b.skill !== skill);
-  for (const ob of shuffle(otherBanks)) {
-    if (distractorPairs.length >= 3) break;
-    distractorPairs.push(pick(ob.pairs));
+  const reversed = reversedPairDistractor(bank, stemPair);
+  if (reversed) tryPush(reversed);
+
+  const siblings = clusterSiblings(skill);
+  const siblingBanks = shuffle(banks.filter(b => siblings.includes(b.skill)));
+  const farBanks = shuffle(banks.filter(b => b.skill !== skill && !siblings.includes(b.skill)));
+
+  const wantedSiblingCount =
+    effectiveDiff === 'hard' ? 2 : effectiveDiff === 'medium' ? 1 : 0;
+  for (const sb of siblingBanks) {
+    if (distractorPairs.length >= 1 + wantedSiblingCount) break;
+    tryPush(pick(sb.pairs));
   }
-  while (distractorPairs.length < 3) {
-    distractorPairs.push(pick(pick(otherBanks).pairs));
+  for (const fb of farBanks) {
+    if (distractorPairs.length >= 3) break;
+    tryPush(pick(fb.pairs));
+  }
+  // Safety net: top up from any non-stem bank if clusters/far pools ran short.
+  const anyOther = banks.filter(b => b.skill !== skill);
+  let guard = 0;
+  while (distractorPairs.length < 3 && anyOther.length > 0 && guard++ < 40) {
+    tryPush(pick(pick(anyOther).pairs));
   }
 
   const fmtPair = (p: Pair) => `${p[0]} : ${p[1]}`;
@@ -309,8 +364,6 @@ function generateOneRelation(
     fmtPair(correctPair),
     ...distractorPairs.slice(0, 3).map(fmtPair),
   ]);
-
-  const effectiveDiff = difficulty === 'adaptive' ? pick(['easy', 'medium', 'hard'] as Difficulty[]) : difficulty;
 
   if (recentStems) recentStems.add(`${stemPair[0]}:${stemPair[1]}`);
 

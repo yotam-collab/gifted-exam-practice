@@ -46,10 +46,16 @@ const places = ['בחנות', 'בספרייה', 'בבית הספר', 'בגן', '
 // ── Option generation ───────────────────────────────────────────────────
 
 function makeOptions(correct: number, partials: number[] = []): { options: string[]; correctOption: number } {
+  // Guard: a non-finite `correct` (NaN/Infinity from a buggy template) used to
+  // spin the while-loop below forever, because a Set dedups NaN against NaN.
+  // Fail loudly instead of hanging the whole session build.
+  if (!Number.isFinite(correct)) {
+    throw new Error(`makeOptions: non-finite correct value (${correct}) — check the calling template`);
+  }
   const set = new Set<number>([correct]);
-  // Add partial/common-mistake values first
+  // Add partial/common-mistake values first (skip non-finite partials quietly)
   for (const p of partials) {
-    if (p > 0 && p !== correct) set.add(p);
+    if (Number.isFinite(p) && p > 0 && p !== correct) set.add(p);
   }
   // Add close distractors
   const offsets = shuffle([-3, -2, -1, 1, 2, 3, 4, 5, -4, 6, -5, 7]);
@@ -58,7 +64,10 @@ function makeOptions(correct: number, partials: number[] = []): { options: strin
     const v = correct + off;
     if (v > 0 && !set.has(v)) set.add(v);
   }
-  while (set.size < 4) set.add(correct + rand(1, 20));
+  let guard = 0;
+  while (set.size < 4 && guard++ < 100) set.add(correct + rand(1, 20));
+  // Deterministic top-up if randomness somehow starved (paranoia-level safety).
+  for (let i = 1; set.size < 4; i++) set.add(correct + 20 + i);
 
   const arr = shuffle(Array.from(set).slice(0, 4));
   return { options: arr.map(String), correctOption: arr.indexOf(correct) };
@@ -540,7 +549,14 @@ const mc1: TemplateGen = (d) => {
   const price1 = rand(lo, hi);
   const price2 = rand(lo, hi);
   const total = qty1 * price1 + price2;
-  const bill = pick([20, 50, 100].filter(b => b > total));
+  // BUG FIX: at hard difficulty `total` can exceed 100, which used to leave the
+  // filter empty → pick(undefined) → answer = NaN → makeOptions' Set-based
+  // while-loop spun forever (Set dedups NaN against NaN). This latent hang was
+  // the cause of all the mysteriously stuck audit runs.
+  const billCandidates = [20, 50, 100, 200].filter(b => b > total);
+  const bill = billCandidates.length > 0
+    ? pick(billCandidates)
+    : Math.ceil((total + 10) / 50) * 50;
   const answer = bill - total;
 
   const stem = `${name} קנה ${qty1} ${item1.plural} ב-${price1} שקלים כל אחת, ו${item2.name} ב-${price2} שקלים. שילם עם שטר של ${bill} שקלים. כמה עודף קיבל?`;
@@ -904,6 +920,66 @@ const wt1: TemplateGen = (d) => {
   };
 };
 
+// ── Twins + sibling sum-relation (two-step: sum, then offset) ───────────
+const tw1: TemplateGen = (d) => {
+  const twinAge = rand(d === 'easy' ? 5 : 6, d === 'hard' ? 10 : 9);
+  const k = rand(2, d === 'hard' ? 7 : 5);
+  const sum = twinAge * 2;
+  const sisterAge = sum - k;
+  if (sisterAge <= twinAge) return tw1(d); // sibling should be older than each twin
+  const [n1, n2] = shuffle([...girls]).slice(0, 2);
+  const sister = pick(girls.filter(g => g !== n1 && g !== n2));
+  const stem = `${n1} ו${n2} תאומות בנות ${twinAge}. גילה של אחותן הגדולה ${sister} שווה לסכום הגילים של שתיהן, פחות ${k}. בת כמה ${sister}?`;
+  const { options, correctOption } = makeOptions(sisterAge, [sum, twinAge + k, sum + k]);
+  const explanation = `סכום הגילים של התאומות: ${twinAge} + ${twinAge} = ${sum}.\nגיל האחות: ${sum} − ${k} = ${sisterAge}.`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── Sleep/awake hours across multiple days (24-hour reasoning) ──────────
+const sl1: TemplateGen = (d) => {
+  const sleep = rand(8, 16);
+  const days = d === 'easy' ? 2 : d === 'hard' ? 4 : 3;
+  const awakePerDay = 24 - sleep;
+  const answer = awakePerDay * days;
+  const name = pick([...boys, ...girls]);
+  const dayWord = days === 2 ? 'יומיים' : `${days} ימים`;
+  const stem = `${name} ישן ${sleep} שעות בכל יממה. כמה שעות הוא ער במהלך ${dayWord} שלמים?`;
+  const { options, correctOption } = makeOptions(answer, [awakePerDay, sleep * days, 24 * days - sleep]);
+  const explanation = `ביממה יש 24 שעות. ער בכל יממה: 24 − ${sleep} = ${awakePerDay} שעות.\nבמהלך ${dayWord}: ${awakePerDay} × ${days} = ${answer} שעות.\nשימו לב למלכודת: מי שמחשב כמה הוא ישן מקבל ${sleep * days} — אבל שאלו כמה הוא ער!`;
+  return { stem, options, correctOption, explanation };
+};
+
+// ── Two-constraint digit puzzle: check every option against BOTH rules ──
+const dp2: TemplateGen = (d) => {
+  // "I'm a two-digit EVEN number and my digit-sum is S. Who am I?"
+  // The kid must verify two independent constraints per option — a real
+  // exam skill (elimination by checking), not a single computation.
+  const digitSum = d === 'hard' ? pick([9, 11, 13]) : pick([7, 9]);
+  // Collect all 2-digit even numbers with that digit sum.
+  const evens: number[] = [];
+  const odds: number[] = [];
+  const wrongSumEvens: number[] = [];
+  for (let n = 10; n <= 98; n++) {
+    const s = Math.floor(n / 10) + (n % 10);
+    if (s === digitSum) (n % 2 === 0 ? evens : odds).push(n);
+    else if (n % 2 === 0 && Math.abs(s - digitSum) === 1) wrongSumEvens.push(n);
+  }
+  if (evens.length === 0 || odds.length < 2 || wrongSumEvens.length === 0) return dp2('medium');
+  const answer = pick(evens);
+  const distractors = shuffle([
+    ...shuffle(odds).slice(0, 2),          // right sum, but odd
+    pick(wrongSumEvens),                    // even, but sum off by one
+  ]).slice(0, 3);
+  const allOpts = shuffle([answer, ...distractors]).map(String);
+  const stem = `אני מספר דו־ספרתי זוגי, וסכום הספרות שלי הוא ${digitSum}. מי אני?`;
+  return {
+    stem,
+    options: allOpts,
+    correctOption: allOpts.indexOf(String(answer)),
+    explanation: `בודקים כל אפשרות מול שני התנאים:\n1) המספר זוגי (ספרת האחדות: 0, 2, 4, 6 או 8).\n2) סכום הספרות = ${digitSum}.\nרק ${answer} מקיים את שניהם: ${Math.floor(answer / 10)} + ${answer % 10} = ${digitSum}, וספרת האחדות ${answer % 10} זוגית.`,
+  };
+};
+
 // ═══════════════════════════════════════════════════════════════════════
 // Template Registry
 // ═══════════════════════════════════════════════════════════════════════
@@ -921,9 +997,9 @@ interface SkillTemplates {
 // digit puzzles, age-with-multiplier, items×rows layouts, multi-week shopping,
 // rate extrapolation, group division with leftover.
 const allTemplates: SkillTemplates[] = [
-  { skill: 'word_problems', templates: [wp1, wp2, wp3, wp4, wp5, wp7, wp8, ir1, mw1, gd1, inv1, sf1, rs1, wt1] },
+  { skill: 'word_problems', templates: [wp1, wp2, wp3, wp4, wp5, wp7, wp8, ir1, mw1, gd1, inv1, sf1, rs1, wt1, sl1] },
   { skill: 'number_sequences', templates: [seq1, seq2, seq4, seq5] },
-  { skill: 'math_logic', templates: [ml2, ml4, dp1, ag1, by1, re1] },
+  { skill: 'math_logic', templates: [ml2, ml4, dp1, ag1, by1, re1, tw1, dp2] },
   { skill: 'time_clock', templates: [tc1, tc2, tc3, sp1, ba1] },
   { skill: 'money_change', templates: [mc1, mc2, mc3, hw1] },
 ];
@@ -944,7 +1020,9 @@ export function generateMathQuestions(
   options?: { skill?: MathSkill; recentTemplates?: Set<TemplateGen> },
 ): Question[] {
   const result: Question[] = [];
-  const effectiveDiff: Difficulty = difficulty === 'adaptive' ? pick(['easy', 'medium', 'hard']) : difficulty;
+  // Adaptive is the default practice mode of a gifted-exam prep tool, so it
+  // must stretch toward exam level — no pure-easy, majority medium/hard.
+  const effectiveDiff: Difficulty = difficulty === 'adaptive' ? pick(['medium', 'medium', 'hard', 'hard']) : difficulty;
 
   // Build the working template list: filter by skill if requested, and only
   // surface hard-only templates when the difficulty is actually hard.
@@ -991,7 +1069,7 @@ export function generateMathQuestions(
   }
 
   for (const { skill, gen } of shuffle(pool).slice(0, count)) {
-    const d = difficulty === 'adaptive' ? pick(['easy', 'medium', 'hard']) as Difficulty : effectiveDiff;
+    const d = difficulty === 'adaptive' ? pick(['medium', 'medium', 'hard', 'hard']) as Difficulty : effectiveDiff;
     const r = gen(d);
     result.push({
       id: uid(),

@@ -19,9 +19,14 @@ function shuffle<T>(a: T[]): T[] {
 }
 
 function makeNumOptions(correct: number, partials: number[] = []): { options: string[]; correctOption: number } {
+  // Guard: non-finite `correct` would spin the while-loop forever (a Set
+  // dedups NaN against NaN). Fail loudly instead of hanging.
+  if (!Number.isFinite(correct)) {
+    throw new Error(`makeNumOptions: non-finite correct value (${correct}) — check the calling generator`);
+  }
   const set = new Set<number>([correct]);
   for (const p of partials) {
-    if (p > 0 && p !== correct) set.add(p);
+    if (Number.isFinite(p) && p > 0 && p !== correct) set.add(p);
   }
   const offsets = shuffle([-3, -2, -1, 1, 2, 3, 4, -4, 5]);
   for (const off of offsets) {
@@ -29,7 +34,9 @@ function makeNumOptions(correct: number, partials: number[] = []): { options: st
     const v = correct + off;
     if (v > 0 && !set.has(v)) set.add(v);
   }
-  while (set.size < 4) set.add(correct + rand(1, 15));
+  let guard = 0;
+  while (set.size < 4 && guard++ < 100) set.add(correct + rand(1, 15));
+  for (let i = 1; set.size < 4; i++) set.add(correct + 15 + i);
   const arr = shuffle(Array.from(set).slice(0, 4));
   return { options: arr.map(String), correctOption: arr.indexOf(correct) };
 }
@@ -50,13 +57,26 @@ interface NSGenResult {
 // ── Divided Circle: two circles with same operation ─────────────────────
 
 function genDividedCircle(d: Difficulty): NSGenResult {
-  const opType = pick(['multiply', 'add', 'divide'] as const);
+  // 'offset' is a within-circle relation (bottom-left = top − k, bottom-right
+  // = top + k) — a harder rule family because the kid must compare BOTH
+  // circles to extract k, then apply it internally. Reserved for medium+.
+  const opType = d === 'easy'
+    ? pick(['multiply', 'add', 'divide'] as const)
+    : pick(['multiply', 'add', 'divide', 'offset', 'offset'] as const);
   let circle1: number[];
   let circle2: number[];
   let answer: number;
   let ruleText: string;
 
-  if (opType === 'multiply') {
+  if (opType === 'offset') {
+    const k = rand(2, d === 'hard' ? 9 : 5);
+    const top1 = rand(k + 10, d === 'hard' ? 80 : 40);
+    const top2 = rand(k + 10, d === 'hard' ? 80 : 40);
+    circle1 = [top1, top1 - k, top1 + k];
+    circle2 = [top2, top2 - k];
+    answer = top2 + k;
+    ruleText = `הכלל בתוך כל עיגול: המספר משמאל למטה קטן ב-${k} מהעליון, והמספר מימין למטה גדול ב-${k} מהעליון.\nבעיגול הראשון: ${top1} − ${k} = ${top1 - k}, ${top1} + ${k} = ${top1 + k} ✓\nבעיגול השני: ${top2} + ${k} = ${answer}.`;
+  } else if (opType === 'multiply') {
     // a × b = c in each circle
     const a1 = rand(2, d === 'hard' ? 12 : 8);
     const b1 = rand(2, d === 'hard' ? 10 : 6);
@@ -543,8 +563,9 @@ export function generateNSQuestions(difficulty: Difficulty, count: number): NSQu
   while (pool.length < count) pool.push(pick(allGenerators));
 
   for (const { gen } of shuffle(pool).slice(0, count)) {
+    // Adaptive stretches toward exam level — no pure-easy in the default mode.
     const d: Difficulty = difficulty === 'adaptive'
-      ? pick(['easy', 'medium', 'hard'])
+      ? pick(['medium', 'medium', 'hard', 'hard'])
       : difficulty;
 
     const r = gen(d);
