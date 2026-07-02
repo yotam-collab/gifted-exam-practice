@@ -1,0 +1,6 @@
+# Supabase local config. The Grow webhook must accept unauthenticated POSTs
+# (Grow has no Supabase JWT), so JWT verification is disabled for it — the
+# function protects itself with a shared secret instead.
+
+[functions.grow-webhook]
+verify_jwt = false

@@ -39,6 +39,41 @@ Then invite the buyer to log in: Authentication → Users → **Invite user** wi
 that email (or they can just request a link at `/auth`). On first login the
 `claim_entitlements()` RPC stamps their `user_id` onto the row automatically.
 
+## Grow webhook (`functions/grow-webhook`)
+
+Grants an entitlement by email + invites the buyer, on every paid transaction.
+
+**Deploy:** `supabase functions deploy grow-webhook`
+**Grow side:** set the server callback URL to
+`https://<ref>.supabase.co/functions/v1/grow-webhook?secret=<GROW_WEBHOOK_SECRET>`
+and enable sending the payer's email + phone. The marketing-site success page
+should point buyers to `https://<app-domain>/auth` ("check your email").
+
+**Test with curl** (replace `<ref>` and `<SECRET>`):
+
+```bash
+BASE="https://<ref>.supabase.co/functions/v1/grow-webhook?secret=<SECRET>"
+
+# 1. Valid sale -> grant + invite
+curl -sX POST "$BASE" -H 'content-type: application/json' \
+  -d '{"transactionId":"T-1001","payerEmail":"buyer@example.com","sum":"249"}'
+# -> {"ok":true,"outcome":"granted"}
+
+# 2. Same tx again -> idempotent
+curl -sX POST "$BASE" -H 'content-type: application/json' \
+  -d '{"transactionId":"T-1001","payerEmail":"buyer@example.com","sum":"249"}'
+# -> {"ok":true,"outcome":"duplicate"}
+
+# 3. Wrong secret -> no grant
+curl -sX POST "https://<ref>.supabase.co/functions/v1/grow-webhook?secret=nope" \
+  -H 'content-type: application/json' \
+  -d '{"transactionId":"T-1002","payerEmail":"x@example.com"}'
+# -> {"ok":true,"outcome":"bad_secret"}
+```
+
+Inspect results: `select * from webhook_log order by created_at desc;` and
+`select email, kit_id, source, expires_at from entitlements;`.
+
 ## How gating works
 
 - `entitlements` are keyed by **email** so the webhook can grant access before

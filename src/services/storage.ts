@@ -30,14 +30,36 @@ const KEYS = {
   settings: 'settings',
 } as const;
 
+// === Per-user namespacing ===
+// Anonymous ('local') keeps the original unsuffixed keys — fully backward
+// compatible with any existing data. A logged-in Supabase user gets a
+// `::<uid>` suffix so multiple accounts on one browser stay isolated.
+let activeUserId = 'local';
+
+export function setActiveUserId(id: string | null): void {
+  activeUserId = id ?? 'local';
+}
+
+export function getActiveUserId(): string {
+  return activeUserId;
+}
+
+function k(key: string): string {
+  return activeUserId === 'local' ? key : `${key}::${activeUserId}`;
+}
+
 // === Storage Service ===
 
 export const storage = {
+  // Expose the key namespacer so the migration helper can reach both spaces.
+  _key: k,
+  KEYS,
+
   // ── Generic helpers ──────────────────────────────────────────────
 
   get<T>(key: string, defaultValue: T): T {
     try {
-      const raw = localStorage.getItem(key);
+      const raw = localStorage.getItem(k(key));
       if (raw === null) return defaultValue;
       return JSON.parse(raw) as T;
     } catch {
@@ -46,7 +68,7 @@ export const storage = {
   },
 
   set<T>(key: string, value: T): void {
-    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(k(key), JSON.stringify(value));
   },
 
   // ── Session helpers ──────────────────────────────────────────────
