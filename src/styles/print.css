@@ -1,0 +1,91 @@
+/* Printable worksheet styles — imported only by PrintRoute. A4, RTL, black
+   ink on white, with page-break control so a question never splits and the
+   answer key starts on its own page. */
+
+.print-root {
+  direction: rtl;
+  background: #ffffff;
+  color: #111827;
+  font-family: 'Heebo', 'Segoe UI', Tahoma, Arial, sans-serif;
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 12mm 14mm;
+}
+
+.print-toolbar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 12px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  z-index: 10;
+}
+
+.worksheet-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 2px solid #111827;
+  padding-bottom: 8px;
+  margin-bottom: 18px;
+}
+.worksheet-header h1 { font-size: 20px; font-weight: 800; margin: 0; }
+.worksheet-header .meta { font-size: 12px; color: #6b7280; }
+.worksheet-header .name-line {
+  font-size: 12px; color: #374151; margin-top: 4px;
+}
+
+.question-block {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  margin-bottom: 20px;
+  padding-bottom: 6px;
+}
+.question-num {
+  display: inline-block;
+  width: 26px; height: 26px; line-height: 26px;
+  text-align: center;
+  border: 2px solid #111827; border-radius: 50%;
+  font-weight: 800; font-size: 14px;
+  margin-inline-end: 8px;
+}
+.question-stem { font-size: 15px; font-weight: 600; line-height: 1.6; }
+.question-visual { margin: 10px 0; }
+
+.options-row {
+  display: flex; flex-wrap: wrap; gap: 8px 18px;
+  margin-top: 8px;
+}
+.option {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 14px;
+}
+.option .bubble {
+  width: 18px; height: 18px; border: 1.6px solid #111827; border-radius: 50%;
+  display: inline-block; flex-shrink: 0;
+}
+.option .label { font-weight: 700; }
+
+.answer-key {
+  break-before: page;
+  page-break-before: always;
+}
+.answer-key h2 {
+  font-size: 18px; font-weight: 800;
+  border-bottom: 2px solid #111827; padding-bottom: 6px; margin-bottom: 14px;
+}
+.answer-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px 14px;
+  font-size: 14px;
+}
+.answer-grid .a-cell { display: flex; gap: 6px; }
+.answer-grid .a-q { font-weight: 800; }
+
+@media print {
+  .no-print { display: none !important; }
+  .print-root { padding: 0; }
+  @page { size: A4; margin: 14mm; }
+}
